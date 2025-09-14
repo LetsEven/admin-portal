@@ -160,9 +160,14 @@ const MenuManagement = () => {
   }, {} as Record<string, typeof menuItems>);
   return <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Gestión del Menú
-        </h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+            Gestión de Menú
+          </h1>
+          <p className="text-sm text-gray-500">
+            Administra platillos, precios y categorías de tu carta
+          </p>
+        </div>
         <div className="mt-4 sm:mt-0 flex flex-col space-y-2">
           <button type="button" onClick={handleAddSectionClick} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500">
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" />

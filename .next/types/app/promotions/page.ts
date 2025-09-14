@@ -1,4 +1,4 @@
-// File: C:\Users\adria\OneDrive\Documentos\Xquisito\Desarrollo\Portal-de-Administraci-n-de-Restaurantes-Xquisito---Fork\app\promotions\page.tsx
+// File: C:\Users\adria\OneDrive\Documentos\Xquisito\Desarrollo\admin-portal\app\promotions\page.tsx
 import * as entry from '../../../../app/promotions/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

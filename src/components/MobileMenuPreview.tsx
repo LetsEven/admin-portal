@@ -44,7 +44,7 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
         return;
       }
       const scrollTop = mainContentRef.current.scrollTop;
-      const headerOffset = 220; // Ajustar según la altura del encabezado
+      const headerOffset = 170; // Ajustar según la altura del encabezado
       // Find which section is most visible
       let closestSection = activeTab;
       let minDistance = Infinity;
@@ -70,7 +70,7 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
     setActiveTab(category);
     const sectionElement = sectionRefs.current[category];
     if (sectionElement && mainContentRef.current) {
-      const headerOffset = 220; // Ajustar según la altura del encabezado
+      const headerOffset = 170; // Ajustar según la altura del encabezado
       const sectionTop = sectionElement.offsetTop;
       mainContentRef.current.scrollTo({
         top: sectionTop - headerOffset,
@@ -78,44 +78,43 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
       });
     }
   };
-  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-[2px]">
       <div className="relative w-full max-w-[375px] mx-auto">
-        {/* iPhone 16 Pro frame */}
-        <div className="bg-black rounded-[55px] p-2 shadow-xl overflow-hidden border-8 border-black">
-          {/* Dynamic Island */}
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-50 bg-black w-[30%] h-[30px] rounded-b-[18px] flex items-center justify-center">
-            <div className="absolute w-[10px] h-[10px] rounded-full bg-gray-700 left-[15%]"></div>
-            <div className="absolute w-[50px] h-[6px] rounded-full bg-gray-800"></div>
-            <div className="absolute w-[10px] h-[10px] rounded-full bg-gray-700 right-[15%]"></div>
-          </div>
-          {/* Screen - Todo el contenido en un solo contenedor con scroll */}
-          <div ref={mainContentRef} className="relative bg-white rounded-[48px] overflow-y-auto h-[750px] touch-auto" style={{
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          WebkitOverflowScrolling: 'touch'
-        }} onScroll={handleScroll}>
-            {/* Status Bar - Fijo en la parte superior */}
-            <div className="sticky top-0 z-30 bg-white px-5 pt-8 pb-1 flex justify-between items-center">
-              <div className="text-black font-semibold">13:00</div>
-              <div className="flex items-center space-x-1">
-                <div className="flex items-center space-x-1">
-                  <div className="h-3 w-3">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 6.477 17.523 2 12 2Z" stroke="black" strokeWidth="1.5" />
-                      <path d="M15 9C15 7.343 13.657 6 12 6C10.343 6 9 7.343 9 9C9 10.657 10.343 12 12 12C13.657 12 15 10.657 15 9Z" fill="black" />
-                      <path d="M5.5 19.5C7.5 17 9.5 15 12 15C14.5 15 16.5 17 18.5 19.5" stroke="black" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                </div>
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 7C3 5.89543 3.89543 5 5 5H19C20.1046 5 21 5.89543 21 7V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="black" strokeWidth="2" />
-                  <rect x="6" y="8" width="12" height="8" rx="1" fill="black" />
-                </svg>
-                <div className="font-semibold text-sm">100%</div>
-              </div>
-            </div>
-            {/* Top action buttons - Fijo debajo del status bar */}
-            <div className="sticky top-[48px] z-20 px-4 py-3 flex items-center justify-between bg-white">
+        <style jsx>{`
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+        {/* Mobile frame with image */}
+        <div className="relative">
+          {/* Phone frame image */}
+          <img 
+            src="/frame.webp" 
+            alt="Mobile Frame" 
+            className="w-full h-auto relative z-10"
+          />
+          
+          {/* Menu content overlay */}
+          <div className="absolute inset-0 z-20" style={{
+            top: '4.2%',
+            left: '6%',
+            right: '4.5%',
+            bottom: '2.4%'
+          }}>
+            <div className="bg-white rounded-[50px] overflow-hidden h-full">
+              {/* Screen - Todo el contenido en un solo contenedor con scroll */}
+              <div 
+                ref={mainContentRef} 
+                className="relative bg-white rounded-[30px] overflow-y-auto h-full touch-auto hide-scrollbar" 
+                style={{
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  WebkitOverflowScrolling: 'touch'
+                }} 
+                onScroll={handleScroll}
+              >
+            {/* Top action buttons */}
+            <div className="sticky top-0 z-20 px-4 py-3 pt-8 flex items-center justify-between bg-white">
               <button onClick={onClose} className="p-1 bg-gray-100 rounded-full">
                 <XIcon className="h-6 w-6 text-black" />
               </button>
@@ -156,7 +155,7 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
               </div>
             </div>
             {/* Navigation Tabs - Sticky para que se desplace con el contenido pero se quede visible */}
-            <div className="sticky top-[106px] z-10 flex px-1 overflow-x-auto bg-white border-b border-gray-100" style={{
+            <div className="sticky top-[68px] z-10 flex px-1 overflow-x-auto bg-white border-b border-gray-100" style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none'
           }}>
@@ -251,10 +250,10 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
                   </div>
                 </div>;
           })}
-            <div className="h-16"></div> {/* Bottom spacing */}
+                <div className="h-16"></div> {/* Bottom spacing */}
+              </div>
+            </div>
           </div>
-          {/* Home indicator */}
-          <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-[30%] h-[5px] bg-gray-800 rounded-full"></div>
         </div>
       </div>
     </div>;

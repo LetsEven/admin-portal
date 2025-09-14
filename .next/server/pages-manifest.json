@@ -1,10 +1,1 @@
-{
-  "/_error": "pages/_error.js",
-  "/Dashboard": "pages/Dashboard.js",
-  "/MenuManagement": "pages/MenuManagement.js",
-  "/_app": "pages/_app.js",
-  "/PromotionsManagement": "pages/PromotionsManagement.js",
-  "/RewardsManagement": "pages/RewardsManagement.js",
-  "/Settings": "pages/Settings.js",
-  "/_document": "pages/_document.js"
-}
+{}
