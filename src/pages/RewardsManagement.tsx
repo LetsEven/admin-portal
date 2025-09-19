@@ -642,19 +642,19 @@ const RewardsPricingModal = ({
   const plans = [{
     name: 'Básico',
     price: 'Gratis',
-    features: ['1 campaña activa por mes', 'Estadísticas básicas', 'Soporte por email'],
+    features: ['1 campaña activa x mes', 'Estadísticas básicas', 'Soporte por email'],
     gradient: currentPlan === 'Básico' ? 'from-green-400/20 to-green-600/20' : 'from-gray-400/20 to-gray-600/20',
     borderColor: currentPlan === 'Básico' ? 'border-green-400/30' : 'border-gray-300/30'
   }, {
     name: 'Premium',
-    price: '$15 USD',
-    features: ['Hasta 5 campañas por mes', 'Estadísticas avanzadas', 'Segmentación de clientes', 'Soporte prioritario'],
+    price: '$20 USD',
+    features: ['5 campañas x mes', 'Estadísticas avanzadas', 'Segmentación de clientes', 'Soporte prioritario'],
     gradient: currentPlan === 'Premium' ? 'from-green-400/20 to-green-600/20' : 'from-gray-400/20 to-gray-600/20',
     borderColor: currentPlan === 'Premium' ? 'border-green-400/30' : 'border-gray-300/30'
   }, {
     name: 'Ultra',
     price: '$30 USD',
-    features: ['Hasta 10 campañas por mes', 'Estadísticas en tiempo real', 'Segmentación avanzada', 'Soporte 24/7', 'API de integración'],
+    features: ['Hasta 10 campañas x mes', 'Estadísticas avanzadas', 'Segmentación avanzada', 'Soporte 24/7'],
     gradient: currentPlan === 'Ultra' ? 'from-green-400/20 to-green-600/20' : 'from-gray-400/20 to-gray-600/20',
     borderColor: currentPlan === 'Ultra' ? 'border-green-400/30' : 'border-gray-300/30'
   }];

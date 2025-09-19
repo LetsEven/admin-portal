@@ -5,6 +5,7 @@ import MenuItemForm from '../components/MenuItemForm';
 import SectionHeader from '../components/SectionHeader';
 import SectionForm from '../components/SectionForm';
 import MobileMenuPreview from '../components/MobileMenuPreview';
+import RestaurantHeader from '../components/RestaurantHeader';
 // Sample data for menu items with updated categories and weights for Hot Dawgs
 const initialMenuItems = [{
   id: 1,
@@ -74,32 +75,54 @@ const initialMenuItems = [{
 // Default sections
 const defaultSections = ['Entradas', 'Holy Burgers', 'Siders', 'Holy Kids', 'Ensaladas', 'Holy Fit', 'Malteadas', 'Postres'];
 const MenuManagement = () => {
+  const [isHydrated, setIsHydrated] = useState(false);
+
   // Use localStorage to persist sections and menu items
-  const [menuItems, setMenuItems] = useState(() => {
-    const savedItems = localStorage.getItem('menuItems');
-    return savedItems ? JSON.parse(savedItems) : initialMenuItems;
+  const [menuItems, setMenuItems] = useState(initialMenuItems);
+  const [sections, setSections] = useState(defaultSections);
+  const [restaurantInfo, setRestaurantInfo] = useState({
+    name: 'Mi Restaurante',
+    description: 'Descripción de tu restaurante - agrega información sobre tu cocina, especialidades y ambiente',
+    bannerImage: '',
+    logoImage: ''
   });
-  // Modificamos esta parte para que no recalcule las secciones basadas en los items
-  const [sections, setSections] = useState(() => {
-    const savedSections = localStorage.getItem('sections');
-    // Si hay secciones guardadas, usamos esas exactamente como están
-    if (savedSections) {
-      return JSON.parse(savedSections);
+
+  // Load from localStorage after hydration
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedItems = localStorage.getItem('menuItems');
+      if (savedItems) {
+        setMenuItems(JSON.parse(savedItems));
+      }
+
+      const savedSections = localStorage.getItem('sections');
+      if (savedSections) {
+        setSections(JSON.parse(savedSections));
+      }
+
+      const savedInfo = localStorage.getItem('restaurantInfo');
+      if (savedInfo) {
+        setRestaurantInfo(JSON.parse(savedInfo));
+      }
+
+      setIsHydrated(true);
     }
-    // Solo si no hay secciones guardadas, usamos las predeterminadas
-    return defaultSections;
-  });
+  }, []);
+
   const [showItemForm, setShowItemForm] = useState(false);
   const [showSectionForm, setShowSectionForm] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
   const [filterCategory, setFilterCategory] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  // Save to localStorage whenever sections or menuItems change
+  // Save to localStorage whenever sections, menuItems, or restaurantInfo change
   useEffect(() => {
-    localStorage.setItem('sections', JSON.stringify(sections));
-    localStorage.setItem('menuItems', JSON.stringify(menuItems));
-  }, [sections, menuItems]);
+    if (isHydrated && typeof window !== 'undefined') {
+      localStorage.setItem('sections', JSON.stringify(sections));
+      localStorage.setItem('menuItems', JSON.stringify(menuItems));
+      localStorage.setItem('restaurantInfo', JSON.stringify(restaurantInfo));
+    }
+  }, [sections, menuItems, restaurantInfo, isHydrated]);
   // Get all unique categories from the sections state only
   const allCategories = [...sections];
   const handleAddItemClick = (category: string) => {
@@ -142,13 +165,30 @@ const MenuManagement = () => {
     // Close the form
     setShowSectionForm(false);
     // Guardamos inmediatamente para asegurar la persistencia
-    localStorage.setItem('sections', JSON.stringify(updatedSections));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sections', JSON.stringify(updatedSections));
+    }
     // Filtramos los elementos del menú para eliminar los que pertenecen a secciones eliminadas
     const updatedMenuItems = menuItems.filter(item => updatedSections.includes(item.category));
     // Update the menu items state
     setMenuItems(updatedMenuItems);
     // También guardamos los elementos actualizados
-    localStorage.setItem('menuItems', JSON.stringify(updatedMenuItems));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('menuItems', JSON.stringify(updatedMenuItems));
+    }
+  };
+
+  // Restaurant header handlers
+  const handleUpdateRestaurantName = (name: string) => {
+    setRestaurantInfo(prev => ({ ...prev, name }));
+  };
+
+  const handleUpdateBanner = (bannerImage: string) => {
+    setRestaurantInfo(prev => ({ ...prev, bannerImage }));
+  };
+
+  const handleUpdateLogo = (logoImage: string) => {
+    setRestaurantInfo(prev => ({ ...prev, logoImage }));
   };
   // Filter items by category if filter is set
   const filteredItems = filterCategory ? menuItems.filter(item => item.category === filterCategory) : menuItems;
@@ -158,26 +198,40 @@ const MenuManagement = () => {
     acc[category] = items;
     return acc;
   }, {} as Record<string, typeof menuItems>);
-  return <div className="w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-            Gestión de Menú
-          </h1>
-          <p className="text-sm text-gray-500">
-            Administra platillos, precios y categorías de tu carta
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0 flex flex-col space-y-2">
-          <button type="button" onClick={handleAddSectionClick} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500">
-            <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-            Administrar sección
-          </button>
-          <button type="button" onClick={() => setShowMobilePreview(true)} className="inline-flex items-center justify-center px-4 py-2 border border-custom-green-600 text-sm font-medium rounded-md shadow-sm text-custom-green-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500">
-            Ver menu
-          </button>
+  if (!isHydrated) {
+    return <div className="w-full">
+      {/* Restaurant Header Section */}
+      <RestaurantHeader
+        restaurantName="Mi Restaurante"
+        bannerImage=""
+        logoImage=""
+        onUpdateName={() => {}}
+        onUpdateBanner={() => {}}
+        onUpdateLogo={() => {}}
+        onAddSectionClick={() => {}}
+        onViewMenuClick={() => {}}
+      />
+      <div className="mt-6">
+        <div className="text-center py-12">
+          <p className="text-gray-500">Cargando...</p>
         </div>
       </div>
+    </div>;
+  }
+
+  return <div className="w-full">
+      {/* Restaurant Header Section */}
+      <RestaurantHeader
+        restaurantName={restaurantInfo.name}
+        bannerImage={restaurantInfo.bannerImage}
+        logoImage={restaurantInfo.logoImage}
+        onUpdateName={handleUpdateRestaurantName}
+        onUpdateBanner={handleUpdateBanner}
+        onUpdateLogo={handleUpdateLogo}
+        onAddSectionClick={handleAddSectionClick}
+        onViewMenuClick={() => setShowMobilePreview(true)}
+      />
+
       <div className="mt-6">
         {Object.keys(itemsByCategory).length === 0 ? <div className="text-center py-12">
             <p className="text-gray-500">

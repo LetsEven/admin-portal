@@ -21,7 +21,9 @@ Portal de administración para la gestión de restaurantes Xquisito. Aplicación
 - **Vista móvil optimizada**: Interfaz responsive para todos los dispositivos
 
 ### Gestión de Menú
-- **Editor visual**: Interfaz intuitiva para modificar menús
+- **Header personalizable**: Sección tipo LinkedIn con banner, logo circular y nombre editable
+- **Sistema de recorte avanzado**: Modal con zoom dinámico -300% a 300% para logos
+- **Editor visual**: Interfaz intuitiva para modificar menús con persistencia localStorage
 - **Vista previa móvil**: Simulación en tiempo real de la aplicación móvil
 - **Organización por categorías**: Estructura clara y fácil navegación
 
@@ -33,7 +35,9 @@ Portal de administración para la gestión de restaurantes Xquisito. Aplicación
 - **Íconos**: Lucide React  
 - **Gráficos**: Recharts
 - **Drag & Drop**: React Beautiful DND
-- **Estado**: React Hooks (useState, useEffect)
+- **Recorte de imágenes**: react-easy-crop
+- **Estado**: React Hooks (useState, useEffect, useCallback)
+- **Canvas API**: Para procesamiento de imágenes
 
 ## 📦 Instalación
 
@@ -73,7 +77,9 @@ src/
 │   └── Settings.tsx          # Configuraciones
 ├── components/               # Componentes reutilizables
 │   ├── Sidebar.tsx          # Barra lateral de navegación
-│   └── MobileMenuPreview.tsx # Vista previa móvil
+│   ├── MobileMenuPreview.tsx # Vista previa móvil
+│   ├── RestaurantHeader.tsx # Header personalizable para menús
+│   └── ImageCropModal.tsx   # Modal de recorte con zoom avanzado
 └── app/                     # App Router de Next.js
     ├── layout.tsx           # Layout principal
     └── page.tsx             # Página de inicio
