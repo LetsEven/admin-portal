@@ -27,6 +27,14 @@ Portal de administración para la gestión de restaurantes Xquisito. Aplicación
 - **Vista previa móvil**: Simulación en tiempo real de la aplicación móvil
 - **Organización por categorías**: Estructura clara y fácil navegación
 
+### Pepper AI Chat
+- **Interfaz de chat inteligente**: Sistema de conversación con IA integrado
+- **Posicionamiento dinámico**: La UI se adapta automáticamente al estado de conversación
+- **Animaciones fluidas**: Transiciones suaves cuando se expande/contrae el sidebar
+- **Video integración**: Logo animado de Pepper con video WebM en loop infinito
+- **Control granular**: Posicionamiento pixel-perfect de todos los elementos UI
+- **Responsive design**: Adaptación automática a diferentes tamaños de pantalla
+
 ## 🛠️ Tecnologías
 
 - **Framework**: Next.js 14 con App Router
@@ -72,15 +80,18 @@ src/
 ├── pages/                    # Páginas principales
 │   ├── Dashboard.tsx         # Dashboard con datos dinámicos
 │   ├── RewardsManagement.tsx # Gestión de recompensas/Scala
-│   ├── PromotionsManagement.tsx # Gestión de promociones/Dine  
+│   ├── PromotionsManagement.tsx # Gestión de promociones/Dine
 │   ├── MenuManagement.tsx    # Gestión de menús
 │   └── Settings.tsx          # Configuraciones
 ├── components/               # Componentes reutilizables
-│   ├── Sidebar.tsx          # Barra lateral de navegación
+│   ├── Sidebar.tsx          # Barra lateral con SparklesIcon para IA
 │   ├── MobileMenuPreview.tsx # Vista previa móvil
 │   ├── RestaurantHeader.tsx # Header personalizable para menús
-│   └── ImageCropModal.tsx   # Modal de recorte con zoom avanzado
+│   ├── ImageCropModal.tsx   # Modal de recorte con zoom avanzado
+│   └── Layout.tsx           # Layout con detección de sidebar
 └── app/                     # App Router de Next.js
+    ├── pepper/              # Chat de IA
+    │   └── page.tsx         # Interfaz de Pepper con video y posicionamiento dinámico
     ├── layout.tsx           # Layout principal
     └── page.tsx             # Página de inicio
 ```
@@ -112,11 +123,19 @@ src/
 - Contenido realista con testimonios y promociones
 - Diseño optimizado para móvil y desktop
 
-### Gestión Simplificada  
+### Gestión Simplificada
 - Toggles sin animaciones complejas
 - Cambios de estado inmediatos
 - Interfaz limpia y moderna
 - Feedback visual claro
+
+### Sistema Pepper AI
+- **Detección de sidebar**: JavaScript detecta expansión/contracción automáticamente
+- **Posicionamiento dinámico**: Elementos se mueven con transiciones de 300ms
+- **Video loops**: Logo animado con `/video-icon-pepper.webm` en reproducción continua
+- **Control granular**: Todos los elementos posicionables via inline styles con píxeles exactos
+- **Estados adaptativos**: Interfaz diferente para conversación vacía vs activa
+- **Responsive width**: Barras se contraen automáticamente cuando se expande el sidebar
 
 ## 🚀 Deploy
 

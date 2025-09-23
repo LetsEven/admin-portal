@@ -27,12 +27,12 @@ const Layout: React.FC<LayoutProps> = ({
       </div>
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-shrink-0">
-        <div className="flex flex-col transition-all duration-300 ease-in-out w-16 hover:w-64 shadow-lg">
+        <div className="flex flex-col transition-all duration-300 ease-in-out w-16 hover:w-64 shadow-lg group">
           <Sidebar mobile={false} />
         </div>
       </div>
       {/* Main content */}
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden group">
         <div className="md:hidden pl-3 pt-3 flex items-center border-b border-gray-200 bg-white shadow-sm h-14 sticky top-0 z-10">
           <button className="h-10 w-10 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-custom-green-500" onClick={() => setSidebarOpen(true)}>
             <span className="sr-only">Abrir menú</span>

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HomeIcon, BookOpenIcon, TagIcon, TrendingUpIcon, SettingsIcon, LogOutIcon } from 'lucide-react';
+import { HomeIcon, BookOpenIcon, TagIcon, TrendingUpIcon, SettingsIcon, LogOutIcon, SparklesIcon } from 'lucide-react';
 interface SidebarProps {
   mobile: boolean;
 }
@@ -37,6 +37,12 @@ const Sidebar: React.FC<SidebarProps> = ({
           <HomeIcon className={`flex-shrink-0 h-5 w-5 ${mobile || isExpanded ? 'mr-3 text-custom-green-600' : 'mx-auto text-gray-500'} transition-all duration-200`} />
           <span className={`${!mobile && !isExpanded ? 'hidden' : 'block'} transition-opacity duration-200`}>
             Inicio
+          </span>
+        </Link>
+        <Link href="/pepper" className={`group flex items-center text-sm font-medium rounded-lg transition-all duration-200 ${mobile || isExpanded ? 'px-3 py-3' : 'px-0 py-3 justify-center'} ${pathname === '/pepper' ? 'bg-custom-green-100 text-custom-green-900 shadow-sm' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}`}>
+          <SparklesIcon className={`flex-shrink-0 h-5 w-5 ${mobile || isExpanded ? 'mr-3 text-custom-green-600' : 'mx-auto text-gray-500'} transition-all duration-200`} />
+          <span className={`${!mobile && !isExpanded ? 'hidden' : 'block'} transition-opacity duration-200`}>
+            Pepper
           </span>
         </Link>
         <Link href="/menu" className={`group flex items-center text-sm font-medium rounded-lg transition-all duration-200 ${mobile || isExpanded ? 'px-3 py-3' : 'px-0 py-3 justify-center'} ${pathname === '/menu' ? 'bg-custom-green-100 text-custom-green-900 shadow-sm' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}`}>

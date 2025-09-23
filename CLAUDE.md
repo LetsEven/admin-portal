@@ -26,7 +26,8 @@ git push origin main # Push to main branch
 - `src/pages/RewardsManagement.tsx` - Rewards/Scala management with email preview and pricing modal
 - `src/pages/PromotionsManagement.tsx` - Dine package management with simplified toggles
 - `src/pages/MenuManagement.tsx` - Menu management interface with customizable restaurant header
-- `src/components/Sidebar.tsx` - Navigation sidebar
+- `app/pepper/page.tsx` - AI chat interface with dynamic positioning and video integration
+- `src/components/Sidebar.tsx` - Navigation sidebar with SparklesIcon for AI section
 - `src/components/MobileMenuPreview.tsx` - Mobile menu preview component
 - `src/components/RestaurantHeader.tsx` - LinkedIn-style restaurant profile header with banner and logo
 - `src/components/ImageCropModal.tsx` - Advanced image cropping modal with dynamic zoom system
@@ -43,6 +44,10 @@ git push origin main # Push to main branch
 - **Advanced Image Cropping**: Modal with -300% to 300% zoom range and react-easy-crop integration
 - **LocalStorage Persistence**: Restaurant data persistence with SSR-safe hydration
 - **Canvas Image Processing**: PNG output with transparent backgrounds
+- **Pepper AI Chat Interface**: Complete chat system with dynamic positioning and animations
+- **Video Integration**: Animated Pepper logo using WebM video with loop functionality
+- **Dynamic UI Positioning**: Sidebar-responsive layout with customizable pixel-perfect positioning
+- **SparklesIcon Integration**: Updated sidebar icon for AI section to match modern AI branding
 
 ## Development Notes
 
@@ -101,6 +106,72 @@ useEffect(() => {
   if (typeof window !== 'undefined') {
     // Safe localStorage access after hydration
     setIsHydrated(true);
+  }
+}, []);
+```
+
+## Pepper AI Chat System
+
+### Key Features
+- **Dynamic Positioning**: Empty state centers input bar, conversation state moves it to bottom
+- **Sidebar Integration**: Smooth animations when sidebar expands/contracts
+- **Video Integration**: Animated Pepper logo with WebM video loops
+- **Responsive Layout**: Adapts to different screen sizes and sidebar states
+- **Customizable Spacing**: Pixel-perfect control over all UI elements
+
+### Positioning System
+All major elements use inline styles for precise control:
+
+```typescript
+// Input bar positioning
+style={{
+  bottom: messages.length === 0 ? '350px' : '40px',           // Vertical position
+  left: sidebarExpanded ? 'calc(54% + 100px)' : '54%',       // Horizontal position
+  transform: 'translateX(-50%)'                               // Center alignment
+}}
+
+// Header positioning
+style={{
+  paddingTop: '60px',                                         // Distance from top
+  paddingBottom: '32px',                                      // Space below header
+  transform: sidebarExpanded ? 'translateX(30px)' : 'translateX(0)' // Sidebar animation
+}}
+
+// Message area spacing
+style={{
+  paddingTop: '100px',                                        // Messages start position
+  paddingBottom: '80px',                                      // Space for input bar
+  gap: '50px'                                                 // Space between messages
+}}
+```
+
+### Video Implementation
+```typescript
+<video
+  src="/video-icon-pepper.webm"
+  autoPlay
+  loop
+  muted
+  playsInline
+  className="w-full h-full object-cover rounded-full"
+/>
+```
+
+### Sidebar Detection
+```typescript
+useEffect(() => {
+  const sidebar = document.querySelector('.hidden.md\\:flex .group');
+  if (sidebar) {
+    const handleMouseEnter = () => setSidebarExpanded(true);
+    const handleMouseLeave = () => setSidebarExpanded(false);
+
+    sidebar.addEventListener('mouseenter', handleMouseEnter);
+    sidebar.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      sidebar.removeEventListener('mouseenter', handleMouseEnter);
+      sidebar.removeEventListener('mouseleave', handleMouseLeave);
+    };
   }
 }, []);
 ```
