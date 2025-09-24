@@ -41,7 +41,7 @@ const SectionForm: React.FC<SectionFormProps> = ({
     setSectionList(items);
   };
   return <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onCancel}></div>
+      <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]" onClick={onCancel}></div>
       <div className="relative bg-white rounded-lg max-w-md w-full mx-auto p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium text-gray-900">

@@ -15,7 +15,10 @@
       "Bash(findstr:*)",
       "Bash(curl:*)",
       "Bash(npx tsc:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Read(//c/Users/adria/Pictures/Screenshots/**)",
+      "Bash(taskkill:*)",
+      "Bash(npx kill-port:*)"
     ],
     "deny": [],
     "ask": []

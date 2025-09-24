@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart2Icon, UsersIcon, ShoppingBagIcon, TrendingUpIcon, ChevronDownIcon, MapPinIcon, CheckIcon, XIcon, ClockIcon, DollarSignIcon, UserIcon, ShoppingCartIcon, RotateCcwIcon } from 'lucide-react';
+import { BarChart2Icon, UsersIcon, ShoppingBagIcon, TrendingUpIcon, ChevronDownIcon, MapPinIcon, CheckIcon, XIcon, ClockIcon, DollarSignIcon, UserIcon, ShoppingCartIcon, RotateCcwIcon, CrownIcon, StarIcon } from 'lucide-react';
 // Lista de sucursales de ejemplo
 const sucursales = [{
   id: 1,
@@ -205,6 +205,7 @@ const Dashboard = () => {
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
+  const [mostrarModalPro, setMostrarModalPro] = useState(false);
   
   // Obtener datos de la sucursal seleccionada
   const datosActuales = datosPorSucursal[sucursalSeleccionada.id];
@@ -267,8 +268,11 @@ const Dashboard = () => {
       </div>
       <div className="mt-1">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Card 1 */}
-          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          {/* Card 1 - Ventas Totales (Pro) */}
+          <div
+            className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg cursor-pointer"
+            onClick={() => setMostrarModalPro(true)}
+          >
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0 bg-custom-green-100 p-3 rounded-full">
@@ -280,8 +284,13 @@ const Dashboard = () => {
                       Ventas totales
                     </dt>
                     <dd>
-                      <div className="text-lg font-medium text-gray-900">
-                        {datosActuales.ventasTotales}
+                      <div className="flex items-center justify-center">
+                        <div className="bg-gradient-to-r from-purple-500/20 to-yellow-500/20 backdrop-blur-sm border border-white/30 rounded-lg px-4 py-2 shadow-lg">
+                          <div className="flex items-center space-x-2">
+                            <CrownIcon className="h-5 w-5 text-yellow-600" />
+                            <span className="text-lg font-semibold text-gray-800">Pro</span>
+                          </div>
+                        </div>
                       </div>
                     </dd>
                   </dl>
@@ -290,12 +299,12 @@ const Dashboard = () => {
             </div>
             <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
               <div className="text-sm">
-                <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                  Ver todo
+                <button className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center w-full">
+                  Ver Planes
                   <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -577,6 +586,155 @@ const Dashboard = () => {
               >
                 Cerrar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Planes Pro */}
+      {mostrarModalPro && (
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]" onClick={() => setMostrarModalPro(false)}></div>
+          <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl max-w-4xl w-full mx-4 shadow-2xl border border-white/20">
+            {/* Header del Modal */}
+            <div className="px-8 py-6 border-b border-white/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    Xquisito Pro
+                  </h3>
+                  <p className="text-gray-600 mt-1">
+                    Desbloquea métricas avanzadas y funcionalidades exclusivas
+                  </p>
+                </div>
+                <button
+                  onClick={() => setMostrarModalPro(false)}
+                  className="text-gray-400 hover:text-gray-500 transition-colors p-2 rounded-full hover:bg-white/20"
+                >
+                  <XIcon className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido del Modal */}
+            <div className="px-8 py-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Plan Básico */}
+                <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg">
+                  <div className="text-center mb-6">
+                    <h4 className="text-xl font-semibold text-gray-900 mb-2">
+                      Básico
+                    </h4>
+                    <div className="flex items-center justify-center">
+                      <span className="text-3xl font-bold text-gray-900">Gratis</span>
+                    </div>
+                    <p className="text-gray-600 mt-2">Plan actual</p>
+                  </div>
+
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-center">
+                      <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                      <span className="text-gray-700">Dashboard básico</span>
+                    </li>
+                    <li className="flex items-center">
+                      <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                      <span className="text-gray-700">Gestión de menús</span>
+                    </li>
+                    <li className="flex items-center">
+                      <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                      <span className="text-gray-700">Promociones básicas</span>
+                    </li>
+                    <li className="flex items-center">
+                      <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                      <span className="text-gray-700">Hasta 3 sucursales</span>
+                    </li>
+                    <li className="flex items-center opacity-50">
+                      <XIcon className="h-5 w-5 text-gray-400 mr-3" />
+                      <span className="text-gray-500">Métricas de ventas avanzadas</span>
+                    </li>
+                    <li className="flex items-center opacity-50">
+                      <XIcon className="h-5 w-5 text-gray-400 mr-3" />
+                      <span className="text-gray-500">Análisis predictivo</span>
+                    </li>
+                    <li className="flex items-center opacity-50">
+                      <XIcon className="h-5 w-5 text-gray-400 mr-3" />
+                      <span className="text-gray-500">Reportes personalizados</span>
+                    </li>
+                  </ul>
+
+                  <button className="w-full py-3 px-4 bg-gray-200 text-gray-600 rounded-lg font-medium cursor-not-allowed">
+                    Plan Actual
+                  </button>
+                </div>
+
+                {/* Plan Pro */}
+                <div className="bg-gradient-to-br from-purple-500/20 to-yellow-500/20 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg relative overflow-hidden">
+                  {/* Badge Pro */}
+                  <div className="absolute top-4 right-4">
+                    <div className="bg-gradient-to-r from-purple-600 to-yellow-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center">
+                      <CrownIcon className="h-3 w-3 mr-1" />
+                      POPULAR
+                    </div>
+                  </div>
+
+                  <div className="text-center mb-6">
+                    <h4 className="text-xl font-semibold text-gray-900 mb-2 flex items-center justify-center">
+                      <CrownIcon className="h-5 w-5 text-yellow-600 mr-2" />
+                      Pro
+                    </h4>
+                    <div className="flex items-center justify-center">
+                      <span className="text-3xl font-bold text-gray-900">$299</span>
+                      <span className="text-gray-600 ml-1">/mes</span>
+                    </div>
+                    <p className="text-gray-600 mt-2">Facturación mensual</p>
+                  </div>
+
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-center">
+                      <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                      <span className="text-gray-700">Todo del plan Básico</span>
+                    </li>
+                    <li className="flex items-center">
+                      <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
+                      <span className="text-gray-700 font-medium">Métricas de ventas detalladas</span>
+                    </li>
+                    <li className="flex items-center">
+                      <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
+                      <span className="text-gray-700 font-medium">Análisis predictivo con IA</span>
+                    </li>
+                    <li className="flex items-center">
+                      <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
+                      <span className="text-gray-700 font-medium">Reportes personalizados</span>
+                    </li>
+                    <li className="flex items-center">
+                      <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
+                      <span className="text-gray-700 font-medium">Sucursales ilimitadas</span>
+                    </li>
+                    <li className="flex items-center">
+                      <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
+                      <span className="text-gray-700 font-medium">Pepper AI avanzado</span>
+                    </li>
+                    <li className="flex items-center">
+                      <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
+                      <span className="text-gray-700 font-medium">Soporte prioritario 24/7</span>
+                    </li>
+                  </ul>
+
+                  <button className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-yellow-500 text-white rounded-lg font-medium hover:from-purple-700 hover:to-yellow-600 transition-all duration-200 shadow-lg">
+                    Actualizar a Pro
+                  </button>
+                </div>
+              </div>
+
+              {/* Nota informativa */}
+              <div className="mt-8 text-center">
+                <div className="bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-lg p-4">
+                  <p className="text-blue-800 text-sm">
+                    <strong>💡 Nota:</strong> Las métricas de ventas totales están disponibles exclusivamente en Xquisito Pro.
+                    Actualiza tu plan para acceder a análisis detallados de ingresos, tendencias de ventas y proyecciones de crecimiento.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
