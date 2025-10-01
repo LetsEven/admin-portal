@@ -18,7 +18,11 @@
       "Bash(node:*)",
       "Read(//c/Users/adria/Pictures/Screenshots/**)",
       "Bash(taskkill:*)",
-      "Bash(npx kill-port:*)"
+      "Bash(npx kill-port:*)",
+      "Bash(tasklist)",
+      "Bash(timeout:*)",
+      "Bash(git config:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []

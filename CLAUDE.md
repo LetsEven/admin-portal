@@ -31,6 +31,7 @@ git push origin main # Push to main branch
 - `src/components/MobileMenuPreview.tsx` - Mobile menu preview component
 - `src/components/RestaurantHeader.tsx` - LinkedIn-style restaurant profile header with banner and logo
 - `src/components/ImageCropModal.tsx` - Advanced image cropping modal with dynamic zoom system
+- `src/components/MenuItemForm.tsx` - Menu item form with advanced customization fields and optimized field order
 
 ### Recent Features Implemented
 - Dynamic dashboard data based on selected branch/location
@@ -48,6 +49,8 @@ git push origin main # Push to main branch
 - **Video Integration**: Animated Pepper logo using WebM video with loop functionality
 - **Dynamic UI Positioning**: Sidebar-responsive layout with customizable pixel-perfect positioning
 - **SparklesIcon Integration**: Updated sidebar icon for AI section to match modern AI branding
+- **MenuItemForm Optimization**: Reorganized field order (Image → Name → Description → Customization → Price → Discount)
+- **Spanish Localization**: Customization field types translated to Spanish (Lista Desplegable, Opciones Casillas, Lista desplegable con cantidad)
 
 ## Development Notes
 
@@ -109,6 +112,49 @@ useEffect(() => {
   }
 }, []);
 ```
+
+## MenuItemForm System
+
+### Form Field Order
+The menu item form follows an optimized, intuitive order:
+1. **Imagen del platillo** - Image upload with preview (appears first for visual hierarchy)
+2. **Nombre** - Item name
+3. **Descripción** - Item description
+4. **Personalización** - Customization fields (positioned between description and pricing)
+5. **Precio** - Price input
+6. **Descuento** - Discount percentage
+
+### Customization Field Types
+Three types of customization fields available in Spanish:
+
+**Lista Desplegable** (`dropdown`)
+- Single selection dropdown
+- Ideal for: sizes, preparation methods, cooking levels
+
+**Opciones Casillas** (`checkboxes`)
+- Multiple selection checkboxes
+- Ideal for: toppings, extras, add-ons
+
+**Lista desplegable con cantidad** (`dropdown-quantity`)
+- Dropdown with quantity selector
+- Ideal for: portioned items, extras with counts
+
+### Implementation Example
+```typescript
+interface CustomField {
+  id: string;
+  name: string;
+  type: 'dropdown' | 'checkboxes' | 'dropdown-quantity';
+  options?: string[];
+}
+```
+
+### Key Features
+- Dynamic field addition with `Add Field` button
+- Individual field removal with trash icon
+- Option management (add/remove options per field)
+- Gray card design (bg-gray-50) for visual separation
+- Border-top separator for Personalización section
 
 ## Pepper AI Chat System
 

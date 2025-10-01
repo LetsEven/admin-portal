@@ -26,6 +26,11 @@ Portal de administración para la gestión de restaurantes Xquisito. Aplicación
 - **Editor visual**: Interfaz intuitiva para modificar menús con persistencia localStorage
 - **Vista previa móvil**: Simulación en tiempo real de la aplicación móvil
 - **Organización por categorías**: Estructura clara y fácil navegación
+- **Formulario de platillos optimizado**: Orden intuitivo (Imagen → Nombre → Descripción → Personalización → Precio → Descuento)
+- **Sistema de personalización avanzado**: Campos customizables con tres tipos de respuesta:
+  - **Lista Desplegable**: Selección única de opciones
+  - **Opciones Casillas**: Selección múltiple con checkboxes
+  - **Lista desplegable con cantidad**: Selección con control de cantidad
 
 ### Pepper AI Chat
 - **Interfaz de chat inteligente**: Sistema de conversación con IA integrado
@@ -88,6 +93,7 @@ src/
 │   ├── MobileMenuPreview.tsx # Vista previa móvil
 │   ├── RestaurantHeader.tsx # Header personalizable para menús
 │   ├── ImageCropModal.tsx   # Modal de recorte con zoom avanzado
+│   ├── MenuItemForm.tsx     # Formulario de platillos con personalización avanzada
 │   └── Layout.tsx           # Layout con detección de sidebar
 └── app/                     # App Router de Next.js
     ├── pepper/              # Chat de IA
