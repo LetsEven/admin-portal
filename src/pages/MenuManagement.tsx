@@ -6,80 +6,84 @@ import SectionHeader from '../components/SectionHeader';
 import SectionForm from '../components/SectionForm';
 import MobileMenuPreview from '../components/MobileMenuPreview';
 import RestaurantHeader from '../components/RestaurantHeader';
+import menuApiService, { MenuSection, MenuItem } from '../services/menuApi';
 // Sample data for menu items with updated categories and weights for Hot Dawgs
-const initialMenuItems = [{
-  id: 1,
-  name: 'Nachos Supremos',
-  description: 'Nachos con queso fundido, guacamole, pico de gallo y crema agria.',
-  price: 8.99,
-  discount: 0,
-  category: 'Entradas',
-  image: 'https://images.unsplash.com/photo-1582169296194-e4d644c48063?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
-}, {
-  id: 2,
-  name: 'Holy Classic',
-  description: 'Hamburguesa clásica con queso cheddar, lechuga, tomate y salsa especial.',
-  price: 12.99,
-  discount: 15,
-  category: 'Holy Burgers',
-  image: 'https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
-}, {
-  id: 3,
-  name: 'Papas Fritas',
-  description: 'Papas fritas crujientes con sal marina.',
-  price: 4.99,
-  discount: 0,
-  category: 'Siders',
-  image: 'https://images.unsplash.com/photo-1576107232684-1279f390859f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
-}, {
-  id: 4,
-  name: 'Mini Burger',
-  description: 'Hamburguesa pequeña con queso para niños.',
-  price: 7.99,
-  discount: 0,
-  category: 'Holy Kids',
-  image: 'https://images.unsplash.com/photo-1603064752734-4c48eff53d05?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
-}, {
-  id: 5,
-  name: 'César con Pollo',
-  description: 'Ensalada César con pollo a la parrilla, crutones y aderezo casero.',
-  price: 10.99,
-  discount: 0,
-  category: 'Ensaladas',
-  image: 'https://images.unsplash.com/photo-1512852939750-1305098529bf?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
-}, {
-  id: 7,
-  name: 'Wrap de Pollo',
-  description: 'Wrap de pollo a la parrilla con vegetales frescos y aderezo ligero.',
-  price: 9.99,
-  discount: 0,
-  category: 'Holy Fit',
-  image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
-}, {
-  id: 8,
-  name: 'Malteada de Chocolate',
-  description: 'Malteada cremosa de chocolate con crema batida.',
-  price: 5.99,
-  discount: 0,
-  category: 'Malteadas',
-  image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
-}, {
-  id: 9,
-  name: 'Brownie con Helado',
-  description: 'Brownie caliente con helado de vainilla y salsa de chocolate.',
-  price: 6.99,
-  discount: 0,
-  category: 'Postres',
-  image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
-}];
+// const initialMenuItems = [{
+//   id: 1,
+//   name: 'Nachos Supremos',
+//   description: 'Nachos con queso fundido, guacamole, pico de gallo y crema agria.',
+//   price: 8.99,
+//   discount: 0,
+//   category: 'Entradas',
+//   image: 'https://images.unsplash.com/photo-1582169296194-e4d644c48063?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
+// }, {
+//   id: 2,
+//   name: 'Holy Classic',
+//   description: 'Hamburguesa clásica con queso cheddar, lechuga, tomate y salsa especial.',
+//   price: 12.99,
+//   discount: 15,
+//   category: 'Holy Burgers',
+//   image: 'https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
+// }, {
+//   id: 3,
+//   name: 'Papas Fritas',
+//   description: 'Papas fritas crujientes con sal marina.',
+//   price: 4.99,
+//   discount: 0,
+//   category: 'Siders',
+//   image: 'https://images.unsplash.com/photo-1576107232684-1279f390859f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
+// }, {
+//   id: 4,
+//   name: 'Mini Burger',
+//   description: 'Hamburguesa pequeña con queso para niños.',
+//   price: 7.99,
+//   discount: 0,
+//   category: 'Holy Kids',
+//   image: 'https://images.unsplash.com/photo-1603064752734-4c48eff53d05?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
+// }, {
+//   id: 5,
+//   name: 'César con Pollo',
+//   description: 'Ensalada César con pollo a la parrilla, crutones y aderezo casero.',
+//   price: 10.99,
+//   discount: 0,
+//   category: 'Ensaladas',
+//   image: 'https://images.unsplash.com/photo-1512852939750-1305098529bf?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
+// }, {
+//   id: 7,
+//   name: 'Wrap de Pollo',
+//   description: 'Wrap de pollo a la parrilla con vegetales frescos y aderezo ligero.',
+//   price: 9.99,
+//   discount: 0,
+//   category: 'Holy Fit',
+//   image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
+// }, {
+//   id: 8,
+//   name: 'Malteada de Chocolate',
+//   description: 'Malteada cremosa de chocolate con crema batida.',
+//   price: 5.99,
+//   discount: 0,
+//   category: 'Malteadas',
+//   image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
+// }, {
+//   id: 9,
+//   name: 'Brownie con Helado',
+//   description: 'Brownie caliente con helado de vainilla y salsa de chocolate.',
+//   price: 6.99,
+//   discount: 0,
+//   category: 'Postres',
+//   image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
+// }];
 // Default sections
-const defaultSections = ['Entradas', 'Holy Burgers', 'Siders', 'Holy Kids', 'Ensaladas', 'Holy Fit', 'Malteadas', 'Postres'];
+// const defaultSections = ['Entradas', 'Holy Burgers', 'Siders', 'Holy Kids', 'Ensaladas', 'Holy Fit', 'Malteadas', 'Postres'];
+
 const MenuManagement = () => {
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Use localStorage to persist sections and menu items
-  const [menuItems, setMenuItems] = useState(initialMenuItems);
-  const [sections, setSections] = useState(defaultSections);
+  // State for API data
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [sections, setSections] = useState<MenuSection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [restaurantInfo, setRestaurantInfo] = useState({
     name: 'Mi Restaurante',
     description: 'Descripción de tu restaurante - agrega información sobre tu cocina, especialidades y ambiente',
@@ -87,25 +91,47 @@ const MenuManagement = () => {
     logoImage: ''
   });
 
-  // Load from localStorage after hydration
+  // Load data from API
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('🔍 Loading sections and items from API...');
+
+      // Load sections and items in parallel
+      const [sectionsData, itemsData] = await Promise.all([
+        menuApiService.sections.getAll(),
+        menuApiService.items.getAll()
+      ]);
+
+      setSections(sectionsData);
+      setMenuItems(itemsData);
+
+      console.log('✅ Data loaded successfully:', {
+        sections: sectionsData,
+        items: itemsData.length
+      });
+
+    } catch (error) {
+      console.error('❌ Error loading data:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load restaurant info from localStorage (keep this for now)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedItems = localStorage.getItem('menuItems');
-      if (savedItems) {
-        setMenuItems(JSON.parse(savedItems));
-      }
-
-      const savedSections = localStorage.getItem('sections');
-      if (savedSections) {
-        setSections(JSON.parse(savedSections));
-      }
-
       const savedInfo = localStorage.getItem('restaurantInfo');
       if (savedInfo) {
         setRestaurantInfo(JSON.parse(savedInfo));
       }
-
       setIsHydrated(true);
+
+      // Load data from API
+      loadData();
     }
   }, []);
 
@@ -115,16 +141,15 @@ const MenuManagement = () => {
   const [currentItem, setCurrentItem] = useState<any>(null);
   const [filterCategory, setFilterCategory] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  // Save to localStorage whenever sections, menuItems, or restaurantInfo change
+  // Save restaurant info to localStorage (keep this for now)
   useEffect(() => {
     if (isHydrated && typeof window !== 'undefined') {
-      localStorage.setItem('sections', JSON.stringify(sections));
-      localStorage.setItem('menuItems', JSON.stringify(menuItems));
       localStorage.setItem('restaurantInfo', JSON.stringify(restaurantInfo));
     }
-  }, [sections, menuItems, restaurantInfo, isHydrated]);
-  // Get all unique categories from the sections state only
-  const allCategories = [...sections];
+  }, [restaurantInfo, isHydrated]);
+
+  // Get all section names for compatibility with existing components
+  const allCategories = sections.map(s => s.name);
   const handleAddItemClick = (category: string) => {
     setCurrentItem(null);
     setSelectedCategory(category);
@@ -136,45 +161,138 @@ const MenuManagement = () => {
   const handleEditClick = (id: number) => {
     const itemToEdit = menuItems.find(item => item.id === id);
     if (itemToEdit) {
-      setCurrentItem(itemToEdit);
+      // Find section name for compatibility with MenuItemForm
+      const section = sections.find(s => s.id === itemToEdit.section_id);
+
+      // Validate and parse custom_fields to ensure it's always an array
+      let customFields = [];
+      try {
+        if (Array.isArray(itemToEdit.custom_fields)) {
+          customFields = itemToEdit.custom_fields;
+        } else if (typeof itemToEdit.custom_fields === 'string') {
+          customFields = JSON.parse(itemToEdit.custom_fields);
+        } else if (itemToEdit.custom_fields === null || itemToEdit.custom_fields === undefined) {
+          customFields = [];
+        }
+      } catch (error) {
+        console.warn('Error parsing custom_fields in frontend:', error);
+        customFields = [];
+      }
+
+      // Adapt the item data for the form
+      const adaptedItem = {
+        ...itemToEdit,
+        category: section?.name || '',
+        image: itemToEdit.image_url || '',
+        customFields: customFields
+      };
+
+      setCurrentItem(adaptedItem);
       setShowItemForm(true);
     }
   };
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = async (id: number) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este platillo?')) {
-      setMenuItems(menuItems.filter(item => item.id !== id));
+      try {
+        console.log('🔍 Deleting item:', id);
+        await menuApiService.items.delete(id);
+
+        // Reload data to get updated items
+        await loadData();
+
+        console.log('✅ Item deleted successfully');
+      } catch (error) {
+        console.error('❌ Error deleting item:', error);
+        setError(error instanceof Error ? error.message : 'Failed to delete item');
+      }
     }
   };
-  const handleItemFormSubmit = (values: any) => {
-    if (values.id) {
-      // Update existing item
-      setMenuItems(menuItems.map(item => item.id === values.id ? values : item));
-    } else {
-      // Add new item with a new ID
-      const newId = Math.max(...menuItems.map(item => item.id), 0) + 1;
-      setMenuItems([...menuItems, {
-        ...values,
-        id: newId
-      }]);
+  const handleItemFormSubmit = async (values: any) => {
+    try {
+      console.log('🔍 Submitting item:', values);
+
+      // Find section ID by name (for compatibility with existing MenuItemForm)
+      const section = sections.find(s => s.name === values.category);
+      if (!section) {
+        throw new Error(`Section "${values.category}" not found`);
+      }
+
+      // Validate and ensure custom_fields is an array
+      let customFields = [];
+      try {
+        if (Array.isArray(values.customFields)) {
+          customFields = values.customFields;
+        } else if (typeof values.customFields === 'string') {
+          customFields = JSON.parse(values.customFields);
+        } else if (values.customFields === null || values.customFields === undefined) {
+          customFields = [];
+        }
+      } catch (error) {
+        console.warn('Error parsing customFields in form submission:', error);
+        customFields = [];
+      }
+
+      // Prepare item data for API
+      const itemData = {
+        section_id: section.id,
+        name: values.name,
+        description: values.description,
+        image_url: values.image,
+        price: values.price,
+        discount: values.discount || 0,
+        custom_fields: customFields,
+        display_order: 0
+      };
+
+      if (values.id) {
+        // Update existing item
+        console.log('🔍 Updating item:', values.id);
+        await menuApiService.items.update(values.id, itemData);
+      } else {
+        // Create new item
+        console.log('🔍 Creating new item');
+        await menuApiService.items.create(itemData);
+      }
+
+      // Reload data to get updated items
+      await loadData();
+
+      // Close the form
+      setShowItemForm(false);
+
+      console.log('✅ Item saved successfully');
+    } catch (error) {
+      console.error('❌ Error saving item:', error);
+      setError(error instanceof Error ? error.message : 'Failed to save item');
     }
-    setShowItemForm(false);
   };
-  const handleSectionFormSubmit = (updatedSections: string[]) => {
-    // Update sections
-    setSections(updatedSections);
-    // Close the form
-    setShowSectionForm(false);
-    // Guardamos inmediatamente para asegurar la persistencia
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sections', JSON.stringify(updatedSections));
-    }
-    // Filtramos los elementos del menú para eliminar los que pertenecen a secciones eliminadas
-    const updatedMenuItems = menuItems.filter(item => updatedSections.includes(item.category));
-    // Update the menu items state
-    setMenuItems(updatedMenuItems);
-    // También guardamos los elementos actualizados
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('menuItems', JSON.stringify(updatedMenuItems));
+  const handleSectionFormSubmit = async (updatedSectionNames: string[]) => {
+    try {
+      console.log('🔍 Updating sections:', updatedSectionNames);
+
+      // For now, we'll create new sections for any that don't exist
+      // This is a simplified implementation - you might want to enhance this
+      const currentSectionNames = sections.map(s => s.name);
+      const newSectionNames = updatedSectionNames.filter(name => !currentSectionNames.includes(name));
+
+      // Create new sections
+      for (const name of newSectionNames) {
+        await menuApiService.sections.create({
+          name,
+          display_order: sections.length + newSectionNames.indexOf(name)
+        });
+      }
+
+      // Reload data to get updated sections
+      await loadData();
+
+      // Close the form
+      setShowSectionForm(false);
+
+      console.log('✅ Sections updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating sections:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update sections');
     }
   };
 
@@ -191,20 +309,25 @@ const MenuManagement = () => {
     setRestaurantInfo(prev => ({ ...prev, logoImage }));
   };
   // Filter items by category if filter is set
-  const filteredItems = filterCategory ? menuItems.filter(item => item.category === filterCategory) : menuItems;
-  // Group items by category - only use categories from the sections state
-  const itemsByCategory = sections.reduce((acc, category) => {
-    const items = filteredItems.filter(item => item.category === category);
-    acc[category] = items;
+  const filteredItems = filterCategory ? menuItems.filter(item => {
+    const section = sections.find(s => s.id === item.section_id);
+    return section?.name === filterCategory;
+  }) : menuItems;
+
+  // Group items by category - use section names from the database
+  const itemsByCategory = sections.reduce((acc, section) => {
+    const items = filteredItems.filter(item => item.section_id === section.id);
+    acc[section.name] = items;
     return acc;
-  }, {} as Record<string, typeof menuItems>);
-  if (!isHydrated) {
+  }, {} as Record<string, MenuItem[]>);
+  // Show loading state
+  if (!isHydrated || loading) {
     return <div className="w-full">
       {/* Restaurant Header Section */}
       <RestaurantHeader
-        restaurantName="Mi Restaurante"
-        bannerImage=""
-        logoImage=""
+        restaurantName={restaurantInfo.name}
+        bannerImage={restaurantInfo.bannerImage}
+        logoImage={restaurantInfo.logoImage}
         onUpdateName={() => {}}
         onUpdateBanner={() => {}}
         onUpdateLogo={() => {}}
@@ -213,7 +336,39 @@ const MenuManagement = () => {
       />
       <div className="mt-6">
         <div className="text-center py-12">
-          <p className="text-gray-500">Cargando...</p>
+          <p className="text-gray-500">
+            {!isHydrated ? 'Iniciando...' : 'Cargando datos del menú...'}
+          </p>
+        </div>
+      </div>
+    </div>;
+  }
+
+  // Show error state
+  if (error) {
+    return <div className="w-full">
+      <RestaurantHeader
+        restaurantName={restaurantInfo.name}
+        bannerImage={restaurantInfo.bannerImage}
+        logoImage={restaurantInfo.logoImage}
+        onUpdateName={() => {}}
+        onUpdateBanner={() => {}}
+        onUpdateLogo={() => {}}
+        onAddSectionClick={() => {}}
+        onViewMenuClick={() => {}}
+      />
+      <div className="mt-6">
+        <div className="text-center py-12">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
+            <p className="text-red-600 font-medium">Error al cargar datos</p>
+            <p className="text-red-500 text-sm mt-1">{error}</p>
+            <button
+              onClick={loadData}
+              className="mt-3 px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
+            >
+              Reintentar
+            </button>
+          </div>
         </div>
       </div>
     </div>;

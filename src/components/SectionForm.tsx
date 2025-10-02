@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { XIcon, PlusIcon, TrashIcon, GripIcon } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { MenuSection } from '../services/menuApi';
+
 interface SectionFormProps {
-  sections: string[];
+  sections: MenuSection[];
   onSubmit: (sections: string[]) => void;
   onCancel: () => void;
   fixedCategory?: string;
@@ -13,7 +15,8 @@ const SectionForm: React.FC<SectionFormProps> = ({
   onCancel,
   fixedCategory
 }) => {
-  const [sectionList, setSectionList] = useState([...sections]);
+  // Extract section names from MenuSection objects
+  const [sectionList, setSectionList] = useState([...sections.map(s => s.name)]);
   const [newSection, setNewSection] = useState('');
   const handleAddSection = () => {
     if (newSection.trim() && !sectionList.includes(newSection.trim())) {
@@ -75,7 +78,7 @@ const SectionForm: React.FC<SectionFormProps> = ({
                 {provided => <ul {...provided.droppableProps} ref={provided.innerRef} className="border border-gray-200 rounded-md divide-y divide-gray-200 max-h-60 overflow-y-auto">
                     {sectionList.length === 0 ? <li className="px-4 py-3 text-sm text-gray-500">
                         No hay secciones definidas
-                      </li> : sectionList.map((section, index) => <Draggable key={section} draggableId={section} index={index}>
+                      </li> : sectionList.map((section, index) => <Draggable key={`section-${index}-${section}`} draggableId={`section-${index}-${section}`} index={index}>
                           {(provided, snapshot) => <li ref={provided.innerRef} {...provided.draggableProps} className={`px-4 py-3 flex items-center justify-between text-sm ${snapshot.isDragging ? 'bg-gray-50' : ''}`}>
                               <div className="flex items-center flex-1">
                                 <span {...provided.dragHandleProps} className="mr-2 cursor-grab text-gray-400 hover:text-gray-600">

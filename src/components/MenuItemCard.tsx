@@ -28,7 +28,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
   const hasDiscount = discount && discount > 0;
   const discountedPrice = hasDiscount ? price * (1 - discount / 100) : price;
   return <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 hover:shadow-md border border-gray-100">
-      <div className="relative h-40 w-full overflow-hidden">
+      <div className="relative h-56 w-full overflow-hidden">
         <img src={image} alt={name} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" />
         <div className="absolute top-2 right-2 flex space-x-2">
           <button onClick={() => onEdit(id)} className="bg-white p-2 rounded-full shadow hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500">
