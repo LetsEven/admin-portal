@@ -19,8 +19,14 @@ const SectionForm: React.FC<SectionFormProps> = ({
   const [sectionList, setSectionList] = useState([...sections.map(s => s.name)]);
   const [newSection, setNewSection] = useState('');
   const handleAddSection = () => {
-    if (newSection.trim() && !sectionList.includes(newSection.trim())) {
-      setSectionList([...sectionList, newSection.trim()]);
+    const trimmedSection = newSection.trim();
+
+    // Verificar contra lista local Y secciones originales
+    const existsInLocal = sectionList.includes(trimmedSection);
+    const existsInOriginal = sections.some(section => section.name === trimmedSection);
+
+    if (trimmedSection && !existsInLocal && !existsInOriginal) {
+      setSectionList([...sectionList, trimmedSection]);
       setNewSection('');
     }
   };

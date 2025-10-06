@@ -298,13 +298,37 @@ const MenuManagement = () => {
     try {
       console.log('🔍 Updating sections:', updatedSectionNames);
 
-      // Create new sections for user
       const currentSectionNames = sections.map(s => s.name);
+
+      // Detect new sections to create
       const newSectionNames = updatedSectionNames.filter(name => !currentSectionNames.includes(name));
+
+      // Detect sections to delete
+      const sectionsToDelete = sections.filter(section => !updatedSectionNames.includes(section.name));
+
+      // Delete removed sections using backend API
+      for (const section of sectionsToDelete) {
+        try {
+          console.log('🗑️ Deleting section:', section.name);
+          await menuApi.sections.delete(section.id);
+        } catch (apiError) {
+          console.log('⚠️ Backend API not available for section deletion, using localStorage fallback');
+
+          // Fallback to localStorage if API fails
+          const updatedSections = sections.filter(s => s.id !== section.id);
+          setSections(updatedSections);
+
+          // Save to localStorage with user-specific key
+          if (user) {
+            localStorage.setItem(`sections_${user.id}`, JSON.stringify(updatedSections));
+          }
+        }
+      }
 
       // Create new sections using backend API
       for (const name of newSectionNames) {
         try {
+          console.log('Creating section:', name);
           await menuApi.sections.create({
             name,
             display_order: sections.length + newSectionNames.indexOf(name)
