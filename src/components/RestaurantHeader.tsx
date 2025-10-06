@@ -27,6 +27,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
   onAddSectionClick,
   onViewMenuClick
 }) => {
+  const isNewRestaurant = restaurantName === "Mi Restaurante" && !bannerImage && !logoImage;
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [tempName, setTempName] = useState(restaurantName);
@@ -108,7 +109,44 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-8 relative">
+    <div>
+      {/* New Restaurant Setup Banner */}
+      {isNewRestaurant && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6">
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Camera className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                ¡Configura tu restaurante!
+              </h3>
+              <p className="text-blue-700 text-sm mb-4">
+                Personaliza la información de tu restaurante para crear una experiencia única.
+                Comienza editando el nombre haciendo clic en "Mi Restaurante" más abajo.
+              </p>
+              <div className="flex flex-wrap gap-3 text-sm">
+                <div className="flex items-center text-blue-600">
+                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></div>
+                  Edita el nombre del restaurante
+                </div>
+                <div className="flex items-center text-blue-600">
+                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></div>
+                  Agrega tu logo
+                </div>
+                <div className="flex items-center text-blue-600">
+                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></div>
+                  Sube una imagen de portada
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-8 relative">
       {/* Banner Section */}
       <div className="relative h-48 group">
         {bannerImage ? (
@@ -277,6 +315,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
         onImageUpload={handleImageUploadFromModal}
         title="Ajustar Logo del Restaurante"
       />
+      </div>
     </div>
   );
 };

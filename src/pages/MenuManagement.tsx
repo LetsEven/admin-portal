@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { PlusIcon, FilterIcon } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
+import { useRestaurant } from '../contexts/RestaurantContext';
 import MenuItemCard from '../components/MenuItemCard';
 import MenuItemForm from '../components/MenuItemForm';
 import SectionHeader from '../components/SectionHeader';
 import SectionForm from '../components/SectionForm';
 import MobileMenuPreview from '../components/MobileMenuPreview';
 import RestaurantHeader from '../components/RestaurantHeader';
-import menuApiService, { MenuSection, MenuItem } from '../services/menuApi';
+import { useMenuAdminPortalApi } from '../services/menuAdminPortalApi';
+import { MenuSection, MenuItem } from '../services/adminPortalApi';
 // Sample data for menu items with updated categories and weights for Hot Dawgs
 // const initialMenuItems = [{
 //   id: 1,
@@ -78,40 +81,72 @@ import menuApiService, { MenuSection, MenuItem } from '../services/menuApi';
 
 const MenuManagement = () => {
   const [isHydrated, setIsHydrated] = useState(false);
+  const { user } = useUser();
+  const { restaurant, loading: restaurantLoading, updateRestaurant, createRestaurant } = useRestaurant();
+  const menuApi = useMenuAdminPortalApi();
 
   // State for API data
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [sections, setSections] = useState<MenuSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [restaurantInfo, setRestaurantInfo] = useState({
-    name: 'Mi Restaurante',
-    description: 'Descripción de tu restaurante - agrega información sobre tu cocina, especialidades y ambiente',
-    bannerImage: '',
-    logoImage: ''
-  });
 
   // Load data from API
   const loadData = async () => {
+    if (!user || !restaurant) {
+      console.log('⏳ Waiting for user and restaurant data...');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      console.log('🔍 Loading sections and items from API...');
+      console.log('🔍 Loading sections and items for restaurant:', restaurant.name, 'user:', user.id);
 
-      // Load sections and items in parallel
-      const [sectionsData, itemsData] = await Promise.all([
-        menuApiService.sections.getAll(),
-        menuApiService.items.getAll()
-      ]);
+      try {
+        // Try to load from backend API first
+        const [sectionsData, itemsData] = await Promise.all([
+          menuApi.sections.getAll(),
+          menuApi.items.getAll()
+        ]);
 
-      setSections(sectionsData);
-      setMenuItems(itemsData);
+        setSections(sectionsData);
+        setMenuItems(itemsData);
 
-      console.log('✅ Data loaded successfully:', {
-        sections: sectionsData,
-        items: itemsData.length
-      });
+        console.log('✅ Data loaded from backend API:', {
+          sections: sectionsData,
+          items: itemsData.length
+        });
+      } catch (apiError) {
+        console.log('⚠️ Backend API not available, trying localStorage fallback:', apiError);
+
+        // Fallback to localStorage with user-specific keys
+        const userSectionsKey = `sections_${user.id}`;
+        const userItemsKey = `items_${user.id}`;
+
+        const savedSections = localStorage.getItem(userSectionsKey);
+        const savedItems = localStorage.getItem(userItemsKey);
+
+        if (savedSections && savedItems) {
+          const sectionsData = JSON.parse(savedSections);
+          const itemsData = JSON.parse(savedItems);
+
+          setSections(sectionsData);
+          setMenuItems(itemsData);
+
+          console.log('✅ Data loaded from localStorage fallback:', {
+            sections: sectionsData.length,
+            items: itemsData.length
+          });
+        } else {
+          // Initialize with empty data for new user
+          setSections([]);
+          setMenuItems([]);
+
+          console.log('✅ Initialized with empty data for new user');
+        }
+      }
 
     } catch (error) {
       console.error('❌ Error loading data:', error);
@@ -121,19 +156,18 @@ const MenuManagement = () => {
     }
   };
 
-  // Load restaurant info from localStorage (keep this for now)
+  // Load data when user and restaurant are available
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedInfo = localStorage.getItem('restaurantInfo');
-      if (savedInfo) {
-        setRestaurantInfo(JSON.parse(savedInfo));
-      }
       setIsHydrated(true);
-
-      // Load data from API
-      loadData();
     }
   }, []);
+
+  useEffect(() => {
+    if (isHydrated && user && restaurant && !restaurantLoading) {
+      loadData();
+    }
+  }, [isHydrated, user, restaurant, restaurantLoading]);
 
   const [showItemForm, setShowItemForm] = useState(false);
   const [showSectionForm, setShowSectionForm] = useState(false);
@@ -141,12 +175,6 @@ const MenuManagement = () => {
   const [currentItem, setCurrentItem] = useState<any>(null);
   const [filterCategory, setFilterCategory] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  // Save restaurant info to localStorage (keep this for now)
-  useEffect(() => {
-    if (isHydrated && typeof window !== 'undefined') {
-      localStorage.setItem('restaurantInfo', JSON.stringify(restaurantInfo));
-    }
-  }, [restaurantInfo, isHydrated]);
 
   // Get all section names for compatibility with existing components
   const allCategories = sections.map(s => s.name);
@@ -195,7 +223,7 @@ const MenuManagement = () => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este platillo?')) {
       try {
         console.log('🔍 Deleting item:', id);
-        await menuApiService.items.delete(id);
+        await menuApi.items.delete(id);
 
         // Reload data to get updated items
         await loadData();
@@ -247,11 +275,11 @@ const MenuManagement = () => {
       if (values.id) {
         // Update existing item
         console.log('🔍 Updating item:', values.id);
-        await menuApiService.items.update(values.id, itemData);
+        await menuApi.items.update(values.id, itemData);
       } else {
         // Create new item
         console.log('🔍 Creating new item');
-        await menuApiService.items.create(itemData);
+        await menuApi.items.create(itemData);
       }
 
       // Reload data to get updated items
@@ -270,17 +298,39 @@ const MenuManagement = () => {
     try {
       console.log('🔍 Updating sections:', updatedSectionNames);
 
-      // For now, we'll create new sections for any that don't exist
-      // This is a simplified implementation - you might want to enhance this
+      // Create new sections for user
       const currentSectionNames = sections.map(s => s.name);
       const newSectionNames = updatedSectionNames.filter(name => !currentSectionNames.includes(name));
 
-      // Create new sections
+      // Create new sections using backend API
       for (const name of newSectionNames) {
-        await menuApiService.sections.create({
-          name,
-          display_order: sections.length + newSectionNames.indexOf(name)
-        });
+        try {
+          await menuApi.sections.create({
+            name,
+            display_order: sections.length + newSectionNames.indexOf(name)
+          });
+        } catch (apiError) {
+          console.log('⚠️ Backend API not available for section creation, using localStorage fallback');
+
+          // Fallback to localStorage if API fails
+          const newSection = {
+            id: Date.now() + newSectionNames.indexOf(name),
+            restaurant_id: restaurant?.id || 0,
+            name,
+            is_active: true,
+            display_order: sections.length + newSectionNames.indexOf(name),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          const updatedSections = [...sections, newSection];
+          setSections(updatedSections);
+
+          // Save to localStorage with user-specific key
+          if (user) {
+            localStorage.setItem(`sections_${user.id}`, JSON.stringify(updatedSections));
+          }
+        }
       }
 
       // Reload data to get updated sections
@@ -297,16 +347,22 @@ const MenuManagement = () => {
   };
 
   // Restaurant header handlers
-  const handleUpdateRestaurantName = (name: string) => {
-    setRestaurantInfo(prev => ({ ...prev, name }));
+  const handleUpdateRestaurantName = async (name: string) => {
+    if (!restaurant) {
+      // Si no existe restaurante, crearlo
+      await createRestaurant({ name });
+    } else {
+      // Si existe, actualizarlo
+      updateRestaurant({ name });
+    }
   };
 
-  const handleUpdateBanner = (bannerImage: string) => {
-    setRestaurantInfo(prev => ({ ...prev, bannerImage }));
+  const handleUpdateBanner = (banner_url: string) => {
+    updateRestaurant({ banner_url });
   };
 
-  const handleUpdateLogo = (logoImage: string) => {
-    setRestaurantInfo(prev => ({ ...prev, logoImage }));
+  const handleUpdateLogo = (logo_url: string) => {
+    updateRestaurant({ logo_url });
   };
   // Filter items by category if filter is set
   const filteredItems = filterCategory ? menuItems.filter(item => {
@@ -321,13 +377,13 @@ const MenuManagement = () => {
     return acc;
   }, {} as Record<string, MenuItem[]>);
   // Show loading state
-  if (!isHydrated || loading) {
+  if (!isHydrated || loading || restaurantLoading || !restaurant) {
     return <div className="w-full">
       {/* Restaurant Header Section */}
       <RestaurantHeader
-        restaurantName={restaurantInfo.name}
-        bannerImage={restaurantInfo.bannerImage}
-        logoImage={restaurantInfo.logoImage}
+        restaurantName={restaurant?.name || 'Mi Restaurante'}
+        bannerImage={restaurant?.banner_url || ''}
+        logoImage={restaurant?.logo_url || ''}
         onUpdateName={() => {}}
         onUpdateBanner={() => {}}
         onUpdateLogo={() => {}}
@@ -337,7 +393,7 @@ const MenuManagement = () => {
       <div className="mt-6">
         <div className="text-center py-12">
           <p className="text-gray-500">
-            {!isHydrated ? 'Iniciando...' : 'Cargando datos del menú...'}
+            {!isHydrated ? 'Iniciando...' : restaurantLoading ? 'Cargando restaurante...' : 'Cargando datos del menú...'}
           </p>
         </div>
       </div>
@@ -348,9 +404,9 @@ const MenuManagement = () => {
   if (error) {
     return <div className="w-full">
       <RestaurantHeader
-        restaurantName={restaurantInfo.name}
-        bannerImage={restaurantInfo.bannerImage}
-        logoImage={restaurantInfo.logoImage}
+        restaurantName={restaurant?.name || 'Mi Restaurante'}
+        bannerImage={restaurant?.banner_url || ''}
+        logoImage={restaurant?.logo_url || ''}
         onUpdateName={() => {}}
         onUpdateBanner={() => {}}
         onUpdateLogo={() => {}}
@@ -377,9 +433,9 @@ const MenuManagement = () => {
   return <div className="w-full">
       {/* Restaurant Header Section */}
       <RestaurantHeader
-        restaurantName={restaurantInfo.name}
-        bannerImage={restaurantInfo.bannerImage}
-        logoImage={restaurantInfo.logoImage}
+        restaurantName={restaurant?.name || 'Mi Restaurante'}
+        bannerImage={restaurant?.banner_url || ''}
+        logoImage={restaurant?.logo_url || ''}
         onUpdateName={handleUpdateRestaurantName}
         onUpdateBanner={handleUpdateBanner}
         onUpdateLogo={handleUpdateLogo}
