@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Camera, Edit3, Trash2, Upload, PlusIcon } from 'lucide-react';
 import ImageCropModal from './ImageCropModal';
+import { ImageUploadService } from '../services/imageUploadService';
+import { useUser } from '@clerk/nextjs';
 
 interface RestaurantHeaderProps {
   restaurantName?: string;
@@ -27,6 +29,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
   onAddSectionClick,
   onViewMenuClick
 }) => {
+  const { user } = useUser();
   const isNewRestaurant = restaurantName === "Mi Restaurante" && !bannerImage && !logoImage;
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -37,46 +40,94 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
   const [showCropModal, setShowCropModal] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState('');
 
-  const handleImageUpload = (type: 'banner' | 'logo') => {
+  // Upload states
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+
+  const handleImageUpload = async (type: 'banner' | 'logo') => {
+    if (!user) {
+      alert('Debes estar autenticado para subir imágenes');
+      return;
+    }
+
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const imageUrl = e.target?.result as string;
-          if (type === 'banner' && onUpdateBanner) {
-            // For banner, upload directly without cropping
-            onUpdateBanner(imageUrl);
+        try {
+          if (type === 'banner') {
+            // For banner, upload directly to storage
+            setIsUploadingBanner(true);
+
+            // Resize image before upload
+            const resizedFile = await ImageUploadService.resizeImage(file, 1200, 400, 0.8);
+
+            // Upload to storage
+            const publicUrl = await ImageUploadService.updateImage(
+              resizedFile,
+              'banner',
+              bannerImage // Delete old image if exists
+            );
+
+            if (onUpdateBanner) {
+              onUpdateBanner(publicUrl);
+            }
           } else if (type === 'logo') {
-            // For logo, open crop modal
-            setTempImageSrc(imageUrl);
+            // For logo, show preview for cropping
+            const base64 = await ImageUploadService.fileToBase64(file);
+            setTempImageSrc(base64);
             setShowCropModal(true);
           }
-        };
-        reader.readAsDataURL(file);
+        } catch (error) {
+          console.error('❌ Error uploading image:', error);
+          alert('Error al subir la imagen. Por favor intenta de nuevo.');
+        } finally {
+          setIsUploadingBanner(false);
+        }
       }
     };
     input.click();
   };
 
-  const handleImageUploadFromModal = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const imageUrl = e.target?.result as string;
-      setTempImageSrc(imageUrl);
-    };
-    reader.readAsDataURL(file);
+  const handleImageUploadFromModal = async (file: File) => {
+    const base64 = await ImageUploadService.fileToBase64(file);
+    setTempImageSrc(base64);
   };
 
-  const handleCropSave = (croppedImage: string) => {
-    if (onUpdateLogo) {
-      onUpdateLogo(croppedImage);
+  const handleCropSave = async (croppedImage: string) => {
+    if (!user) {
+      alert('Debes estar autenticado para subir imágenes');
+      return;
     }
-    setShowCropModal(false);
-    setTempImageSrc('');
+
+    try {
+      setIsUploadingLogo(true);
+
+      // Convert base64 to blob/file
+      const response = await fetch(croppedImage);
+      const blob = await response.blob();
+      const file = new File([blob], `logo_${user.id}.jpg`, { type: 'image/jpeg' });
+
+      // Upload to storage
+      const publicUrl = await ImageUploadService.updateImage(
+        file,
+        'logo',
+        logoImage // Delete old image if exists
+      );
+
+      if (onUpdateLogo) {
+        onUpdateLogo(publicUrl);
+      }
+    } catch (error) {
+      console.error('❌ Error uploading logo:', error);
+      alert('Error al subir el logo. Por favor intenta de nuevo.');
+    } finally {
+      setIsUploadingLogo(false);
+      setShowCropModal(false);
+      setTempImageSrc('');
+    }
   };
 
   const handleCropClose = () => {
@@ -169,10 +220,17 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
           <div className="flex space-x-2">
             <button
               onClick={() => handleImageUpload('banner')}
-              className="bg-white bg-opacity-90 backdrop-blur-sm hover:bg-opacity-100 text-gray-700 p-2 rounded-lg shadow-md transition-all duration-200"
+              disabled={isUploadingBanner}
+              className="bg-white bg-opacity-90 backdrop-blur-sm hover:bg-opacity-100 text-gray-700 p-2 rounded-lg shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               title={bannerImage ? "Cambiar imagen" : "Subir imagen"}
             >
-              {bannerImage ? <Edit3 className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+              {isUploadingBanner ? (
+                <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+              ) : bannerImage ? (
+                <Edit3 className="h-4 w-4" />
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
             </button>
             {bannerImage && (
               <button
@@ -222,10 +280,17 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
                       setShowCropModal(true);
                     }
                   }}
-                  className="bg-white text-gray-700 p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors duration-200"
+                  disabled={isUploadingLogo}
+                  className="bg-white text-gray-700 p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   title={logoImage ? "Editar logo" : "Subir logo"}
                 >
-                  {logoImage ? <Edit3 className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+                  {isUploadingLogo ? (
+                    <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  ) : logoImage ? (
+                    <Edit3 className="h-4 w-4" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
                 </button>
                 {logoImage && (
                   <button

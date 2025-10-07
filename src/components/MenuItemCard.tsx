@@ -26,7 +26,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
   const isHotDawg = category === 'Hot Dawgs';
   // Calcular precio con descuento si hay descuento
   const hasDiscount = discount && discount > 0;
-  const discountedPrice = hasDiscount ? price * (1 - discount / 100) : price;
+  const discountedPrice = hasDiscount ? price * (1 - discount / 100) : price;  
   return <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 hover:shadow-md border border-gray-100">
       <div className="relative h-56 w-full overflow-hidden">
         <img src={image} alt={name} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" />

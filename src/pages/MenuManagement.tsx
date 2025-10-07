@@ -469,29 +469,35 @@ const MenuManagement = () => {
 
       <div className="mt-6">
         {Object.keys(itemsByCategory).length === 0 ? <div className="text-center py-12">
-            <p className="text-gray-500">
-              No hay platillos en esta categoría. Agrega una sección y platillos
-              para comenzar.
-            </p>
+          <p className="text-gray-500">
+            No hay platillos en esta categoría. Agrega una sección y platillos
+            para comenzar.
+          </p>
           </div> : Object.entries(itemsByCategory).map(([category, items]) => <div key={category} className="mb-8">
-              <SectionHeader title={category} />
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {items.map(item => <MenuItemCard key={item.id} id={item.id} name={item.name} description={item.description} price={item.price} discount={item.discount} category={item.category} image={item.image} onEdit={handleEditClick} onDelete={handleDeleteClick} />)}
-                {/* Botón para agregar platillo en esta sección */}
-                <button onClick={() => handleAddItemClick(category)} className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-48 hover:bg-gray-50 transition-colors">
-                  <div className="text-center">
-                    <PlusIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <span className="mt-2 block text-sm font-medium text-gray-500">
-                      Agregar platillo
-                    </span>
-                  </div>
-                </button>
-                {items.length === 0 && <div className="col-span-full py-4 text-center text-gray-500">
-                    No hay platillos en esta sección. Haz clic en "Agregar
-                    platillo" para comenzar.
-                  </div>}
-              </div>
-            </div>)}
+
+            <SectionHeader title={category} />
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {items.map(item => <MenuItemCard key={item.id} id={item.id} name={item.name} description={item.description} price={item.price} discount={item.discount} category={item.category} image={item.image} onEdit={handleEditClick} onDelete={handleDeleteClick} />)}
+              {/* Botón para agregar platillo en esta sección */}
+              <button onClick={() => handleAddItemClick(category)} className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-48 hover:bg-gray-50 transition-colors">
+                <div className="text-center">
+                  <PlusIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <span className="mt-2 block text-sm font-medium text-gray-500">
+                    Agregar platillo
+                  </span>
+                </div>
+              </button>
+              {items.length === 0 && 
+                <div className="col-span-full py-4 text-center text-gray-500">
+                  No hay platillos en esta sección. Haz clic en "Agregar
+                  platillo" para comenzar.
+                </div>
+              }
+            </div>
+
+          </div>
+        )}
       </div>
       {showItemForm && <MenuItemForm initialValues={currentItem || undefined} onSubmit={handleItemFormSubmit} onCancel={() => setShowItemForm(false)} preselectedCategory={selectedCategory} />}
       {showSectionForm && <SectionForm sections={sections} onSubmit={handleSectionFormSubmit} onCancel={() => setShowSectionForm(false)} />}

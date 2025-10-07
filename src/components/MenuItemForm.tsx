@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { XIcon, UploadIcon, PlusIcon, TrashIcon } from 'lucide-react';
+import { ImageUploadService } from '../services/imageUploadService';
+import { useUser } from '@clerk/nextjs';
 
 interface CustomField {
   id: string;
@@ -37,6 +39,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   onCancel,
   preselectedCategory
 }) => {
+  const { user } = useUser();
   const [values, setValues] = useState({
     ...initialValues,
     category: preselectedCategory || initialValues.category
@@ -44,6 +47,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [customFields, setCustomFields] = useState<CustomField[]>(initialValues.customFields || []);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   // Set initial image preview if an image URL exists
   useEffect(() => {
     if (initialValues.image && initialValues.image.startsWith('http')) {
@@ -60,21 +64,54 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
       [name]: name === 'price' || name === 'discount' ? parseFloat(value) : value
     });
   };
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) {
+      alert('Debes estar autenticado para subir imágenes');
+      return;
+    }
+
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setImageFile(file);
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setImagePreview(result);
+
+      try {
+        setIsUploadingImage(true);
+
+        // Create preview URL for immediate display
+        const base64Preview = await ImageUploadService.fileToBase64(file);
+        setImagePreview(base64Preview);
+
+        // Resize image before upload
+        const resizedFile = await ImageUploadService.resizeImage(file, 800, 600, 0.8);
+
+        // Upload to storage
+        const publicUrl = await ImageUploadService.updateImage(
+          resizedFile,
+          'item',
+          values.image // Delete old image if exists
+        );
+
+        // Update form values with the public URL
         setValues({
           ...values,
-          image: result // Store the base64 image data in the form values
+          image: publicUrl
         });
-      };
-      reader.readAsDataURL(file);
+
+        // Update preview to the final URL
+        setImagePreview(publicUrl);
+
+        console.log('✅ Item image uploaded successfully:', publicUrl);
+
+      } catch (error) {
+        console.error('❌ Error uploading item image:', error);
+        alert('Error al subir la imagen. Por favor intenta de nuevo.');
+
+        // Reset on error
+        setImageFile(null);
+        setImagePreview(values.image || null);
+      } finally {
+        setIsUploadingImage(false);
+      }
     }
   };
   const handleAddField = () => {
@@ -152,19 +189,31 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                 Imagen del platillo
               </label>
               <div className="mt-1 flex items-center">
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 relative">
                   {imagePreview ? <div className="h-24 w-24 overflow-hidden rounded-md">
                       <img src={imagePreview} alt="Vista previa" className="h-24 w-24 object-cover" />
+                      {isUploadingImage && (
+                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-md">
+                          <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
                     </div> : <div className="h-24 w-24 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center text-gray-400">
-                      <UploadIcon className="h-8 w-8" />
+                      {isUploadingImage ? (
+                        <div className="h-6 w-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <UploadIcon className="h-8 w-8" />
+                      )}
                     </div>}
                 </div>
                 <div className="ml-4 flex-1">
                   <div className="relative">
                     <input type="file" name="imageFile" id="imageFile" accept="image/*" onChange={handleImageChange} className="sr-only" />
-                    <label htmlFor="imageFile" className="cursor-pointer py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500">
-                      Seleccionar imagen
+                    <label htmlFor="imageFile" className={`cursor-pointer py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 ${isUploadingImage ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      {isUploadingImage ? 'Subiendo...' : 'Seleccionar imagen'}
                     </label>
+                    {isUploadingImage && (
+                      <input type="file" disabled className="sr-only" />
+                    )}
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
                     JPG, PNG o GIF. Máximo 5MB.
