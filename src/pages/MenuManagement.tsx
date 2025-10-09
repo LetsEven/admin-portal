@@ -403,7 +403,7 @@ const MenuManagement = () => {
       </div>
       {showItemForm && <MenuItemForm initialValues={currentItem || undefined} onSubmit={handleItemFormSubmit} onCancel={() => setShowItemForm(false)} preselectedCategory={selectedCategory} />}
       {showSectionForm && <SectionForm sections={sections} onSubmit={handleSectionFormSubmit} onCancel={() => setShowSectionForm(false)} />}
-      {showMobilePreview && <MobileMenuPreview menuItems={menuItems} onClose={() => setShowMobilePreview(false)} />}
+      {showMobilePreview && <MobileMenuPreview menuItems={menuItems} sections={sections} onClose={() => setShowMobilePreview(false)} />}
     </div>;
 };
 export default MenuManagement;

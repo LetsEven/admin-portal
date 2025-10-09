@@ -6,19 +6,29 @@ interface MenuItem {
   description: string;
   price: number;
   discount?: number;
-  category: string;
-  image: string;
+  section_id: number;
+  image_url?: string;
 }
+
+interface MenuSection {
+  id: number;
+  name: string;
+}
+
 interface MobileMenuPreviewProps {
   menuItems: MenuItem[];
+  sections: MenuSection[];
   onClose: () => void;
 }
 const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
   menuItems,
+  sections,
   onClose
 }) => {
-  // Get all unique categories from menu items
-  const categories = [...new Set(menuItems.map(item => item.category))];
+  // Get all unique categories from sections
+  const categories = sections.map(section => section.name).filter(name =>
+    menuItems.some(item => item.section_id === sections.find(s => s.name === name)?.id)
+  );
   // State for active tab - default to first category
   const [activeTab, setActiveTab] = useState(categories[0] || '');
   // Refs for scrolling
@@ -173,7 +183,7 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
                 const discountedPrice = item.price * (1 - item.discount! / 100);
                 return <div key={item.id} className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100">
                         <div className="relative">
-                          <img src={item.image} alt={item.name} className="w-full h-48 object-cover" />
+                          <img src={item.image_url || ''} alt={item.name} className="w-full h-48 object-cover" />
                           <div className="absolute top-0 left-0 bg-red-600 text-white px-2 py-1 text-xs font-bold">
                             {item.discount}% OFF
                           </div>
@@ -200,9 +210,11 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
               </div>}
             {/* Render all categories one after another */}
             {categories.map(category => {
-            const categoryItems = menuItems.filter(item => item.category === category);
+            const section = sections.find(s => s.name === category);
+            if (!section) return null;
+            const categoryItems = menuItems.filter(item => item.section_id === section.id);
             if (categoryItems.length === 0) return null;
-            return <div key={category} ref={el => sectionRefs.current[category] = el} className="px-4 py-4 bg-white" id={`section-${category.replace(/\s+/g, '-').toLowerCase()}`}>
+            return <div key={category} ref={el => sectionRefs.current[category] = el} className="px-4 py-4 bg-white" id={`section-${category?.replace(/\s+/g, '-').toLowerCase() || 'unknown'}`}>
                   <h2 className="text-2xl font-bold mb-4">{category}</h2>
                   <div className="space-y-4">
                     {categoryItems.map(item => {
@@ -237,7 +249,7 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
                               </div>}
                           </div>
                           <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden">
-                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                            <img src={item.image_url || ''} alt={item.name} className="w-full h-full object-cover" />
                             {hasDiscount && <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5">
                                 {item.discount}% OFF
                               </div>}
