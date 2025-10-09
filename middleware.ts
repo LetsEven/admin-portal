@@ -1,22 +1,30 @@
-import { authMiddleware, redirectToSignIn } from "@clerk/nextjs";
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
-export default authMiddleware({
-  // Routes that can be visited while signed out
-  publicRoutes: ["/sign-in", "/sign-up"],
+// Define public routes that don't require authentication
+const isPublicRoute = createRouteMatcher([
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+]);
 
-  // Force redirect to sign-in for protected routes
-  afterAuth(auth, req) {
-    // If user is not signed in and trying to access a protected route
-    if (!auth.userId && !auth.isPublicRoute) {
-      return redirectToSignIn({ returnBackUrl: req.url });
-    }
+export default clerkMiddleware((auth, req) => {
+  const { userId } = auth();
+  const currentPath = req.nextUrl.pathname;
 
-    // If user is signed in and trying to access auth pages, redirect to dashboard
-    if (auth.userId && (req.nextUrl.pathname === "/sign-in" || req.nextUrl.pathname === "/sign-up")) {
-      const dashboard = new URL("/", req.url);
-      return Response.redirect(dashboard);
-    }
+  // If user is not signed in and trying to access a protected route
+  if (!userId && !isPublicRoute(req)) {
+    const signInUrl = new URL('/sign-in', req.url);
+    signInUrl.searchParams.set('redirect_url', currentPath);
+    return NextResponse.redirect(signInUrl);
   }
+
+  // If user is signed in and trying to access auth pages, redirect to dashboard
+  if (userId && (currentPath === '/sign-in' || currentPath === '/sign-up')) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  // Allow the request to proceed
+  return NextResponse.next();
 });
 
 export const config = {

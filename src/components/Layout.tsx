@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserButton, useUser } from '@clerk/nextjs';
+import { UserButton, useUser, useAuth } from '@clerk/nextjs';
 import { useRestaurant } from '../contexts/RestaurantContext';
 import Link from 'next/link';
 import Sidebar from './Sidebar';
@@ -12,7 +12,33 @@ const Layout: React.FC<LayoutProps> = ({
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useUser();
+  const { isLoaded, isSignedIn } = useAuth();
   const { restaurant, loading: restaurantLoading } = useRestaurant();
+
+  // Show loading while authentication is being verified
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-custom-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Verificando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to sign-in if not authenticated (fallback, middleware should handle this)
+  if (!isSignedIn) {
+    window.location.href = '/sign-in';
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-custom-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Redirigiendo al login...</p>
+        </div>
+      </div>
+    );
+  }
   return <div className="flex h-screen bg-gray-50">
       {/* Mobile sidebar */}
       <div className="md:hidden">
