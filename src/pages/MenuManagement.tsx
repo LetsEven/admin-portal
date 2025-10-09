@@ -379,8 +379,9 @@ const MenuManagement = () => {
             <SectionHeader title={category} />
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {items.map(item => <MenuItemCard key={item.id} id={item.id} name={item.name} description={item.description} price={item.price} discount={item.discount} category={item.category} image={item.image} onEdit={handleEditClick} onDelete={handleDeleteClick} />)}
-              {/* Botón para agregar platillo en esta sección */}
+
+              {items.map(item => <MenuItemCard key={item.id} id={item.id} name={item.name} description={item.description} price={item.price} discount={item.discount} category={sections.find(s => s.id === item.section_id)?.name || ''} image={item.image_url || ''} onEdit={handleEditClick} onDelete={handleDeleteClick} />)}
+
               <button onClick={() => handleAddItemClick(category)} className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-48 hover:bg-gray-50 transition-colors">
                 <div className="text-center">
                   <PlusIcon className="mx-auto h-12 w-12 text-gray-400" />
