@@ -7,7 +7,12 @@ interface CustomField {
   id: string;
   name: string;
   type: 'dropdown' | 'checkboxes' | 'dropdown-quantity';
-  options?: string[];
+  required: boolean;
+  options: Array<{
+    id: string;
+    name: string;
+    price: number;
+  }>;
 }
 
 interface MenuItemFormProps {
@@ -119,7 +124,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
       id: Date.now().toString(),
       name: '',
       type: 'dropdown',
-      options: ['']
+      required: false,
+      options: [{
+        id: Date.now().toString(),
+        name: '',
+        price: 0
+      }]
     };
     setCustomFields([...customFields, newField]);
   };
@@ -136,14 +146,29 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
 
   const handleFieldTypeChange = (id: string, type: CustomField['type']) => {
     setCustomFields(customFields.map(field =>
-      field.id === id ? { ...field, type, options: [''] } : field
+      field.id === id ? {
+        ...field,
+        type,
+        options: [{
+          id: Date.now().toString(),
+          name: '',
+          price: 0
+        }]
+      } : field
     ));
   };
 
   const handleAddOption = (fieldId: string) => {
     setCustomFields(customFields.map(field =>
       field.id === fieldId
-        ? { ...field, options: [...(field.options || []), ''] }
+        ? {
+            ...field,
+            options: [...field.options, {
+              id: Date.now().toString() + Math.random(),
+              name: '',
+              price: 0
+            }]
+          }
         : field
     ));
   };
@@ -151,7 +176,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   const handleRemoveOption = (fieldId: string, optionIndex: number) => {
     setCustomFields(customFields.map(field =>
       field.id === fieldId
-        ? { ...field, options: field.options?.filter((_, i) => i !== optionIndex) }
+        ? { ...field, options: field.options.filter((_, i) => i !== optionIndex) }
         : field
     ));
   };
@@ -161,7 +186,22 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
       field.id === fieldId
         ? {
             ...field,
-            options: field.options?.map((opt, i) => i === optionIndex ? value : opt)
+            options: field.options.map((opt, i) =>
+              i === optionIndex ? { ...opt, name: value } : opt
+            )
+          }
+        : field
+    ));
+  };
+
+  const handleOptionPriceChange = (fieldId: string, optionIndex: number, price: number) => {
+    setCustomFields(customFields.map(field =>
+      field.id === fieldId
+        ? {
+            ...field,
+            options: field.options.map((opt, i) =>
+              i === optionIndex ? { ...opt, price: price } : opt
+            )
           }
         : field
     ));
@@ -318,25 +358,48 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                                 + Agregar opción
                               </button>
                             </div>
-                            <div className="space-y-1">
-                              {field.options?.map((option, optionIndex) => (
-                                <div key={optionIndex} className="flex items-center gap-2">
-                                  <input
-                                    type="text"
-                                    value={option}
-                                    onChange={(e) => handleOptionChange(field.id, optionIndex, e.target.value)}
-                                    placeholder={`Opción ${optionIndex + 1}`}
-                                    className="flex-1 block border border-gray-300 rounded-md shadow-sm py-1 px-2 text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
-                                  />
-                                  {field.options && field.options.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveOption(field.id, optionIndex)}
-                                      className="text-red-500 hover:text-red-700"
-                                    >
-                                      <TrashIcon className="h-3.5 w-3.5" />
-                                    </button>
-                                  )}
+                            <div className="space-y-2">
+                              {field.options.map((option, optionIndex) => (
+                                <div key={optionIndex} className="border border-gray-200 rounded-md p-2 bg-gray-50">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <input
+                                      type="text"
+                                      value={option.name}
+                                      onChange={(e) => handleOptionChange(field.id, optionIndex, e.target.value)}
+                                      placeholder={`Opción ${optionIndex + 1}`}
+                                      className="flex-1 block border border-gray-300 rounded-md shadow-sm py-1 px-2 text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                                    />
+                                    {field.options && field.options.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveOption(field.id, optionIndex)}
+                                        className="text-red-500 hover:text-red-700"
+                                      >
+                                        <TrashIcon className="h-3.5 w-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  {/* Precio opcional */}
+                                  <div className="flex items-center gap-2">
+                                    <label className="text-xs text-gray-600">
+                                      Precio adicional (opcional):
+                                    </label>
+                                    <div className="relative">
+                                      <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                                        <span className="text-gray-500 text-xs">$</span>
+                                      </div>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={option.price}
+                                        onChange={(e) => handleOptionPriceChange(field.id, optionIndex, parseFloat(e.target.value) || 0)}
+                                        placeholder="0.00"
+                                        className="w-20 pl-5 pr-2 py-1 border border-gray-300 rounded-md shadow-sm text-xs focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -357,7 +420,17 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <span className="text-gray-500 sm:text-sm">$</span>
                 </div>
-                <input type="number" name="price" id="price" required min="0" step="0.01" value={values.price} onChange={handleChange} className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm" />
+                <input 
+                  type="number" 
+                  name="price" 
+                  id="price" 
+                  required 
+                  min="0" 
+                  step="0.01" 
+                  value={values.price} 
+                  onChange={handleChange} 
+                  className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm" 
+                />
               </div>
             </div>
             <div>
