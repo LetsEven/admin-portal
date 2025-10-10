@@ -1,78 +1,107 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { SaveIcon } from 'lucide-react';
-const Settings = () => {
-  // Inicializar con datos del localStorage o valores por defecto
-  const [settings, setSettings] = useState(() => {
-    const savedSettings = localStorage.getItem('restaurantSettings');
-    return savedSettings ? JSON.parse(savedSettings) : {
-      restaurantName: 'Mi Restaurante',
-      address: 'Av. Principal 123, Ciudad',
-      phone: '555-123-4567',
-      email: 'contacto@mirestaurante.com',
-      openingHours: {
-        monday: {
-          open: '09:00',
-          close: '22:00',
-          closed: false
-        },
-        tuesday: {
-          open: '09:00',
-          close: '22:00',
-          closed: false
-        },
-        wednesday: {
-          open: '09:00',
-          close: '22:00',
-          closed: false
-        },
-        thursday: {
-          open: '09:00',
-          close: '22:00',
-          closed: false
-        },
-        friday: {
-          open: '09:00',
-          close: '23:00',
-          closed: false
-        },
-        saturday: {
-          open: '10:00',
-          close: '23:00',
-          closed: false
-        },
-        sunday: {
-          open: '10:00',
-          close: '20:00',
-          closed: false
-        }
-      },
-      logo: "/Logo.png",
-      orderNotifications: true,
-      emailNotifications: true,
-      smsNotifications: false,
-      language: 'es',
-      currency: 'MXN'
+import { SaveIcon, Upload, Camera, Edit3, Trash2 } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
+import { useRestaurant } from '../hooks/useRestaurant';
+import { ImageUploadService } from '../services/imageUploadService';
+import ImageCropModal from '../components/ImageCropModal';
+
+interface SettingsData {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  openingHours: {
+    [key: string]: {
+      open: string;
+      close: string;
+      closed: boolean;
     };
-  });
-  const fileInputRef = useRef(null);
-  const [logoPreview, setLogoPreview] = useState(settings.logo);
-  // Actualizar logoPreview cuando cambia settings.logo
+  };
+  logo: string;
+  orderNotifications: boolean;
+  emailNotifications: boolean;
+  smsNotifications: boolean;
+  language: string;
+  currency: string;
+}
+
+const Settings = () => {
+  const { user, isLoaded, isSignedIn } = useUser();
+  const { restaurant, isLoading, isUpdating, error, updateRestaurant } = useRestaurant();
+  const [settings, setSettings] = useState<SettingsData | null>(null);
+
+  // Debug del estado de autenticación
   useEffect(() => {
-    setLogoPreview(settings.logo);
-  }, [settings.logo]);
-  const handleChange = e => {
+    console.log('🔍 [Settings] Estado de autenticación:', {
+      isLoaded,
+      isSignedIn,
+      user: user ? {
+        id: user.id,
+        email: user.emailAddresses?.[0]?.emailAddress,
+        firstName: user.firstName,
+        lastName: user.lastName
+      } : null
+    });
+  }, [user, isLoaded, isSignedIn]);
+
+  const fileInputRef = useRef(null);
+  const [logoPreview, setLogoPreview] = useState('');
+
+  // Image crop modal state
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [tempImageSrc, setTempImageSrc] = useState('');
+
+  // Upload states
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(null);
+
+  // Sincronizar estado local con datos del restaurante
+  useEffect(() => {
+    if (restaurant) {
+      setSettings({
+        name: restaurant.name || 'Mi Restaurante',
+        address: restaurant.address || '',
+        phone: restaurant.phone || '',
+        email: restaurant.email || '',
+        openingHours: restaurant.openingHours || {
+          monday: { open: '09:00', close: '22:00', closed: false },
+          tuesday: { open: '09:00', close: '22:00', closed: false },
+          wednesday: { open: '09:00', close: '22:00', closed: false },
+          thursday: { open: '09:00', close: '22:00', closed: false },
+          friday: { open: '09:00', close: '23:00', closed: false },
+          saturday: { open: '10:00', close: '23:00', closed: false },
+          sunday: { open: '10:00', close: '20:00', closed: false }
+        },
+        logo: restaurant.logo_url || '',
+        orderNotifications: restaurant.orderNotifications ?? true,
+        emailNotifications: restaurant.emailNotifications ?? true,
+        smsNotifications: restaurant.smsNotifications ?? false,
+        language: restaurant.language || 'es',
+        currency: restaurant.currency || 'MXN'
+      });
+      setLogoPreview(restaurant.logo_url || '');
+    }
+  }, [restaurant]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const {
       name,
       value,
-      type,
-      checked
+      type
     } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+
+    if (!settings) return;
+
     setSettings({
       ...settings,
       [name]: type === 'checkbox' ? checked : value
     });
   };
-  const handleHoursChange = (day, field, value) => {
+
+  const handleHoursChange = (day: string, field: string, value: string | null) => {
+    if (!settings) return;
+
     setSettings({
       ...settings,
       openingHours: {
@@ -84,27 +113,164 @@ const Settings = () => {
       }
     });
   };
-  const handleLogoChange = e => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result;
-        setLogoPreview(result);
-        setSettings({
-          ...settings,
-          logo: result
-        });
-      };
-      reader.readAsDataURL(file);
+
+  const handleLogoUpload = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        try {
+          // Mostrar preview para recorte
+          const base64 = await ImageUploadService.fileToBase64(file);
+          setTempImageSrc(base64);
+          setShowCropModal(true);
+        } catch (error) {
+          console.error('❌ Error preparing image:', error);
+          alert('Error al preparar la imagen. Por favor intenta de nuevo.');
+        }
+      }
+    };
+    input.click();
+  };
+
+  const handleImageUploadFromModal = async (file: File) => {
+    const base64 = await ImageUploadService.fileToBase64(file);
+    setTempImageSrc(base64);
+  };
+
+  const handleCropSave = async (croppedImage: string) => {
+    try {
+      setIsUploadingLogo(true);
+
+      // Convert base64 to blob/file
+      const response = await fetch(croppedImage);
+      const blob = await response.blob();
+      const file = new File([blob], `logo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+      // Upload to storage
+      const publicUrl = await ImageUploadService.updateImage(
+        file,
+        'logo',
+        logoPreview // Delete old image if exists
+      );
+
+      // Update restaurant data
+      await updateRestaurant({ logo_url: publicUrl });
+
+      // Update local preview
+      setLogoPreview(publicUrl);
+      setSettings(prev => prev ? { ...prev, logo: publicUrl } : null);
+    } catch (error) {
+      console.error('❌ Error uploading logo:', error);
+      alert('Error al subir el logo. Por favor intenta de nuevo.');
+    } finally {
+      setIsUploadingLogo(false);
+      setShowCropModal(false);
+      setTempImageSrc('');
     }
   };
-  const handleSubmit = e => {
-    e.preventDefault();
-    // Guardar configuración en localStorage
-    localStorage.setItem('restaurantSettings', JSON.stringify(settings));
-    alert('Configuración guardada exitosamente');
+
+  const handleCropClose = () => {
+    setShowCropModal(false);
+    setTempImageSrc('');
   };
+
+  const handleLogoDelete = async () => {
+    try {
+      setIsUploadingLogo(true);
+      await updateRestaurant({ logo_url: '' });
+      setLogoPreview('');
+      setSettings(prev => prev ? { ...prev, logo: '' } : null);
+    } catch (error) {
+      console.error('❌ Error deleting logo:', error);
+      alert('Error al eliminar el logo.');
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!settings) return;
+
+    try {
+      setSaveStatus('saving');
+
+      // Preparar datos para actualizar
+      const updateData = {
+        name: settings.name,
+        address: settings.address,
+        phone: settings.phone,
+        email: settings.email,
+        // Nota: openingHours y otros settings específicos se pueden manejar por separado
+        // ya que el backend actual no los maneja
+      };
+
+      await updateRestaurant(updateData);
+
+      // También guardar en localStorage para settings que no están en el backend
+      const localSettings = {
+        openingHours: settings.openingHours,
+        orderNotifications: settings.orderNotifications,
+        emailNotifications: settings.emailNotifications,
+        smsNotifications: settings.smsNotifications,
+        language: settings.language,
+        currency: settings.currency
+      };
+      localStorage.setItem('restaurantLocalSettings', JSON.stringify(localSettings));
+
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus(null), 3000);
+    } catch (error) {
+      console.error('❌ Error saving settings:', error);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus(null), 5000);
+    }
+  };
+
+  // Mostrar loading mientras se cargan los datos de autenticación
+  if (!isLoaded) {
+    return (
+      <div className="w-full flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="h-8 w-8 border-2 border-custom-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Verificar si el usuario está autenticado
+  if (!isSignedIn) {
+    return (
+      <div className="w-full flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-red-600">Usuario no autenticado. Por favor inicia sesión.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar loading mientras se cargan los datos del restaurante
+  if (isLoading) {
+    return (
+      <div className="w-full flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="h-8 w-8 border-2 border-custom-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando configuración...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No mostrar nada si no hay settings
+  if (!settings) {
+    return null;
+  }
+
   const days = {
     monday: 'Lunes',
     tuesday: 'Martes',
@@ -114,6 +280,7 @@ const Settings = () => {
     saturday: 'Sábado',
     sunday: 'Domingo'
   };
+
   return <div className="w-full">
       <h1 className="text-2xl font-semibold text-gray-900">Configuración</h1>
       <form onSubmit={handleSubmit} className="mt-6 space-y-8">
@@ -137,10 +304,10 @@ const Settings = () => {
             <div className="mt-5 md:mt-0 md:col-span-2">
               <div className="grid grid-cols-6 gap-6">
                 <div className="col-span-6 sm:col-span-4">
-                  <label htmlFor="restaurantName" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                     Nombre del restaurante
                   </label>
-                  <input type="text" name="restaurantName" id="restaurantName" value={settings.restaurantName} onChange={handleChange} className="mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
+                  <input type="text" name="name" id="name" value={settings.name} onChange={handleChange} className="mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
                 <div className="col-span-6">
                   <label htmlFor="address" className="block text-sm font-medium text-gray-700">
@@ -165,12 +332,35 @@ const Settings = () => {
                     Logo del restaurante
                   </label>
                   <div className="mt-2">
-                    <input type="file" id="logo" name="logo" ref={fileInputRef} onChange={handleLogoChange} className="sr-only" accept="image/jpeg,image/png,image/gif" />
-                    <button type="button" onClick={() => fileInputRef.current.click()} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500">
-                      Cambiar logo
-                    </button>
+                    <div className="flex items-center space-x-4">
+                      <button
+                        type="button"
+                        onClick={handleLogoUpload}
+                        disabled={isUploadingLogo}
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isUploadingLogo ? (
+                          <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                        ) : logoPreview ? (
+                          <Edit3 className="h-4 w-4 mr-2" />
+                        ) : (
+                          <Upload className="h-4 w-4 mr-2" />
+                        )}
+                        {logoPreview ? 'Cambiar logo' : 'Subir logo'}
+                      </button>
+                      {logoPreview && (
+                        <button
+                          type="button"
+                          onClick={handleLogoDelete}
+                          disabled={isUploadingLogo}
+                          className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                     <p className="mt-1 text-xs text-gray-500">
-                      JPG, PNG o GIF. Máximo 5MB.
+                      JPG, PNG o WEBP. Se redimensionará automáticamente.
                     </p>
                   </div>
                 </div>
@@ -317,16 +507,55 @@ const Settings = () => {
             </div>
           </div>
         </div>
+
+        {/* Status Messages */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
+        {saveStatus === 'success' && (
+          <div className="bg-green-50 border border-green-200 rounded-md p-4">
+            <p className="text-sm text-green-600">Configuración guardada exitosamente</p>
+          </div>
+        )}
+
+        {saveStatus === 'error' && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-sm text-red-600">Error al guardar la configuración. Por favor intenta de nuevo.</p>
+          </div>
+        )}
+
         <div className="flex justify-end">
           <button type="button" className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500">
             Cancelar
           </button>
-          <button type="submit" className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors duration-200">
-            <SaveIcon className="-ml-1 mr-2 h-5 w-5" />
-            Guardar
+          <button
+            type="submit"
+            disabled={isUpdating || saveStatus === 'saving'}
+            className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {(isUpdating || saveStatus === 'saving') ? (
+              <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+            ) : (
+              <SaveIcon className="-ml-1 mr-2 h-5 w-5" />
+            )}
+            {(isUpdating || saveStatus === 'saving') ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
       </form>
+
+      {/* Image Crop Modal */}
+      <ImageCropModal
+        isOpen={showCropModal}
+        imageSrc={tempImageSrc}
+        onClose={handleCropClose}
+        onSave={handleCropSave}
+        onImageUpload={handleImageUploadFromModal}
+        title="Ajustar Logo del Restaurante"
+      />
     </div>;
 };
+
 export default Settings;

@@ -256,7 +256,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                     )}
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    JPG, PNG o GIF. Máximo 5MB.
+                    JPG, PNG o WEBP.
                   </p>
                   {imageFile && <p className="mt-1 text-xs text-gray-700">
                       {imageFile.name}
