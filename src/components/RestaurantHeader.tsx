@@ -356,7 +356,17 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
           <button
             type="button"
             onClick={onAddSectionClick}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#173E44] hover:bg-[#0f2c31] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44] transition-all duration-200"
+            disabled={!restaurantName || restaurantName.trim() === '' || restaurantName === "Mi Restaurante"}
+            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm transition-all duration-200 ${
+              !restaurantName || restaurantName.trim() === '' || restaurantName === "Mi Restaurante"
+                ? 'text-gray-400 bg-gray-300 cursor-not-allowed'
+                : 'text-white bg-[#173E44] hover:bg-[#0f2c31] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44]'
+            }`}
+            title={
+              !restaurantName || restaurantName.trim() === '' || restaurantName === "Mi Restaurante"
+                ? 'Primero debes configurar el nombre de tu restaurante'
+                : 'Administrar sección'
+            }
           >
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
             Administrar sección
