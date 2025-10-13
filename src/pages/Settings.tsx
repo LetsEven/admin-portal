@@ -44,6 +44,63 @@ const Settings = () => {
     });
   }, [user, isLoaded, isSignedIn]);
 
+  // Función para validar horarios
+  const validateHours = (day: string, field: string, value: string | boolean): string | null => {
+    if (!settings) return null;
+
+    const dayHours = settings.openingHours[day];
+
+    if (field === 'closed') {
+      // Si se está marcando como cerrado, limpiar errores de ese día
+      if (value === true) {
+        const newErrors = {...validationErrors};
+        delete newErrors[`${day}_time`];
+        setValidationErrors(newErrors);
+      }
+      return null;
+    }
+
+    // Si el día está cerrado, no validar horarios
+    if (dayHours.closed) return null;
+
+    let openTime = dayHours.open;
+    let closeTime = dayHours.close;
+
+    // Actualizar con el nuevo valor
+    if (field === 'open') openTime = value as string;
+    if (field === 'close') closeTime = value as string;
+
+    // Validar que hora de apertura sea menor que hora de cierre
+    if (openTime && closeTime) {
+      const open = new Date(`2000-01-01T${openTime}:00`);
+      const close = new Date(`2000-01-01T${closeTime}:00`);
+
+      if (open >= close) {
+        return 'La hora de apertura debe ser menor que la hora de cierre';
+      }
+
+      // Validar duración mínima (1 hora)
+      const diffHours = (close.getTime() - open.getTime()) / (1000 * 60 * 60);
+      if (diffHours < 1) {
+        return 'El restaurante debe estar abierto al menos 1 hora';
+      }
+
+      // Validar horarios realistas (entre 5 AM y 2 AM del día siguiente)
+      const openHour = open.getHours();
+      const closeHour = close.getHours();
+
+      if (openHour < 5) {
+        return 'Hora de apertura muy temprana (mínimo 5:00 AM)';
+      }
+
+      if (closeHour > 2 && closeHour < 5) {
+        return 'Hora de cierre muy tarde (máximo 2:00 AM)';
+      }
+    }
+
+    return null;
+  };
+
   const fileInputRef = useRef(null);
   const [logoPreview, setLogoPreview] = useState('');
 
@@ -54,6 +111,7 @@ const Settings = () => {
   // Upload states
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
 
   // Sincronizar estado local con datos del restaurante
   useEffect(() => {
@@ -102,6 +160,19 @@ const Settings = () => {
   const handleHoursChange = (day: string, field: string, value: string | null) => {
     if (!settings) return;
 
+    // Validar el cambio
+    const validationError = validateHours(day, field, field === 'closed' ? !settings.openingHours[day].closed : value!);
+
+    // Actualizar errores de validación
+    const newErrors = {...validationErrors};
+    if (validationError) {
+      newErrors[`${day}_time`] = validationError;
+    } else {
+      delete newErrors[`${day}_time`];
+    }
+    setValidationErrors(newErrors);
+
+    // Actualizar settings
     setSettings({
       ...settings,
       openingHours: {
@@ -196,24 +267,30 @@ const Settings = () => {
 
     if (!settings) return;
 
+    // Validar todos los horarios antes de enviar
+    const hasValidationErrors = Object.keys(validationErrors).length > 0;
+    if (hasValidationErrors) {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus(null), 5000);
+      return;
+    }
+
     try {
       setSaveStatus('saving');
 
-      // Preparar datos para actualizar
+      // Preparar datos para actualizar (ahora incluyendo horarios)
       const updateData = {
-        name: settings.name,
+        name: settings.restaurantName,
         address: settings.address,
         phone: settings.phone,
         email: settings.email,
-        // Nota: openingHours y otros settings específicos se pueden manejar por separado
-        // ya que el backend actual no los maneja
+        openingHours: settings.openingHours, // ✅ Ahora enviamos horarios al backend
       };
 
       await updateRestaurant(updateData);
 
-      // También guardar en localStorage para settings que no están en el backend
+      // También guardar en localStorage para settings que no están en el backend aún
       const localSettings = {
-        openingHours: settings.openingHours,
         orderNotifications: settings.orderNotifications,
         emailNotifications: settings.emailNotifications,
         smsNotifications: settings.smsNotifications,
@@ -408,6 +485,14 @@ const Settings = () => {
                           <input type="time" id={`close-${day}`} value={settings.openingHours[day].close} onChange={e => handleHoursChange(day, 'close', e.target.value)} className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-custom-green-500 focus:border-custom-green-500" />
                         </div>
                       </>}
+                    {/* Mostrar error de validación si existe */}
+                    {validationErrors[`${day}_time`] && (
+                      <div className="col-span-full">
+                        <p className="text-sm text-red-600 mt-1">
+                          {validationErrors[`${day}_time`]}
+                        </p>
+                      </div>
+                    )}
                   </div>)}
               </div>
             </div>
@@ -523,7 +608,12 @@ const Settings = () => {
 
         {saveStatus === 'error' && (
           <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <p className="text-sm text-red-600">Error al guardar la configuración. Por favor intenta de nuevo.</p>
+            <p className="text-sm text-red-600">
+              {Object.keys(validationErrors).length > 0
+                ? 'Por favor corrige los errores de validación en los horarios antes de guardar.'
+                : 'Error al guardar la configuración. Por favor intenta de nuevo.'
+              }
+            </p>
           </div>
         )}
 

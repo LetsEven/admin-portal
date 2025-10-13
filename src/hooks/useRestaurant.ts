@@ -38,6 +38,40 @@ interface UseRestaurantReturn {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 
+// Función para convertir horarios del backend (JSON) al formato del frontend
+function convertBackendHoursToFrontend(backendHours: any) {
+  const frontendHours: any = {};
+
+  for (const [day, hours] of Object.entries(backendHours)) {
+    if (typeof hours === 'object' && hours !== null) {
+      frontendHours[day] = {
+        open: (hours as any).open_time || '09:00',
+        close: (hours as any).close_time || '22:00',
+        closed: (hours as any).is_closed || false
+      };
+    }
+  }
+
+  return frontendHours;
+}
+
+// Función para convertir horarios del frontend al formato del backend (JSON)
+function convertFrontendHoursToBackend(frontendHours: any) {
+  const backendHours: any = {};
+
+  for (const [day, hours] of Object.entries(frontendHours)) {
+    if (typeof hours === 'object' && hours !== null) {
+      backendHours[day] = {
+        is_closed: (hours as any).closed || false,
+        open_time: (hours as any).open || '09:00',
+        close_time: (hours as any).close || '22:00'
+      };
+    }
+  }
+
+  return backendHours;
+}
+
 export function useRestaurant(): UseRestaurantReturn {
   const { user } = useUser();
   const { getToken } = useAuth();
@@ -100,16 +134,18 @@ export function useRestaurant(): UseRestaurantReturn {
             email: result.data.email || '',
             logo_url: result.data.logo_url || '',
             banner_url: result.data.banner_url || '',
-            // Datos por defecto para Settings que no están en el backend
-            openingHours: {
-              monday: { open: '09:00', close: '22:00', closed: false },
-              tuesday: { open: '09:00', close: '22:00', closed: false },
-              wednesday: { open: '09:00', close: '22:00', closed: false },
-              thursday: { open: '09:00', close: '22:00', closed: false },
-              friday: { open: '09:00', close: '23:00', closed: false },
-              saturday: { open: '10:00', close: '23:00', closed: false },
-              sunday: { open: '10:00', close: '20:00', closed: false }
-            },
+            // Usar opening_hours del backend o datos por defecto
+            openingHours: result.data.opening_hours ?
+              convertBackendHoursToFrontend(result.data.opening_hours) :
+              {
+                monday: { open: '09:00', close: '22:00', closed: false },
+                tuesday: { open: '09:00', close: '22:00', closed: false },
+                wednesday: { open: '09:00', close: '22:00', closed: false },
+                thursday: { open: '09:00', close: '22:00', closed: false },
+                friday: { open: '09:00', close: '23:00', closed: false },
+                saturday: { open: '10:00', close: '23:00', closed: false },
+                sunday: { open: '10:00', close: '20:00', closed: false }
+              },
             orderNotifications: true,
             emailNotifications: true,
             smsNotifications: false,
@@ -177,7 +213,7 @@ export function useRestaurant(): UseRestaurantReturn {
       const token = await getAuthToken();
 
       // Preparar datos para el backend (solo los campos que acepta)
-      const backendData = {
+      const backendData: any = {
         name: updateData.name,
         description: updateData.description,
         address: updateData.address,
@@ -186,6 +222,11 @@ export function useRestaurant(): UseRestaurantReturn {
         logo_url: updateData.logo_url,
         banner_url: updateData.banner_url,
       };
+
+      // Si se incluyen horarios, convertirlos al formato del backend
+      if (updateData.openingHours) {
+        backendData.opening_hours = convertFrontendHoursToBackend(updateData.openingHours);
+      }
 
       // Filtrar campos undefined
       const filteredData = Object.fromEntries(

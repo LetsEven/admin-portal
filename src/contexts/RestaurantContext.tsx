@@ -82,7 +82,6 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
         if (userWithRestaurant) {
           if (userWithRestaurant.restaurant) {
             setRestaurant(userWithRestaurant.restaurant)
-            console.log('✅ Restaurant loaded from backend:', userWithRestaurant.restaurant)
           } else {
             console.log('ℹ️ User exists but has no restaurant - ready for restaurant setup')
             setRestaurant(null)
