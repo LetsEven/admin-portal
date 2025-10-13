@@ -116,6 +116,7 @@ const Settings = () => {
   // Sincronizar estado local con datos del restaurante
   useEffect(() => {
     if (restaurant) {
+      console.log('🔍 Restaurant data received in Settings:', restaurant);
       setSettings({
         name: restaurant.name || 'Mi Restaurante',
         address: restaurant.address || '',
@@ -132,7 +133,7 @@ const Settings = () => {
         },
         logo: restaurant.logo_url || '',
         orderNotifications: restaurant.orderNotifications ?? true,
-        emailNotifications: restaurant.emailNotifications ?? true,
+        emailNotifications: restaurant.emailNotifications ?? false,
         smsNotifications: restaurant.smsNotifications ?? false,
         language: restaurant.language || 'es',
         currency: restaurant.currency || 'MXN'
@@ -151,10 +152,19 @@ const Settings = () => {
 
     if (!settings) return;
 
-    setSettings({
+    let newSettings = {
       ...settings,
       [name]: type === 'checkbox' ? checked : value
-    });
+    };
+
+    // Aplicar lógica de dependencias para notificaciones
+    if (name === 'orderNotifications' && type === 'checkbox' && !checked) {
+      // Si se deshabilita orderNotifications, deshabilitar las demás
+      newSettings.emailNotifications = false;
+      newSettings.smsNotifications = false;
+    }
+
+    setSettings(newSettings);
   };
 
   const handleHoursChange = (day: string, field: string, value: string | null) => {
@@ -274,22 +284,25 @@ const Settings = () => {
     try {
       setSaveStatus('saving');
 
-      // Preparar datos para actualizar (ahora incluyendo horarios)
+      // Preparar datos para actualizar (incluyendo horarios y notificaciones)
       const updateData = {
         name: settings.name,
         address: settings.address,
         phone: settings.phone,
         email: settings.email,
-        openingHours: settings.openingHours, 
-      };
-
-      await updateRestaurant(updateData);
-
-      // También guardar en localStorage para settings que no están en el backend aún
-      const localSettings = {
+        openingHours: settings.openingHours,
         orderNotifications: settings.orderNotifications,
         emailNotifications: settings.emailNotifications,
         smsNotifications: settings.smsNotifications,
+      };
+
+      console.log('🚀 Sending update data:', updateData);
+      console.log('📊 Current settings state:', settings);
+
+      await updateRestaurant(updateData);
+
+      // Guardar en localStorage solo settings que no están en el backend aún
+      const localSettings = {
         language: settings.language,
         currency: settings.currency
       };
@@ -510,7 +523,14 @@ const Settings = () => {
               <div className="space-y-6">
                 <div className="flex items-start">
                   <div className="flex items-center h-5">
-                    <input id="orderNotifications" name="orderNotifications" type="checkbox" checked={settings.orderNotifications} onChange={handleChange} className="focus:ring-custom-green-500 h-4 w-4 text-custom-green-600 border-gray-300 rounded" />
+                    <input 
+                      id="orderNotifications" 
+                      name="orderNotifications" 
+                      type="checkbox" 
+                      checked={settings.orderNotifications} 
+                      onChange={handleChange} 
+                      className="focus:ring-custom-green-500 h-4 w-4 text-custom-green-600 border-gray-300 rounded" 
+                    />
                   </div>
                   <div className="ml-3 text-sm">
                     <label htmlFor="orderNotifications" className="font-medium text-gray-700">
@@ -521,30 +541,59 @@ const Settings = () => {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start">
+                <div className={`flex items-start ${!settings.orderNotifications ? 'opacity-50' : ''}`}>
                   <div className="flex items-center h-5">
-                    <input id="emailNotifications" name="emailNotifications" type="checkbox" checked={settings.emailNotifications} onChange={handleChange} className="focus:ring-custom-green-500 h-4 w-4 text-custom-green-600 border-gray-300 rounded" />
+                    <input
+                      id="emailNotifications"
+                      name="emailNotifications"
+                      type="checkbox"
+                      checked={settings.emailNotifications}
+                      onChange={handleChange}
+                      disabled={!settings.orderNotifications}
+                      className={`h-4 w-4 border-gray-300 rounded transition-colors duration-200 ${
+                        !settings.orderNotifications
+                          ? 'bg-gray-100 cursor-not-allowed'
+                          : 'focus:ring-custom-green-500 text-custom-green-600'
+                      }`}
+                    />
                   </div>
                   <div className="ml-3 text-sm">
-                    <label htmlFor="emailNotifications" className="font-medium text-gray-700">
+                    <label htmlFor="emailNotifications" className={`font-medium ${!settings.orderNotifications ? 'text-gray-400' : 'text-gray-700'}`}>
                       Notificaciones por correo
                     </label>
-                    <p className="text-gray-500">
-                      Recibe notificaciones por correo electrónico.
+                    <p className={`${!settings.orderNotifications ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {!settings.orderNotifications
+                        ? 'Requiere que las notificaciones de pedidos estén habilitadas.'
+                        : 'Recibe notificaciones por correo electrónico.'
+                      }
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start">
+                <div className={`flex items-start ${!settings.orderNotifications ? 'opacity-50' : ''}`}>
                   <div className="flex items-center h-5">
-                    <input id="smsNotifications" name="smsNotifications" type="checkbox" checked={settings.smsNotifications} onChange={handleChange} className="focus:ring-custom-green-500 h-4 w-4 text-custom-green-600 border-gray-300 rounded" />
+                    <input
+                      id="smsNotifications"
+                      name="smsNotifications"
+                      type="checkbox"
+                      checked={settings.smsNotifications}
+                      onChange={handleChange}
+                      disabled={!settings.orderNotifications}
+                      className={`h-4 w-4 border-gray-300 rounded transition-colors duration-200 ${
+                        !settings.orderNotifications
+                          ? 'bg-gray-100 cursor-not-allowed'
+                          : 'focus:ring-custom-green-500 text-custom-green-600'
+                      }`}
+                    />
                   </div>
                   <div className="ml-3 text-sm">
-                    <label htmlFor="smsNotifications" className="font-medium text-gray-700">
+                    <label htmlFor="smsNotifications" className={`font-medium ${!settings.orderNotifications ? 'text-gray-400' : 'text-gray-700'}`}>
                       Notificaciones por SMS
                     </label>
-                    <p className="text-gray-500">
-                      Recibe notificaciones por mensaje de texto (pueden aplicar
-                      cargos).
+                    <p className={`${!settings.orderNotifications ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {!settings.orderNotifications
+                        ? 'Requiere que las notificaciones de pedidos estén habilitadas.'
+                        : 'Recibe notificaciones por mensaje de texto (pueden aplicar cargos).'
+                      }
                     </p>
                   </div>
                 </div>

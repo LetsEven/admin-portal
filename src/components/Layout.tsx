@@ -102,7 +102,7 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
 
           {/* Restaurant Setup Banner */}
-          {!restaurantLoading && !restaurant && (
+          {/* {!restaurantLoading && !restaurant && (
             <div className="bg-gradient-to-r from-custom-green-500 to-custom-green-600 border-b border-custom-green-700">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
                 <div className="py-4">
@@ -132,7 +132,7 @@ const Layout: React.FC<LayoutProps> = ({
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">

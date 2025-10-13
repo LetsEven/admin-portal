@@ -146,15 +146,15 @@ export function useRestaurant(): UseRestaurantReturn {
                 saturday: { open: '10:00', close: '23:00', closed: false },
                 sunday: { open: '10:00', close: '20:00', closed: false }
               },
-            orderNotifications: true,
-            emailNotifications: true,
-            smsNotifications: false,
+            // Usar camelCase en el frontend
+            orderNotifications: result.data.order_notifications ?? true,
+            emailNotifications: result.data.email_notifications ?? false,
+            smsNotifications: result.data.sms_notifications ?? false,
             language: 'es',
             currency: 'MXN'
           };
 
           setRestaurant(restaurantData);
-          console.log('✅ Restaurante cargado:', restaurantData);
         } else {
           // No hay restaurante, usar datos por defecto
           setRestaurant(getDefaultRestaurantData());
@@ -194,7 +194,7 @@ export function useRestaurant(): UseRestaurantReturn {
       sunday: { open: '10:00', close: '20:00', closed: false }
     },
     orderNotifications: true,
-    emailNotifications: true,
+    emailNotifications: false,
     smsNotifications: false,
     language: 'es',
     currency: 'MXN'
@@ -221,6 +221,9 @@ export function useRestaurant(): UseRestaurantReturn {
         email: updateData.email,
         logo_url: updateData.logo_url,
         banner_url: updateData.banner_url,
+        order_notifications: updateData.orderNotifications,
+        email_notifications: updateData.emailNotifications,
+        sms_notifications: updateData.smsNotifications,
       };
 
       // Si se incluyen horarios, convertirlos al formato del backend
