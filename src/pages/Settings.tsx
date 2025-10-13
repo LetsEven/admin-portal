@@ -160,7 +160,6 @@ const Settings = () => {
   const handleHoursChange = (day: string, field: string, value: string | null) => {
     if (!settings) return;
 
-    // Validar el cambio
     const validationError = validateHours(day, field, field === 'closed' ? !settings.openingHours[day].closed : value!);
 
     // Actualizar errores de validación
@@ -215,19 +214,16 @@ const Settings = () => {
     try {
       setIsUploadingLogo(true);
 
-      // Convert base64 to blob/file
       const response = await fetch(croppedImage);
       const blob = await response.blob();
       const file = new File([blob], `logo_${Date.now()}.jpg`, { type: 'image/jpeg' });
 
-      // Upload to storage
       const publicUrl = await ImageUploadService.updateImage(
         file,
         'logo',
         logoPreview // Delete old image if exists
       );
 
-      // Update restaurant data
       await updateRestaurant({ logo_url: publicUrl });
 
       // Update local preview
@@ -280,11 +276,11 @@ const Settings = () => {
 
       // Preparar datos para actualizar (ahora incluyendo horarios)
       const updateData = {
-        name: settings.restaurantName,
+        name: settings.name,
         address: settings.address,
         phone: settings.phone,
         email: settings.email,
-        openingHours: settings.openingHours, // ✅ Ahora enviamos horarios al backend
+        openingHours: settings.openingHours, 
       };
 
       await updateRestaurant(updateData);
