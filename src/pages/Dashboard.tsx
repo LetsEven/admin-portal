@@ -1,5 +1,98 @@
 import React, { useState } from 'react';
 import { BarChart2Icon, UsersIcon, ShoppingBagIcon, TrendingUpIcon, ChevronDownIcon, MapPinIcon, CheckIcon, XIcon, ClockIcon, DollarSignIcon, UserIcon, ShoppingCartIcon, RotateCcwIcon, CrownIcon, StarIcon } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+// Estilos CSS en línea para los sliders
+const sliderStyles = `
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: #10b981;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: #10b981;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+`;
+
+// Datos para el gráfico de ingresos
+const datosGrafico = [
+  { dia: 1, ingresos: 16500 },
+  { dia: 2, ingresos: 17000 },
+  { dia: 3, ingresos: 18500 },
+  { dia: 4, ingresos: 19200 },
+  { dia: 5, ingresos: 19800 },
+  { dia: 6, ingresos: 20500 },
+  { dia: 7, ingresos: 21200 },
+  { dia: 8, ingresos: 21800 },
+  { dia: 9, ingresos: 22500 },
+  { dia: 10, ingresos: 22800 },
+  { dia: 11, ingresos: 23200 },
+  { dia: 12, ingresos: 23800 },
+  { dia: 13, ingresos: 24200 },
+  { dia: 14, ingresos: 25000 },
+  { dia: 15, ingresos: 25300 },
+  { dia: 16, ingresos: 24800 },
+  { dia: 17, ingresos: 24500 },
+  { dia: 18, ingresos: 24200 },
+  { dia: 19, ingresos: 24000 },
+  { dia: 20, ingresos: 23800 },
+  { dia: 21, ingresos: 24200 },
+  { dia: 22, ingresos: 24600 },
+  { dia: 23, ingresos: 25100 },
+  { dia: 24, ingresos: 25800 },
+  { dia: 25, ingresos: 26200 },
+  { dia: 26, ingresos: 26800 },
+  { dia: 27, ingresos: 27200 },
+  { dia: 28, ingresos: 27800 },
+  { dia: 29, ingresos: 28200 },
+  { dia: 30, ingresos: 29500 },
+  { dia: 31, ingresos: 30200 }
+];
+
+// Opciones de filtros
+const opcionesGenero = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'hombre', label: 'Hombre' },
+  { id: 'mujer', label: 'Mujer' },
+  { id: 'otro', label: 'Otro' }
+];
+
+const opcionesEdad = [
+  { id: 'todos', label: 'Todos' },
+  { id: '14-17', label: '14 - 17' },
+  { id: '18-25', label: '18 - 25' },
+  { id: '26-35', label: '26 - 35' },
+  { id: '36-45', label: '36 - 45' },
+  { id: '46+', label: '46 +' }
+];
+
+const opcionesGranularidad = [
+  { id: 'hora', label: 'Hora' },
+  { id: 'dia', label: 'Día' },
+  { id: 'mes', label: 'Mes' },
+  { id: 'ano', label: 'Año' }
+];
+
 // Lista de sucursales de ejemplo
 const sucursales = [{
   id: 1,
@@ -200,12 +293,82 @@ const datosPorSucursal = {
   }
 };
 
+// Componente de tooltip personalizado
+const CustomTooltip = ({ active, payload, label, granularidad, mesSeleccionado }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+
+    // Generar el texto del período según la granularidad
+    const obtenerTextoPeriodo = () => {
+      switch (granularidad) {
+        case 'hora':
+          const mesNombre = mesSeleccionado.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+          return `${label.toString().padStart(2, '0')}:00 del ${label} de ${mesNombre}`;
+        case 'dia':
+          const mesNombreDia = mesSeleccionado.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+          return `Día ${label} de ${mesNombreDia}`;
+        case 'mes':
+          return `${label} ${mesSeleccionado.getFullYear()}`;
+        case 'ano':
+          return `Año ${label}`;
+        default:
+          return `Día ${label}`;
+      }
+    };
+
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[200px]">
+        <div className="text-sm font-medium text-gray-900 mb-2">
+          {obtenerTextoPeriodo()}
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-600">Ingresos:</span>
+          <span className="text-lg font-bold text-custom-green-600">
+            ${data.value.toLocaleString()}
+          </span>
+        </div>
+        <div className="mt-2 pt-2 border-t border-gray-100">
+          <div className="text-xs text-gray-500">
+            Sucursal Centro
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 const Dashboard = () => {
   const [sucursalSeleccionada, setSucursalSeleccionada] = useState(sucursales[0]);
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarModalPro, setMostrarModalPro] = useState(false);
+
+  // Estados para filtros
+  const [generoSeleccionado, setGeneroSeleccionado] = useState(opcionesGenero[0]);
+  const [edadSeleccionada, setEdadSeleccionada] = useState(opcionesEdad[0]);
+  const [dropdownGeneroAbierto, setDropdownGeneroAbierto] = useState(false);
+  const [dropdownEdadAbierto, setDropdownEdadAbierto] = useState(false);
+
+  // Estados para granularidad
+  const [granularidadSeleccionada, setGranularidadSeleccionada] = useState(opcionesGranularidad[1]); // Día por defecto
+  const [dropdownGranularidadAbierto, setDropdownGranularidadAbierto] = useState(false);
+  const [diaSeleccionado, setDiaSeleccionado] = useState('14/10/2025');
+  const [rangoHoras, setRangoHoras] = useState([0, 23]);
+
+  // Estados para el calendario
+  const [calendarioAbierto, setCalendarioAbierto] = useState(false);
+  const [mesActual, setMesActual] = useState(new Date(2025, 9, 14)); // Octubre 2025, día 14
+  const [diaSeleccionadoCalendario, setDiaSeleccionadoCalendario] = useState(14);
+  const [mesSeleccionadoParaGrafico, setMesSeleccionadoParaGrafico] = useState(new Date(2025, 9, 1)); // Para granularidades que no sean Hora
+  const [selectorMesAbierto, setSelectorMesAbierto] = useState(false);
+
+  // Estados para el selector de años (granularidad Mes)
+  const [selectorAnoAbierto, setSelectorAnoAbierto] = useState(false);
+  const [anoSeleccionado, setAnoSeleccionado] = useState(2025);
+  const [rangoAnosInicio, setRangoAnosInicio] = useState(2017);
+
   
   // Obtener datos de la sucursal seleccionada
   const datosActuales = datosPorSucursal[sucursalSeleccionada.id];
@@ -214,7 +377,224 @@ const Dashboard = () => {
     setDropdownAbierto(false);
   };
 
-  const abrirDetallesPedido = (pedido) => {
+  const cambiarGenero = (genero) => {
+    setGeneroSeleccionado(genero);
+    setDropdownGeneroAbierto(false);
+  };
+
+  const cambiarEdad = (edad) => {
+    setEdadSeleccionada(edad);
+    setDropdownEdadAbierto(false);
+  };
+
+  const cambiarGranularidad = (granularidad) => {
+    setGranularidadSeleccionada(granularidad);
+    setDropdownGranularidadAbierto(false);
+  };
+
+  const cambiarMesParaGrafico = (direccion) => {
+    const nuevaFecha = new Date(mesSeleccionadoParaGrafico);
+    nuevaFecha.setMonth(nuevaFecha.getMonth() + direccion);
+    setMesSeleccionadoParaGrafico(nuevaFecha);
+  };
+
+  // Funciones para el selector de años
+  const obtenerAnosDelRango = () => {
+    const anos = [];
+    for (let i = 0; i < 12; i++) { // Mostrar 12 años (6 filas x 2 columnas)
+      anos.push(rangoAnosInicio + i);
+    }
+    return anos;
+  };
+
+  const cambiarRangoAnos = (direccion: any) => {
+    setRangoAnosInicio(rangoAnosInicio + (direccion * 12));
+  };
+
+  const seleccionarAno = (ano: any) => {
+    setAnoSeleccionado(ano);
+    // Actualizar mesSeleccionadoParaGrafico con el nuevo año
+    const nuevaFecha = new Date(mesSeleccionadoParaGrafico);
+    nuevaFecha.setFullYear(ano);
+    setMesSeleccionadoParaGrafico(nuevaFecha);
+    setSelectorAnoAbierto(false);
+  };
+
+
+  // Funciones del calendario
+  const obtenerDiasDelMes = (fecha:any) => {
+    const year = fecha.getFullYear();
+    const month = fecha.getMonth();
+    const primerDia = new Date(year, month, 1);
+    const ultimoDia = new Date(year, month + 1, 0);
+    const diasEnMes = ultimoDia.getDate();
+    const diaInicioSemana = primerDia.getDay();
+
+    const dias = [];
+
+    // Días del mes anterior para completar la primera semana
+    for (let i = diaInicioSemana - 1; i >= 0; i--) {
+      const diaAnterior = new Date(year, month, -i);
+      dias.push({ dia: diaAnterior.getDate(), esOtroMes: true });
+    }
+
+    // Días del mes actual
+    for (let dia = 1; dia <= diasEnMes; dia++) {
+      dias.push({ dia, esOtroMes: false });
+    }
+
+    // Días del mes siguiente para completar la última semana
+    const diasRestantes = 42 - dias.length; // 6 semanas × 7 días = 42
+    for (let dia = 1; dia <= diasRestantes; dia++) {
+      dias.push({ dia, esOtroMes: true });
+    }
+
+    return dias;
+  };
+
+  const cambiarMes = (direccion: any) => {
+    const nuevaFecha = new Date(mesActual);
+    nuevaFecha.setMonth(nuevaFecha.getMonth() + direccion);
+    setMesActual(nuevaFecha);
+  };
+
+  const seleccionarDia = (dia:any) => {
+    setDiaSeleccionadoCalendario(dia);
+    const fechaFormateada = `${dia.toString().padStart(2, '0')}/${(mesActual.getMonth() + 1).toString().padStart(2, '0')}/${mesActual.getFullYear()}`;
+    setDiaSeleccionado(fechaFormateada);
+    setCalendarioAbierto(false);
+  };
+
+  // Función para generar datos dinámicos del gráfico
+  const obtenerDatosGrafico = () => {
+    switch (granularidadSeleccionada.id) {
+      case 'hora':
+        // Para granularidad Hora: 24 horas del día seleccionado
+        const datosHora = [];
+        for (let hora = rangoHoras[0]; hora <= rangoHoras[1]; hora++) {
+          datosHora.push({
+            hora: hora,
+            ingresos: Math.floor(Math.random() * 2000) + 1000 // Datos aleatorios para demostración
+          });
+        }
+        return datosHora;
+
+      case 'dia':
+        // Para granularidad Día: días del mes seleccionado
+        const year = mesSeleccionadoParaGrafico.getFullYear();
+        const month = mesSeleccionadoParaGrafico.getMonth();
+        const diasEnMes = new Date(year, month + 1, 0).getDate();
+
+        const datosDia = [];
+        for (let dia = 1; dia <= diasEnMes; dia++) {
+          datosDia.push({
+            dia: dia,
+            ingresos: Math.floor(Math.random() * 15000) + 15000 // Datos aleatorios
+          });
+        }
+        return datosDia;
+
+      case 'mes':
+        // Para granularidad Mes: 12 meses del año seleccionado
+        const datosMes = [];
+        const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        for (let mes = 0; mes < 12; mes++) {
+          datosMes.push({
+            mes: meses[mes],
+            ingresos: Math.floor(Math.random() * 100000) + 200000 // Datos aleatorios
+          });
+        }
+        return datosMes;
+
+      case 'ano':
+        // Para granularidad Año: desde 2025 en adelante
+        const datosAno = [];
+        const anoInicio = 2025;
+        for (let i = 0; i < 7; i++) { // 7 años desde 2025: 2025, 2026, 2027, 2028, 2029, 2030, 2031
+          datosAno.push({
+            ano: anoInicio + i,
+            ingresos: Math.floor(Math.random() * 500000) + 1000000 // Datos aleatorios
+          });
+        }
+        return datosAno;
+
+      default:
+        return datosGrafico; // Datos por defecto
+    }
+  };
+
+  // Función para generar el título dinámico del gráfico
+  const obtenerTituloGrafico = () => {
+    switch (granularidadSeleccionada.id) {
+      case 'hora':
+        // Para granularidad Hora: mostrar la fecha específica seleccionada
+        const fechaSeleccionada = new Date(mesActual.getFullYear(), mesActual.getMonth(), diaSeleccionadoCalendario);
+        const fechaFormateada = fechaSeleccionada.toLocaleDateString('es-ES', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+        return `Ingresos Totales por hora (${fechaFormateada})`;
+
+      case 'dia':
+        // Para granularidad Día: mostrar el mes y año seleccionado
+        const mesAnio = mesSeleccionadoParaGrafico.toLocaleDateString('es-ES', {
+          month: 'long',
+          year: 'numeric'
+        });
+        return `Ingresos Totales por día (${mesAnio})`;
+
+      case 'mes':
+        // Para granularidad Mes: mostrar el año seleccionado
+        return `Ingresos Totales por mes (${mesSeleccionadoParaGrafico.getFullYear()})`;
+
+      case 'ano':
+        // Para granularidad Año: título genérico
+        return `Ingresos Totales por año`;
+
+      default:
+        return `Ingresos Totales por día (octubre de 2025)`;
+    }
+  };
+
+  // Función para obtener la configuración del eje X según granularidad
+  const obtenerConfiguracionEjeX = () => {
+    switch (granularidadSeleccionada.id) {
+      case 'hora':
+        return {
+          dataKey: 'hora',
+          tickFormatter: (value: any) => `${value.toString().padStart(2, '0')}:00`,
+          interval: 2
+        };
+      case 'dia':
+        const diasEnMes = new Date(mesSeleccionadoParaGrafico.getFullYear(), mesSeleccionadoParaGrafico.getMonth() + 1, 0).getDate();
+        return {
+          dataKey: 'dia',
+          tickFormatter: (value: any) => value.toString(),
+          interval: diasEnMes > 31 ? 3 : diasEnMes > 29 ? 2 : 1
+        };
+      case 'mes':
+        return {
+          dataKey: 'mes',
+          tickFormatter: (value: any) => value,
+          interval: 0
+        };
+      case 'ano':
+        return {
+          dataKey: 'ano',
+          tickFormatter: (value: any) => value.toString(),
+          interval: 0
+        };
+      default:
+        return {
+          dataKey: 'dia',
+          tickFormatter: (value: any) => value.toString(),
+          interval: 2
+        };
+    }
+  };
+
+  const abrirDetallesPedido = (pedido: any) => {
     setPedidoSeleccionado(pedido);
     setMostrarModal(true);
   };
@@ -224,7 +604,10 @@ const Dashboard = () => {
     setPedidoSeleccionado(null);
   };
   return <div className="w-full">
-      <div className="flex justify-between items-center mb-9">
+      {/* Estilos para los sliders */}
+      <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
+
+      <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 mb-2 mt-4">
             Xquisito Administrador
@@ -233,24 +616,105 @@ const Dashboard = () => {
             Bienvenido al panel de administración
           </p>
         </div>
-        {/* Selector de sucursales */}
+      </div>
+
+      {/* Filtros superiores */}
+      <div className="flex flex-wrap gap-4 mb-6 justify-center">
+        {/* Filtro Género */}
         <div className="relative">
-          <button onClick={() => setDropdownAbierto(!dropdownAbierto)} className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2">
-            <MapPinIcon className="h-5 w-5 text-custom-green-600" />
-            <span className="text-sm font-medium text-gray-700">
-              Sucursal actual: {sucursalSeleccionada.nombre}
-            </span>
+          <button
+            onClick={() => setDropdownGeneroAbierto(!dropdownGeneroAbierto)}
+            className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+          >
+            <UsersIcon className="h-4 w-4 text-gray-500" />
+            <span className="text-sm text-gray-600">Género:</span>
+            <span className="text-sm font-medium text-gray-800">{generoSeleccionado.label}</span>
+            <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownGeneroAbierto ? 'transform rotate-180' : ''}`} />
+          </button>
+          {dropdownGeneroAbierto && (
+            <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
+              <div className="px-3 py-2 border-b border-gray-100">
+                <p className="text-xs font-medium text-gray-500 uppercase">
+                  Seleccionar género
+                </p>
+              </div>
+              <ul className="py-1">
+                {opcionesGenero.map(genero => (
+                  <li key={genero.id}>
+                    <button
+                      onClick={() => cambiarGenero(genero)}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
+                    >
+                      <span className="text-sm text-gray-800">{genero.label}</span>
+                      {generoSeleccionado.id === genero.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Filtro Edad */}
+        <div className="relative">
+          <button
+            onClick={() => setDropdownEdadAbierto(!dropdownEdadAbierto)}
+            className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+          >
+            <UserIcon className="h-4 w-4 text-gray-500" />
+            <span className="text-sm text-gray-600">Edad:</span>
+            <span className="text-sm font-medium text-gray-800">{edadSeleccionada.label}</span>
+            <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownEdadAbierto ? 'transform rotate-180' : ''}`} />
+          </button>
+          {dropdownEdadAbierto && (
+            <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
+              <div className="px-3 py-2 border-b border-gray-100">
+                <p className="text-xs font-medium text-gray-500 uppercase">
+                  Seleccionar edad
+                </p>
+              </div>
+              <ul className="py-1">
+                {opcionesEdad.map(edad => (
+                  <li key={edad.id}>
+                    <button
+                      onClick={() => cambiarEdad(edad)}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
+                    >
+                      <span className="text-sm text-gray-800">{edad.label}</span>
+                      {edadSeleccionada.id === edad.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Filtro Sucursal */}
+        <div className="relative">
+          <button
+            onClick={() => setDropdownAbierto(!dropdownAbierto)}
+            className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+          >
+            <MapPinIcon className="h-4 w-4 text-gray-500" />
+            <span className="text-sm text-gray-600">Sucursal:</span>
+            <span className="text-sm font-medium text-gray-800">{sucursalSeleccionada.nombre}</span>
             <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownAbierto ? 'transform rotate-180' : ''}`} />
           </button>
-          {dropdownAbierto && <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
+          {dropdownAbierto && (
+            <div className="absolute left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
               <div className="px-3 py-2 border-b border-gray-100">
                 <p className="text-xs font-medium text-gray-500 uppercase">
                   Seleccionar sucursal
                 </p>
               </div>
               <ul className="max-h-64 overflow-y-auto py-1">
-                {sucursales.map(sucursal => <li key={sucursal.id}>
-                    <button onClick={() => cambiarSucursal(sucursal)} className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between">
+                {sucursales.map(sucursal => (
+                  <li key={sucursal.id}>
+                    <button
+                      onClick={() => cambiarSucursal(sucursal)}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
+                    >
                       <div>
                         <p className="text-sm font-medium text-gray-800">
                           {sucursal.nombre}
@@ -261,148 +725,567 @@ const Dashboard = () => {
                       </div>
                       {sucursalSeleccionada.id === sucursal.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
                     </button>
-                  </li>)}
+                  </li>
+                ))}
               </ul>
-            </div>}
+            </div>
+          )}
         </div>
       </div>
-      <div className="mt-1">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Card 1 - Ventas Totales (Pro) */}
-          <div
-            className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg cursor-pointer"
-            onClick={() => setMostrarModalPro(true)}
-          >
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-custom-green-100 p-3 rounded-full">
-                  <BarChart2Icon className="h-6 w-6 text-custom-green-600" />
+
+      {/* Selector de granularidad y controles específicos */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <div className="relative">
+            <button
+              onClick={() => setDropdownGranularidadAbierto(!dropdownGranularidadAbierto)}
+              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+            >
+              <ClockIcon className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-600">Granularidad:</span>
+              <span className="text-sm font-medium text-gray-800">{granularidadSeleccionada.label}</span>
+              <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownGranularidadAbierto ? 'transform rotate-180' : ''}`} />
+            </button>
+            {dropdownGranularidadAbierto && (
+              <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
+                <div className="px-3 py-2 border-b border-gray-100">
+                  <p className="text-xs font-medium text-gray-500 uppercase">
+                    Seleccionar granularidad
+                  </p>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Ventas totales
-                    </dt>
-                    <dd>
-                      <div className="flex items-center justify-center">
-                        <div className="bg-gradient-to-r from-purple-500/20 to-yellow-500/20 backdrop-blur-sm border border-white/30 rounded-lg px-4 py-2 shadow-lg">
-                          <div className="flex items-center space-x-2">
-                            <CrownIcon className="h-5 w-5 text-yellow-600" />
-                            <span className="text-lg font-semibold text-gray-800">Pro</span>
-                          </div>
-                        </div>
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
+                <ul className="py-1">
+                  {opcionesGranularidad.map(granularidad => (
+                    <li key={granularidad.id}>
+                      <button
+                        onClick={() => cambiarGranularidad(granularidad)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
+                      >
+                        <span className="text-sm text-gray-800">{granularidad.label}</span>
+                        {granularidadSeleccionada.id === granularidad.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
+            )}
+          </div>
+
+          {/* Selector de mes (para granularidad Día) */}
+          {granularidadSeleccionada.id === 'dia' && (
+            <div className="relative">
+              <button
+                onClick={() => setSelectorMesAbierto(!selectorMesAbierto)}
+                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              >
+                <span className="text-sm text-gray-600">Mes:</span>
+                <span className="text-sm font-medium text-gray-800">
+                  {(mesSeleccionadoParaGrafico.getMonth() + 1).toString().padStart(2, '0')}/{mesSeleccionadoParaGrafico.getFullYear()}
+                </span>
+                <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${selectorMesAbierto ? 'transform rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown para seleccionar mes/año */}
+              {selectorMesAbierto && (
+                <div className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-20 p-4 w-64">
+                  {/* Navegación de mes/año */}
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      onClick={() => cambiarMesParaGrafico(-1)}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    >
+                      <ChevronDownIcon className="h-4 w-4 transform rotate-90 text-gray-600" />
+                    </button>
+                    <h3 className="text-sm font-medium text-gray-900">
+                      {mesSeleccionadoParaGrafico.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                    </h3>
+                    <button
+                      onClick={() => cambiarMesParaGrafico(1)}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    >
+                      <ChevronDownIcon className="h-4 w-4 transform -rotate-90 text-gray-600" />
+                    </button>
+                  </div>
+
+                  {/* Botón para cerrar */}
+                  <div className="text-center">
+                    <button
+                      onClick={() => setSelectorMesAbierto(false)}
+                      className="px-4 py-2 bg-custom-green-600 text-white rounded-lg hover:bg-custom-green-700 transition-colors text-sm"
+                    >
+                      Seleccionar
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-              <div className="text-sm">
-                <button className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center w-full">
-                  Ver Planes
-                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+          )}
+
+          {/* Selector de año (para granularidad Mes) */}
+          {granularidadSeleccionada.id === 'mes' && (
+            <div className="relative">
+              <button
+                onClick={() => setSelectorAnoAbierto(!selectorAnoAbierto)}
+                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              >
+                <span className="text-sm text-gray-600">Año:</span>
+                <span className="text-sm font-medium text-gray-800">{anoSeleccionado}</span>
+                <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${selectorAnoAbierto ? 'transform rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown para seleccionar año */}
+              {selectorAnoAbierto && (
+                <div className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-20 p-4 w-64">
+                  {/* Header del selector de años */}
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      onClick={() => cambiarRangoAnos(-1)}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    >
+                      <ChevronDownIcon className="h-4 w-4 transform rotate-90 text-gray-600" />
+                    </button>
+                    <h3 className="text-sm font-medium text-gray-900">
+                      {rangoAnosInicio} - {rangoAnosInicio + 11}
+                    </h3>
+                    <button
+                      onClick={() => cambiarRangoAnos(1)}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    >
+                      <ChevronDownIcon className="h-4 w-4 transform -rotate-90 text-gray-600" />
+                    </button>
+                  </div>
+
+                  {/* Grid de años */}
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    {obtenerAnosDelRango().map(ano => (
+                      <button
+                        key={ano}
+                        onClick={() => seleccionarAno(ano)}
+                        className={`
+                          p-2 text-sm rounded transition-colors text-center
+                          ${ano === anoSeleccionado
+                            ? 'bg-blue-500 text-white hover:bg-blue-600'
+                            : 'text-gray-700 hover:bg-gray-100'
+                          }
+                        `}
+                      >
+                        {ano}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+
+        {/* Controles específicos para granularidad Hora */}
+        {granularidadSeleccionada.id === 'hora' && (
+          <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4 border border-gray-200">
+            {/* Selector de día con calendario */}
+            <div className="relative">
+              <button
+                onClick={() => setCalendarioAbierto(!calendarioAbierto)}
+                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              >
+                <span className="text-sm text-gray-600">Día:</span>
+                <span className="text-sm font-medium text-gray-800">{diaSeleccionado}</span>
+                <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${calendarioAbierto ? 'transform rotate-180' : ''}`} />
+              </button>
+
+              {/* Calendario desplegable */}
+              {calendarioAbierto && (
+                <div className="absolute left-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-20 p-4 w-64">
+                  {/* Header del calendario */}
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      onClick={() => cambiarMes(-1)}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    >
+                      <ChevronDownIcon className="h-4 w-4 transform rotate-90 text-gray-600" />
+                    </button>
+                    <h3 className="text-sm font-medium text-gray-900">
+                      {mesActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                    </h3>
+                    <button
+                      onClick={() => cambiarMes(1)}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    >
+                      <ChevronDownIcon className="h-4 w-4 transform -rotate-90 text-gray-600" />
+                    </button>
+                  </div>
+
+                  {/* Días de la semana */}
+                  <div className="grid grid-cols-7 gap-1 mb-2">
+                    {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(dia => (
+                      <div key={dia} className="text-xs font-medium text-gray-500 text-center p-2">
+                        {dia}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Días del mes */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {obtenerDiasDelMes(mesActual).map((diaInfo, index) => (
+                      <button
+                        key={index}
+                        onClick={() => !diaInfo.esOtroMes && seleccionarDia(diaInfo.dia)}
+                        disabled={diaInfo.esOtroMes}
+                        className={`
+                          p-2 text-sm rounded transition-colors
+                          ${diaInfo.esOtroMes
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-gray-700 hover:bg-gray-100 cursor-pointer'
+                          }
+                          ${diaInfo.dia === diaSeleccionadoCalendario && !diaInfo.esOtroMes
+                            ? 'bg-custom-green-500 text-white hover:bg-custom-green-600'
+                            : ''
+                          }
+                        `}
+                      >
+                        {diaInfo.dia}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Range slider para horas */}
+            <div className="flex-1 mx-6">
+              <div className="text-center mb-2">
+                <span className="text-sm font-medium text-gray-700">
+                  Rango de horas: {rangoHoras[0].toString().padStart(2, '0')}:00 - {rangoHoras[1].toString().padStart(2, '0')}:00
+                </span>
+              </div>
+
+              {/* Slider interactivo */}
+              <div className="relative">
+                {/* Track del slider */}
+                <div className="w-full h-2 bg-gray-200 rounded-full relative">
+                  <div
+                    className="h-2 bg-custom-green-500 rounded-full absolute"
+                    style={{
+                      left: `${(rangoHoras[0] / 23) * 100}%`,
+                      width: `${((rangoHoras[1] - rangoHoras[0]) / 23) * 100}%`
+                    }}
+                  ></div>
+                </div>
+
+                {/* Input ranges superpuestos */}
+                <input
+                  type="range"
+                  min="0"
+                  max="23"
+                  value={rangoHoras[0]}
+                  onChange={(e) => {
+                    const newValue = parseInt(e.target.value);
+                    if (newValue < rangoHoras[1]) {
+                      setRangoHoras([newValue, rangoHoras[1]]);
+                    }
+                  }}
+                  className="absolute top-0 w-full h-2 bg-transparent appearance-none cursor-pointer"
+                  style={{
+                    background: 'transparent',
+                    WebkitAppearance: 'none',
+                    pointerEvents: 'auto'
+                  }}
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max="23"
+                  value={rangoHoras[1]}
+                  onChange={(e) => {
+                    const newValue = parseInt(e.target.value);
+                    if (newValue > rangoHoras[0]) {
+                      setRangoHoras([rangoHoras[0], newValue]);
+                    }
+                  }}
+                  className="absolute top-0 w-full h-2 bg-transparent appearance-none cursor-pointer"
+                  style={{
+                    background: 'transparent',
+                    WebkitAppearance: 'none',
+                    pointerEvents: 'auto'
+                  }}
+                />
+
+                {/* Marcadores de tiempo */}
+                <div className="flex justify-between mt-4 text-xs text-gray-500">
+                  <span>0:00</span>
+                  <span>6:00</span>
+                  <span>12:00</span>
+                  <span>18:00</span>
+                  <span>23:00</span>
+                </div>
               </div>
             </div>
           </div>
-          {/* Card 2 */}
-          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-blue-100 p-3 rounded-full">
-                  <UsersIcon className="h-6 w-6 text-blue-600" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Clientes nuevos
-                    </dt>
-                    <dd>
-                      <div className="text-lg font-medium text-gray-900">
-                        {datosActuales.clientesNuevos}
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
+        )}
+      </div>
+
+      {/* Gráfico de Ingresos Totales */}
+      <div className="bg-white rounded-lg shadow-md border border-gray-100 p-6 mb-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          {obtenerTituloGrafico()}
+        </h3>
+
+        {/* Gráfico de líneas con Recharts */}
+        <div className="h-80 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={obtenerDatosGrafico()}
+              margin={{
+                top: 20,
+                right: 30,
+                left: 20,
+                bottom: 20,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis
+                dataKey={obtenerConfiguracionEjeX().dataKey}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#6b7280' }}
+                tickFormatter={obtenerConfiguracionEjeX().tickFormatter}
+                interval={obtenerConfiguracionEjeX().interval}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#6b7280' }}
+                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+              />
+              <Tooltip
+                content={(props) => (
+                  <CustomTooltip
+                    {...props}
+                    granularidad={granularidadSeleccionada.id}
+                    mesSeleccionado={granularidadSeleccionada.id === 'hora' ? mesActual : mesSeleccionadoParaGrafico}
+                  />
+                )}
+              />
+              <Line
+                type="monotone"
+                dataKey="ingresos"
+                stroke="#10b981"
+                strokeWidth={3}
+                dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, fill: '#10b981' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Tarjetas de métricas */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        {/* Ventas totales */}
+        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-custom-green-100 p-3 rounded-full">
+                <BarChart2Icon className="h-6 w-6 text-custom-green-600" />
               </div>
-            </div>
-            <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                  Ver todo
-                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </a>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Ventas totales
+                  </dt>
+                  <dd>
+                    <div className="text-lg font-medium text-gray-900">
+                      $747,194
+                    </div>
+                  </dd>
+                </dl>
               </div>
             </div>
           </div>
-          {/* Card 3 */}
-          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-amber-100 p-3 rounded-full">
-                  <ShoppingBagIcon className="h-6 w-6 text-amber-600" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Pedidos
-                    </dt>
-                    <dd>
-                      <div className="text-lg font-medium text-gray-900">
-                        {datosActuales.pedidos}
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
+          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+            <div className="text-sm">
+              <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
+                Ver todo
+                <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
             </div>
-            <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                  Ver todo
-                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </a>
+          </div>
+        </div>
+
+        {/* Órdenes Activas */}
+        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-blue-100 p-3 rounded-full">
+                <ShoppingCartIcon className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Órdenes Activas
+                  </dt>
+                  <dd>
+                    <div className="text-lg font-medium text-gray-900">
+                      3
+                    </div>
+                  </dd>
+                </dl>
               </div>
             </div>
           </div>
-          {/* Card 4 */}
-          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-purple-100 p-3 rounded-full">
-                  <TrendingUpIcon className="h-6 w-6 text-purple-600" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Tasa de conversión
-                    </dt>
-                    <dd>
-                      <div className="text-lg font-medium text-gray-900">
-                        {datosActuales.tasaConversion}
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
+          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+            <div className="text-sm">
+              <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
+                Ver todo
+                <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Pedidos */}
+        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-amber-100 p-3 rounded-full">
+                <ShoppingBagIcon className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Pedidos
+                  </dt>
+                  <dd>
+                    <div className="text-lg font-medium text-gray-900">
+                      10
+                    </div>
+                  </dd>
+                </dl>
               </div>
             </div>
-            <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                  Ver todo
-                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </a>
+          </div>
+          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+            <div className="text-sm">
+              <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
+                Ver todo
+                <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Ticket Promedio */}
+        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-purple-100 p-3 rounded-full">
+                <DollarSignIcon className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Ticket Promedio
+                  </dt>
+                  <dd>
+                    <div className="text-lg font-medium text-gray-900">
+                      $74,719.4
+                    </div>
+                  </dd>
+                </dl>
               </div>
             </div>
+          </div>
+          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+            <div className="text-sm">
+              <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
+                Ver todo
+                <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Secciones adicionales */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
+        {/* Órdenes Totales */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-custom-green-100 p-2 rounded-full">
+                <CheckIcon className="h-5 w-5 text-custom-green-600" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-gray-900">Órdenes Totales</h3>
+              </div>
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-gray-900 mb-2">124</div>
+          <div className="text-sm">
+            <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
+              Ver todo
+              <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        {/* Artículo más vendido */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-amber-100 p-2 rounded-full">
+                <CrownIcon className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-gray-900">Artículo más vendido</h3>
+              </div>
+            </div>
+          </div>
+          <div className="text-lg font-bold text-gray-900 mb-1">Hamburguesa Clásica</div>
+          <div className="text-sm text-gray-500 mb-3">1,254 unidades</div>
+          <div className="text-sm">
+            <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
+              Ver todo
+              <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        {/* Tiempo Promedio x cuenta */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
+                <ClockIcon className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-gray-900">Tiempo Promedio x cuenta</h3>
+              </div>
+            </div>
+            <span className="bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded">
+              Flex Bill
+            </span>
+          </div>
+          <div className="text-2xl font-bold text-gray-900 mb-2">23 minutos</div>
+          <div className="text-sm">
+            <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
+              Ver todo
+              <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
           </div>
         </div>
       </div>
