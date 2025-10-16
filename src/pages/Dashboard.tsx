@@ -284,7 +284,7 @@ const datosPorSucursal = {
 };
 
 // Componente de tooltip personalizado
-const CustomTooltip = ({ active, payload, label, granularidad, mesSeleccionado }: any) => {
+const CustomTooltip = ({ active, payload, label, granularidad, mesSeleccionado, diaSeleccionado }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0];
 
@@ -292,8 +292,20 @@ const CustomTooltip = ({ active, payload, label, granularidad, mesSeleccionado }
     const obtenerTextoPeriodo = () => {
       switch (granularidad) {
         case 'hora':
-          const mesNombre = mesSeleccionado.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-          return `${label.toString().padStart(2, '0')}:00 del ${label} de ${mesNombre}`;
+          // Para granularidad hora, usar el día seleccionado específico
+          if (diaSeleccionado) {
+            const [dia, mes, año] = diaSeleccionado.split('/');
+            const fechaSeleccionada = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
+            const fechaFormateada = fechaSeleccionada.toLocaleDateString('es-ES', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            });
+            return `${label.toString().padStart(2, '0')}:00 del ${fechaFormateada}`;
+          } else {
+            const mesNombre = mesSeleccionado.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+            return `${label.toString().padStart(2, '0')}:00 del ${label} de ${mesNombre}`;
+          }
         case 'dia':
           const mesNombreDia = mesSeleccionado.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
           return `Día ${label} de ${mesNombreDia}`;
@@ -317,11 +329,11 @@ const CustomTooltip = ({ active, payload, label, granularidad, mesSeleccionado }
             ${data.value.toLocaleString()}
           </span>
         </div>
-        <div className="mt-2 pt-2 border-t border-gray-100">
+        {/* <div className="mt-2 pt-2 border-t border-gray-100">
           <div className="text-xs text-gray-500">
             Sucursal Centro
           </div>
-        </div>
+        </div> */}
       </div>
     );
   }
@@ -1262,6 +1274,7 @@ const Dashboard = () => {
                     {...props}
                     granularidad={granularidadSeleccionada.id}
                     mesSeleccionado={granularidadSeleccionada.id === 'hora' ? mesActual : mesSeleccionadoParaGrafico}
+                    diaSeleccionado={granularidadSeleccionada.id === 'hora' ? diaSeleccionado : null}
                   />
                 )}
               />
