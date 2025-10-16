@@ -365,13 +365,18 @@ const Dashboard = () => {
   // Estados para granularidad
   const [granularidadSeleccionada, setGranularidadSeleccionada] = useState(opcionesGranularidad[1]); // Día por defecto
   const [dropdownGranularidadAbierto, setDropdownGranularidadAbierto] = useState(false);
-  const [diaSeleccionado, setDiaSeleccionado] = useState('14/10/2025');
+  // Generar fecha actual en formato DD/MM/AAAA
+  const fechaActual = new Date();
+  const diaActual = fechaActual.getDate().toString().padStart(2, '0');
+  const mesActualStr = (fechaActual.getMonth() + 1).toString().padStart(2, '0');
+  const añoActual = fechaActual.getFullYear();
+  const [diaSeleccionado, setDiaSeleccionado] = useState(`${diaActual}/${mesActualStr}/${añoActual}`);
   const [rangoHoras, setRangoHoras] = useState([0, 23]);
 
   // Estados para el calendario
   const [calendarioAbierto, setCalendarioAbierto] = useState(false);
-  const [mesActual, setMesActual] = useState(new Date(2025, 9, 14)); // Octubre 2025, día 14
-  const [diaSeleccionadoCalendario, setDiaSeleccionadoCalendario] = useState(14);
+  const [mesActual, setMesActual] = useState(new Date()); // Fecha actual del sistema
+  const [diaSeleccionadoCalendario, setDiaSeleccionadoCalendario] = useState(new Date().getDate());
   const [mesSeleccionadoParaGrafico, setMesSeleccionadoParaGrafico] = useState(new Date(2025, 9, 1)); // Para granularidades que no sean Hora
   const [selectorMesAbierto, setSelectorMesAbierto] = useState(false);
 
@@ -402,7 +407,7 @@ const Dashboard = () => {
   };
 
   // Función para cargar datos del dashboard
-  const cargarDatosDashboard = (restaurantId = null, customFilters = {}, customRangoHoras = null) => {
+  const cargarDatosDashboard = (restaurantId = null, customFilters = {}, customRangoHoras = null, customDiaSeleccionado = null) => {
     const currentGranularity = customFilters.granularity || granularidadSeleccionada.id;
     let startDate = null;
     let endDate = null;
@@ -412,8 +417,11 @@ const Dashboard = () => {
       // Usar rango personalizado si se proporciona, sino usar el estado actual
       const rangoActual = customRangoHoras || rangoHoras;
 
+      // Usar fecha personalizada si se proporciona, sino usar el estado actual
+      const fechaAUsar = customDiaSeleccionado || diaSeleccionado;
+
       // Convertir diaSeleccionado "14/10/2025" a fecha local
-      const [dia, mes, año] = diaSeleccionado.split('/');
+      const [dia, mes, año] = fechaAUsar.split('/');
       const fechaBase = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
 
       // Fecha de inicio: construcción directa para evitar problemas de zona horaria
@@ -426,18 +434,13 @@ const Dashboard = () => {
       endDate = new Date(fechaBase);
       endDate.setHours(rangoActual[1], 59, 59, 999);
 
-      // DEBUG: Verificar construcción
-      console.log('🔍 DEBUG Construcción Mixta:', {
-        'Usuario selecciona inicio': rangoActual[0],
-        'Usuario selecciona fin': rangoActual[1],
-        'rangoActual usado': rangoActual,
-        'rangoHoras estado': rangoHoras,
-        'customRangoHoras pasado': customRangoHoras,
+      // DEBUG: Verificar construcción de fechas
+      console.log('🔍 DEBUG Construcción de Fechas:', {
+        'customDiaSeleccionado pasado': customDiaSeleccionado,
+        'diaSeleccionado estado': diaSeleccionado,
+        'fechaAUsar final': fechaAUsar,
         'startDateISO construido': startDateISO,
-        'startDate final': startDate.toString(),
-        'startDate.getHours()': startDate.getHours(),
-        'endDate final': endDate.toString(),
-        'endDate.getHours()': endDate.getHours()
+        'rangoActual usado': rangoActual
       });
     }
 
@@ -445,15 +448,19 @@ const Dashboard = () => {
       restaurant_id: restaurantId,
       start_date: startDate ? formatearFechaLocal(startDate) : null,
       end_date: endDate ? formatearFechaLocal(endDate) : null,
-      gender: generoSeleccionado.id as any,
-      age_range: edadSeleccionada.id as any,
+      gender: customFilters.gender || generoSeleccionado.id as any,
+      age_range: customFilters.age_range || edadSeleccionada.id as any,
       granularity: currentGranularity as any
     };
 
     // Debug: mostrar los filtros que se están enviando
     console.log('🔍 Filtros enviados al backend:', filtros);
-    console.log('🔍 Estado actual rangoHoras:', rangoHoras);
-    console.log('🔍 Timestamp de la llamada:', new Date().toISOString());
+    console.log('🔍 Debug customFilters:', {
+      'customFilters recibidos': customFilters,
+      'customFilters.gender': customFilters.gender,
+      'generoSeleccionado.id estado': generoSeleccionado.id,
+      'gender final usado': filtros.gender
+    });
 
     // Cargar datos completos del dashboard
     getCompleteDashboardData(filtros);
@@ -464,28 +471,30 @@ const Dashboard = () => {
     }
   };
 
-  const cambiarGenero = (genero) => {
+  const cambiarGenero = (genero: any) => {
+    console.log('genero', genero);
+    
     setGeneroSeleccionado(genero);
     setDropdownGeneroAbierto(false);
     // Recargar datos con el nuevo filtro, pasando el valor actualizado
     cargarDatosDashboard(sucursalSeleccionada?.id, { gender: genero.id });
   };
 
-  const cambiarEdad = (edad) => {
+  const cambiarEdad = (edad: any) => {
     setEdadSeleccionada(edad);
     setDropdownEdadAbierto(false);
     // Recargar datos con el nuevo filtro, pasando el valor actualizado
     cargarDatosDashboard(sucursalSeleccionada?.id, { age_range: edad.id });
   };
 
-  const cambiarGranularidad = (granularidad) => {
+  const cambiarGranularidad = (granularidad:any) => {
     setGranularidadSeleccionada(granularidad);
     setDropdownGranularidadAbierto(false);
     // Recargar datos con el nuevo filtro, pasando el valor actualizado
     cargarDatosDashboard(sucursalSeleccionada?.id, { granularity: granularidad.id });
   };
 
-  const cambiarMesParaGrafico = (direccion) => {
+  const cambiarMesParaGrafico = (direccion: any) => {
     const nuevaFecha = new Date(mesSeleccionadoParaGrafico);
     nuevaFecha.setMonth(nuevaFecha.getMonth() + direccion);
     setMesSeleccionadoParaGrafico(nuevaFecha);
@@ -553,23 +562,28 @@ const Dashboard = () => {
 
   const seleccionarDia = (dia:any) => {
     setDiaSeleccionadoCalendario(dia);
+
+    // Usar mesActual del estado para generar la fecha formateada
     const fechaFormateada = `${dia.toString().padStart(2, '0')}/${(mesActual.getMonth() + 1).toString().padStart(2, '0')}/${mesActual.getFullYear()}`;
     setDiaSeleccionado(fechaFormateada);
     setCalendarioAbierto(false);
 
     // Si la granularidad es "hora", recargar datos con el nuevo día
     if (granularidadSeleccionada.id === 'hora') {
-      // Usar setTimeout para asegurar que el estado se actualice primero
-      setTimeout(() => {
-        cargarDatosDashboard(sucursalSeleccionada?.id);
-      }, 50);
+      // Pasar customFilters con el día actualizado para evitar problemas de estado
+      const customFilters = {
+        // Mantener otros filtros si están activos
+        ...(generoSeleccionado.id !== 'todos' && { gender: generoSeleccionado.id }),
+        ...(edadSeleccionada.id !== 'todos' && { age_range: edadSeleccionada.id })
+      };
+
+      // Recargar inmediatamente pasando la fecha directamente para evitar estado desactualizado
+      cargarDatosDashboard(sucursalSeleccionada?.id, customFilters, null, fechaFormateada);
     }
   };
 
   // Función para cambiar hora de inicio del rango
   const cambiarHoraInicio = (nuevaHora: number) => {
-    console.log('NUEVA HORA',nuevaHora);
-
     if (nuevaHora < rangoHoras[1]) {
       const nuevoRango = [nuevaHora, rangoHoras[1]];
       setRangoHoras(nuevoRango);
@@ -583,8 +597,6 @@ const Dashboard = () => {
 
   // Función para cambiar hora de fin del rango
   const cambiarHoraFin = (nuevaHora: number) => {
-    console.log('HORA FINAL',nuevaHora);
-
     if (nuevaHora > rangoHoras[0]) {
       const nuevoRango = [rangoHoras[0], nuevaHora];
       setRangoHoras(nuevoRango);
@@ -606,15 +618,6 @@ const Dashboard = () => {
     if (granularidadSeleccionada.id === 'hora') {
       const datosOriginales = dashboardData.grafico;
       const datosCompletos = [];
-
-      console.log('🔍 Debug obtenerDatosGrafico (ZOOM):', {
-        rangoHoras,
-        datosOriginales,
-        horaInicio: rangoHoras[0],
-        horaFin: rangoHoras[1],
-        'mostrará': `rango ${rangoHoras[0]} hasta ${rangoHoras[1]} (inclusivo)`,
-        'zoom activo': true
-      });
 
       // ZOOM: Generar solo las horas del rango seleccionado (inclusivo)
       for (let hora = rangoHoras[0]; hora <= rangoHoras[1]; hora++) {
