@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart2Icon, UsersIcon, ShoppingBagIcon, TrendingUpIcon, ChevronDownIcon, MapPinIcon, CheckIcon, XIcon, ClockIcon, DollarSignIcon, UserIcon, ShoppingCartIcon, RotateCcwIcon, CrownIcon, StarIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useAnalytics, type AnalyticsFilters } from '../hooks/useAnalytics';
 
 // Estilos CSS en línea para los sliders
 const sliderStyles = `
@@ -72,9 +73,10 @@ const datosGrafico = [
 // Opciones de filtros
 const opcionesGenero = [
   { id: 'todos', label: 'Todos' },
-  { id: 'hombre', label: 'Hombre' },
-  { id: 'mujer', label: 'Mujer' },
-  { id: 'otro', label: 'Otro' }
+  { id: 'male', label: 'Hombre' },
+  { id: 'female', label: 'Mujer' },
+  { id: 'non-binary', label: 'No binario' },
+  { id: 'prefer-not-to-say', label: 'Prefiero no decir' }
 ];
 
 const opcionesEdad = [
@@ -93,23 +95,11 @@ const opcionesGranularidad = [
   { id: 'ano', label: 'Año' }
 ];
 
-// Lista de sucursales de ejemplo
-const sucursales = [{
+// Esta será reemplazada por datos reales del hook
+const sucursalesDefault = [{
   id: 1,
-  nombre: 'Sucursal Centro',
-  direccion: 'Av. Reforma 123'
-}, {
-  id: 2,
-  nombre: 'Sucursal Norte',
-  direccion: 'Blvd. Manuel Ávila Camacho 456'
-}, {
-  id: 3,
-  nombre: 'Sucursal Sur',
-  direccion: 'Calz. de Tlalpan 789'
-}, {
-  id: 4,
-  nombre: 'Sucursal Poniente',
-  direccion: 'Santa Fe 101'
+  name: 'Cargando...',
+  is_active: true
 }];
 
 // Datos de ejemplo para pedidos
@@ -339,11 +329,32 @@ const CustomTooltip = ({ active, payload, label, granularidad, mesSeleccionado }
 };
 
 const Dashboard = () => {
-  const [sucursalSeleccionada, setSucursalSeleccionada] = useState(sucursales[0]);
+  // Hook para analytics
+  const {
+    dashboardData,
+    activeOrders,
+    topSellingItem,
+    userRestaurants,
+    isLoading,
+    isLoadingOrders,
+    isLoadingTopItem,
+    isLoadingRestaurants,
+    error,
+    getDashboardMetrics,
+    getCompleteDashboardData,
+    getActiveOrders,
+    getTopSellingItem,
+    getUserRestaurants,
+    getDashboardSummary,
+    clearError
+  } = useAnalytics();
+
+  const [sucursalSeleccionada, setSucursalSeleccionada] = useState(sucursalesDefault[0]);
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarModalPro, setMostrarModalPro] = useState(false);
+  const [mostrarDebugPanel, setMostrarDebugPanel] = useState(false);
 
   // Estados para filtros
   const [generoSeleccionado, setGeneroSeleccionado] = useState(opcionesGenero[0]);
@@ -370,26 +381,108 @@ const Dashboard = () => {
   const [rangoAnosInicio, setRangoAnosInicio] = useState(2017);
 
   
-  // Obtener datos de la sucursal seleccionada
-  const datosActuales = datosPorSucursal[sucursalSeleccionada.id];
-  const cambiarSucursal = sucursal => {
+  // Función para cambiar sucursal y cargar datos
+  const cambiarSucursal = (sucursal) => {
     setSucursalSeleccionada(sucursal);
     setDropdownAbierto(false);
+    cargarDatosDashboard(sucursal.id);
+  };
+
+  // Helper function: convertir Date a string local sin zona horaria
+  const formatearFechaLocal = (fecha: Date): string => {
+    const año = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const horas = String(fecha.getHours()).padStart(2, '0');
+    const minutos = String(fecha.getMinutes()).padStart(2, '0');
+    const segundos = String(fecha.getSeconds()).padStart(2, '0');
+    const milisegundos = String(fecha.getMilliseconds()).padStart(3, '0');
+
+    return `${año}-${mes}-${dia}T${horas}:${minutos}:${segundos}.${milisegundos}`;
+  };
+
+  // Función para cargar datos del dashboard
+  const cargarDatosDashboard = (restaurantId = null, customFilters = {}, customRangoHoras = null) => {
+    const currentGranularity = customFilters.granularity || granularidadSeleccionada.id;
+    let startDate = null;
+    let endDate = null;
+
+    // Si la granularidad es "hora", usar fecha y rango de horas específicos
+    if (currentGranularity === 'hora') {
+      // Usar rango personalizado si se proporciona, sino usar el estado actual
+      const rangoActual = customRangoHoras || rangoHoras;
+
+      // Convertir diaSeleccionado "14/10/2025" a fecha local
+      const [dia, mes, año] = diaSeleccionado.split('/');
+      const fechaBase = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
+
+      // Fecha de inicio: construcción directa para evitar problemas de zona horaria
+      const fechaBaseISO = `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+      const horaInicioStr = rangoActual[0].toString().padStart(2, '0');
+      const startDateISO = `${fechaBaseISO}T${horaInicioStr}:00:00.000`;
+      startDate = new Date(startDateISO);
+
+      // Fecha de fin: mantener lógica original que funciona
+      endDate = new Date(fechaBase);
+      endDate.setHours(rangoActual[1], 59, 59, 999);
+
+      // DEBUG: Verificar construcción
+      console.log('🔍 DEBUG Construcción Mixta:', {
+        'Usuario selecciona inicio': rangoActual[0],
+        'Usuario selecciona fin': rangoActual[1],
+        'rangoActual usado': rangoActual,
+        'rangoHoras estado': rangoHoras,
+        'customRangoHoras pasado': customRangoHoras,
+        'startDateISO construido': startDateISO,
+        'startDate final': startDate.toString(),
+        'startDate.getHours()': startDate.getHours(),
+        'endDate final': endDate.toString(),
+        'endDate.getHours()': endDate.getHours()
+      });
+    }
+
+    const filtros: AnalyticsFilters = {
+      restaurant_id: restaurantId,
+      start_date: startDate ? formatearFechaLocal(startDate) : null,
+      end_date: endDate ? formatearFechaLocal(endDate) : null,
+      gender: generoSeleccionado.id as any,
+      age_range: edadSeleccionada.id as any,
+      granularity: currentGranularity as any
+    };
+
+    // Debug: mostrar los filtros que se están enviando
+    console.log('🔍 Filtros enviados al backend:', filtros);
+    console.log('🔍 Estado actual rangoHoras:', rangoHoras);
+    console.log('🔍 Timestamp de la llamada:', new Date().toISOString());
+
+    // Cargar datos completos del dashboard
+    getCompleteDashboardData(filtros);
+
+    // Cargar órdenes activas si hay restaurante seleccionado
+    if (restaurantId) {
+      getActiveOrders(restaurantId);
+    }
   };
 
   const cambiarGenero = (genero) => {
     setGeneroSeleccionado(genero);
     setDropdownGeneroAbierto(false);
+    // Recargar datos con el nuevo filtro, pasando el valor actualizado
+    cargarDatosDashboard(sucursalSeleccionada?.id, { gender: genero.id });
   };
 
   const cambiarEdad = (edad) => {
     setEdadSeleccionada(edad);
     setDropdownEdadAbierto(false);
+    // Recargar datos con el nuevo filtro, pasando el valor actualizado
+    cargarDatosDashboard(sucursalSeleccionada?.id, { age_range: edad.id });
   };
 
   const cambiarGranularidad = (granularidad) => {
     setGranularidadSeleccionada(granularidad);
     setDropdownGranularidadAbierto(false);
+    // Recargar datos con el nuevo filtro, pasando el valor actualizado
+    cargarDatosDashboard(sucursalSeleccionada?.id, { granularity: granularidad.id });
   };
 
   const cambiarMesParaGrafico = (direccion) => {
@@ -463,64 +556,88 @@ const Dashboard = () => {
     const fechaFormateada = `${dia.toString().padStart(2, '0')}/${(mesActual.getMonth() + 1).toString().padStart(2, '0')}/${mesActual.getFullYear()}`;
     setDiaSeleccionado(fechaFormateada);
     setCalendarioAbierto(false);
+
+    // Si la granularidad es "hora", recargar datos con el nuevo día
+    if (granularidadSeleccionada.id === 'hora') {
+      // Usar setTimeout para asegurar que el estado se actualice primero
+      setTimeout(() => {
+        cargarDatosDashboard(sucursalSeleccionada?.id);
+      }, 50);
+    }
   };
 
-  // Función para generar datos dinámicos del gráfico
-  const obtenerDatosGrafico = () => {
-    switch (granularidadSeleccionada.id) {
-      case 'hora':
-        // Para granularidad Hora: 24 horas del día seleccionado
-        const datosHora = [];
-        for (let hora = rangoHoras[0]; hora <= rangoHoras[1]; hora++) {
-          datosHora.push({
-            hora: hora,
-            ingresos: Math.floor(Math.random() * 2000) + 1000 // Datos aleatorios para demostración
-          });
-        }
-        return datosHora;
+  // Función para cambiar hora de inicio del rango
+  const cambiarHoraInicio = (nuevaHora: number) => {
+    console.log('NUEVA HORA',nuevaHora);
 
-      case 'dia':
-        // Para granularidad Día: días del mes seleccionado
-        const year = mesSeleccionadoParaGrafico.getFullYear();
-        const month = mesSeleccionadoParaGrafico.getMonth();
-        const diasEnMes = new Date(year, month + 1, 0).getDate();
+    if (nuevaHora < rangoHoras[1]) {
+      const nuevoRango = [nuevaHora, rangoHoras[1]];
+      setRangoHoras(nuevoRango);
 
-        const datosDia = [];
-        for (let dia = 1; dia <= diasEnMes; dia++) {
-          datosDia.push({
-            dia: dia,
-            ingresos: Math.floor(Math.random() * 15000) + 15000 // Datos aleatorios
-          });
-        }
-        return datosDia;
-
-      case 'mes':
-        // Para granularidad Mes: 12 meses del año seleccionado
-        const datosMes = [];
-        const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        for (let mes = 0; mes < 12; mes++) {
-          datosMes.push({
-            mes: meses[mes],
-            ingresos: Math.floor(Math.random() * 100000) + 200000 // Datos aleatorios
-          });
-        }
-        return datosMes;
-
-      case 'ano':
-        // Para granularidad Año: desde 2025 en adelante
-        const datosAno = [];
-        const anoInicio = 2025;
-        for (let i = 0; i < 7; i++) { // 7 años desde 2025: 2025, 2026, 2027, 2028, 2029, 2030, 2031
-          datosAno.push({
-            ano: anoInicio + i,
-            ingresos: Math.floor(Math.random() * 500000) + 1000000 // Datos aleatorios
-          });
-        }
-        return datosAno;
-
-      default:
-        return datosGrafico; // Datos por defecto
+      // Si la granularidad es "hora", recargar datos pasando el nuevo rango directamente
+      if (granularidadSeleccionada.id === 'hora') {
+        cargarDatosDashboard(sucursalSeleccionada?.id, {}, nuevoRango);
+      }
     }
+  };
+
+  // Función para cambiar hora de fin del rango
+  const cambiarHoraFin = (nuevaHora: number) => {
+    console.log('HORA FINAL',nuevaHora);
+
+    if (nuevaHora > rangoHoras[0]) {
+      const nuevoRango = [rangoHoras[0], nuevaHora];
+      setRangoHoras(nuevoRango);
+
+      // Si la granularidad es "hora", recargar datos pasando el nuevo rango directamente
+      if (granularidadSeleccionada.id === 'hora') {
+        cargarDatosDashboard(sucursalSeleccionada?.id, {}, nuevoRango);
+      }
+    }
+  };
+
+  // Función para obtener datos reales del gráfico
+  const obtenerDatosGrafico = () => {
+    if (!dashboardData?.grafico) {
+      return [];
+    }
+
+    // Si la granularidad es "hora", completar el rango de horas seleccionado
+    if (granularidadSeleccionada.id === 'hora') {
+      const datosOriginales = dashboardData.grafico;
+      const datosCompletos = [];
+
+      console.log('🔍 Debug obtenerDatosGrafico (ZOOM):', {
+        rangoHoras,
+        datosOriginales,
+        horaInicio: rangoHoras[0],
+        horaFin: rangoHoras[1],
+        'mostrará': `rango ${rangoHoras[0]} hasta ${rangoHoras[1]} (inclusivo)`,
+        'zoom activo': true
+      });
+
+      // ZOOM: Generar solo las horas del rango seleccionado (inclusivo)
+      for (let hora = rangoHoras[0]; hora <= rangoHoras[1]; hora++) {
+        // Buscar si hay datos para esta hora
+        const datoExistente = datosOriginales.find(item => item.hora === hora);
+
+        if (datoExistente) {
+          // Si hay datos reales, usarlos
+          datosCompletos.push(datoExistente);
+        } else {
+          // Si no hay datos reales, poner 0
+          datosCompletos.push({
+            hora: hora,
+            ingresos: 0
+          });
+        }
+      }
+
+      return datosCompletos;
+    }
+
+    // Para otras granularidades, retornar datos originales
+    return dashboardData.grafico;
   };
 
   // Función para generar el título dinámico del gráfico
@@ -603,6 +720,35 @@ const Dashboard = () => {
     setMostrarModal(false);
     setPedidoSeleccionado(null);
   };
+
+  // Efecto para inicializar datos
+  useEffect(() => {
+    // Seleccionar el primer restaurante cuando estén disponibles
+    if (userRestaurants.length > 0 && sucursalSeleccionada.name === 'Cargando...') {
+      setSucursalSeleccionada(userRestaurants[0]);
+      cargarDatosDashboard(userRestaurants[0].id);
+    }
+  }, [userRestaurants]);
+
+  // Efecto para manejar errores
+  useEffect(() => {
+    if (error) {
+      console.error('Error en analytics:', error);
+      // Aquí podrías mostrar una notificación de error al usuario
+    }
+  }, [error]);
+
+  // Debug: Log automático para verificar datos
+  console.log('🔍 DEBUG Dashboard - Datos recibidos:', {
+    dashboardData: dashboardData,
+    filtroAplicados: dashboardData?.filtros_aplicados,
+    activeOrders: activeOrders,
+    topSellingItem: topSellingItem,
+    userRestaurants: userRestaurants,
+    sucursalSeleccionada: sucursalSeleccionada,
+    isLoading: isLoading
+  });
+
   return <div className="w-full">
       {/* Estilos para los sliders */}
       <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
@@ -615,6 +761,40 @@ const Dashboard = () => {
           <p className="text-sm text-gray-500">
             Bienvenido al panel de administración
           </p>
+        </div>
+
+        {/* Botones de Debug */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              console.log('📊 DATOS COMPLETOS DEL DASHBOARD:', {
+                dashboardData,
+                activeOrders,
+                topSellingItem,
+                userRestaurants,
+                filtrosActuales: {
+                  restaurante: sucursalSeleccionada,
+                  genero: generoSeleccionado,
+                  edad: edadSeleccionada,
+                  granularidad: granularidadSeleccionada
+                }
+              });
+              alert('✅ Datos enviados a la consola del navegador.\n\nAbre las herramientas de desarrollador (F12) y ve a la pestaña "Console" para ver los datos detallados.');
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm font-medium shadow"
+          >
+            🔍 Debug Consola
+          </button>
+          <button
+            onClick={() => setMostrarDebugPanel(!mostrarDebugPanel)}
+            className={`px-4 py-2 text-white rounded text-sm font-medium shadow ${
+              mostrarDebugPanel
+                ? 'bg-red-500 hover:bg-red-600'
+                : 'bg-green-500 hover:bg-green-600'
+            }`}
+          >
+            {mostrarDebugPanel ? '❌ Ocultar Panel' : '📋 Panel Debug'}
+          </button>
         </div>
       </div>
 
@@ -698,7 +878,7 @@ const Dashboard = () => {
           >
             <MapPinIcon className="h-4 w-4 text-gray-500" />
             <span className="text-sm text-gray-600">Sucursal:</span>
-            <span className="text-sm font-medium text-gray-800">{sucursalSeleccionada.nombre}</span>
+            <span className="text-sm font-medium text-gray-800">{sucursalSeleccionada.name}</span>
             <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownAbierto ? 'transform rotate-180' : ''}`} />
           </button>
           {dropdownAbierto && (
@@ -709,24 +889,30 @@ const Dashboard = () => {
                 </p>
               </div>
               <ul className="max-h-64 overflow-y-auto py-1">
-                {sucursales.map(sucursal => (
-                  <li key={sucursal.id}>
-                    <button
-                      onClick={() => cambiarSucursal(sucursal)}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">
-                          {sucursal.nombre}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {sucursal.direccion}
-                        </p>
-                      </div>
-                      {sucursalSeleccionada.id === sucursal.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
-                    </button>
-                  </li>
-                ))}
+                {isLoadingRestaurants ? (
+                  <li className="px-4 py-2 text-sm text-gray-500">Cargando restaurantes...</li>
+                ) : userRestaurants.length > 0 ? (
+                  userRestaurants.map(restaurant => (
+                    <li key={restaurant.id}>
+                      <button
+                        onClick={() => cambiarSucursal(restaurant)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">
+                            {restaurant.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            ID: {restaurant.id}
+                          </p>
+                        </div>
+                        {sucursalSeleccionada.id === restaurant.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
+                      </button>
+                    </li>
+                  ))
+                ) : (
+                  <li className="px-4 py-2 text-sm text-gray-500">No hay restaurantes disponibles</li>
+                )}
               </ul>
             </div>
           )}
@@ -959,64 +1145,74 @@ const Dashboard = () => {
                 </span>
               </div>
 
-              {/* Slider interactivo */}
-              <div className="relative">
-                {/* Track del slider */}
-                <div className="w-full h-2 bg-gray-200 rounded-full relative">
-                  <div
-                    className="h-2 bg-custom-green-500 rounded-full absolute"
-                    style={{
-                      left: `${(rangoHoras[0] / 23) * 100}%`,
-                      width: `${((rangoHoras[1] - rangoHoras[0]) / 23) * 100}%`
-                    }}
-                  ></div>
+              {/* Controles separados para cada slider */}
+              <div className="space-y-4">
+                {/* Slider de hora inicio */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Hora Inicio: {rangoHoras[0].toString().padStart(2, '0')}:00
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="range"
+                      min="0"
+                      max="23"
+                      value={rangoHoras[0]}
+                      onChange={(e) => {
+                        const newValue = parseInt(e.target.value);
+                        cambiarHoraInicio(newValue);
+                      }}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-inicio"
+                      style={{
+                        background: `linear-gradient(to right, #10b981 0%, #10b981 ${(rangoHoras[0] / 23) * 100}%, #e5e7eb ${(rangoHoras[0] / 23) * 100}%, #e5e7eb 100%)`
+                      }}
+                    />
+                  </div>
                 </div>
 
-                {/* Input ranges superpuestos */}
-                <input
-                  type="range"
-                  min="0"
-                  max="23"
-                  value={rangoHoras[0]}
-                  onChange={(e) => {
-                    const newValue = parseInt(e.target.value);
-                    if (newValue < rangoHoras[1]) {
-                      setRangoHoras([newValue, rangoHoras[1]]);
-                    }
-                  }}
-                  className="absolute top-0 w-full h-2 bg-transparent appearance-none cursor-pointer"
-                  style={{
-                    background: 'transparent',
-                    WebkitAppearance: 'none',
-                    pointerEvents: 'auto'
-                  }}
-                />
-                <input
-                  type="range"
-                  min="0"
-                  max="23"
-                  value={rangoHoras[1]}
-                  onChange={(e) => {
-                    const newValue = parseInt(e.target.value);
-                    if (newValue > rangoHoras[0]) {
-                      setRangoHoras([rangoHoras[0], newValue]);
-                    }
-                  }}
-                  className="absolute top-0 w-full h-2 bg-transparent appearance-none cursor-pointer"
-                  style={{
-                    background: 'transparent',
-                    WebkitAppearance: 'none',
-                    pointerEvents: 'auto'
-                  }}
-                />
+                {/* Slider de hora final */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Hora Final: {rangoHoras[1].toString().padStart(2, '0')}:00
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="range"
+                      min="0"
+                      max="23"
+                      value={rangoHoras[1]}
+                      onChange={(e) => {
+                        const newValue = parseInt(e.target.value);
+                        cambiarHoraFin(newValue);
+                      }}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-final"
+                      style={{
+                        background: `linear-gradient(to right, #e5e7eb 0%, #e5e7eb ${(rangoHoras[1] / 23) * 100}%, #10b981 ${(rangoHoras[1] / 23) * 100}%, #10b981 100%)`
+                      }}
+                    />
+                  </div>
+                </div>
 
-                {/* Marcadores de tiempo */}
-                <div className="flex justify-between mt-4 text-xs text-gray-500">
-                  <span>0:00</span>
-                  <span>6:00</span>
-                  <span>12:00</span>
-                  <span>18:00</span>
-                  <span>23:00</span>
+                {/* Visualización del rango completo */}
+                <div className="mt-4">
+                  <div className="text-xs text-gray-500 mb-1">Rango seleccionado:</div>
+                  <div className="w-full h-3 bg-gray-200 rounded-full relative">
+                    <div
+                      className="h-3 bg-custom-green-500 rounded-full absolute"
+                      style={{
+                        left: `${(rangoHoras[0] / 23) * 100}%`,
+                        width: `${((rangoHoras[1] - rangoHoras[0]) / 23) * 100}%`
+                      }}
+                    ></div>
+                  </div>
+                  {/* Marcadores de tiempo */}
+                  <div className="flex justify-between mt-2 text-xs text-gray-500">
+                    <span>0:00</span>
+                    <span>6:00</span>
+                    <span>12:00</span>
+                    <span>18:00</span>
+                    <span>23:00</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1079,6 +1275,72 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Panel de Debug */}
+      {mostrarDebugPanel && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <h3 className="text-lg font-medium text-yellow-800 mb-3 flex items-center">
+            🔧 Panel de Debug - Datos del Dashboard
+          </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
+            {/* Métricas del Dashboard */}
+            <div className="bg-white p-3 rounded border">
+              <h4 className="font-medium text-gray-700 mb-2">📊 Métricas del Dashboard:</h4>
+              <div className="space-y-1 text-xs">
+                <div><strong>Ventas Totales:</strong> ${dashboardData?.metricas?.ventas_totales || 'Sin datos'}</div>
+                <div><strong>Órdenes Activas:</strong> {dashboardData?.metricas?.ordenes_activas || 'Sin datos'}</div>
+                <div><strong>Total Pedidos:</strong> {dashboardData?.metricas?.pedidos || 'Sin datos'}</div>
+                <div><strong>Ticket Promedio:</strong> ${dashboardData?.metricas?.ticket_promedio || 'Sin datos'}</div>
+              </div>
+            </div>
+
+            {/* Estado de Carga */}
+            <div className="bg-white p-3 rounded border">
+              <h4 className="font-medium text-gray-700 mb-2">⏳ Estados de Carga:</h4>
+              <div className="space-y-1 text-xs">
+                <div><strong>Dashboard:</strong> {isLoading ? '🔄 Cargando' : '✅ Listo'}</div>
+                <div><strong>Órdenes:</strong> {isLoadingOrders ? '🔄 Cargando' : '✅ Listo'}</div>
+                <div><strong>Top Item:</strong> {isLoadingTopItem ? '🔄 Cargando' : '✅ Listo'}</div>
+                <div><strong>Restaurantes:</strong> {isLoadingRestaurants ? '🔄 Cargando' : '✅ Listo'}</div>
+              </div>
+            </div>
+
+            {/* Filtros Actuales */}
+            <div className="bg-white p-3 rounded border">
+              <h4 className="font-medium text-gray-700 mb-2">🎛️ Filtros Actuales:</h4>
+              <div className="space-y-1 text-xs">
+                <div><strong>Restaurante:</strong> {sucursalSeleccionada?.name || 'Sin seleccionar'}</div>
+                <div><strong>Género:</strong> {generoSeleccionado?.label || 'Sin filtro'}</div>
+                <div><strong>Edad:</strong> {edadSeleccionada?.label || 'Sin filtro'}</div>
+                <div><strong>Granularidad:</strong> {granularidadSeleccionada?.label || 'Sin seleccionar'}</div>
+                {granularidadSeleccionada?.id === 'hora' && (
+                  <>
+                    <div><strong>📅 Día:</strong> {diaSeleccionado}</div>
+                    <div><strong>⏰ Horas:</strong> {rangoHoras[0]}:00 - {rangoHoras[1]}:00</div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Datos de Gráfico */}
+            <div className="bg-white p-3 rounded border">
+              <h4 className="font-medium text-gray-700 mb-2">📈 Datos del Gráfico:</h4>
+              <div className="space-y-1 text-xs">
+                <div><strong>Puntos de datos:</strong> {dashboardData?.grafico?.length || 0}</div>
+                <div><strong>Órdenes activas:</strong> {activeOrders?.length || 0}</div>
+                <div><strong>Top Item:</strong> {topSellingItem?.nombre || 'Sin datos'}</div>
+                <div><strong>Error:</strong> {error ? '❌ Sí' : '✅ No'}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-yellow-200">
+            <p className="text-xs text-yellow-700">
+              💡 <strong>Tip:</strong> Usa el botón "🔍 Debug Consola" para ver datos completos en la consola del navegador (F12)
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Tarjetas de métricas */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         {/* Ventas totales */}
@@ -1095,7 +1357,7 @@ const Dashboard = () => {
                   </dt>
                   <dd>
                     <div className="text-lg font-medium text-gray-900">
-                      $747,194
+                      {isLoading ? 'Cargando...' : `$${dashboardData?.metricas?.ventasTotales?.toLocaleString() || '0'}`}
                     </div>
                   </dd>
                 </dl>
@@ -1128,7 +1390,7 @@ const Dashboard = () => {
                   </dt>
                   <dd>
                     <div className="text-lg font-medium text-gray-900">
-                      3
+                      {isLoading ? 'Cargando...' : (dashboardData?.metricas?.ordenesActivas || '0')}
                     </div>
                   </dd>
                 </dl>
@@ -1161,7 +1423,7 @@ const Dashboard = () => {
                   </dt>
                   <dd>
                     <div className="text-lg font-medium text-gray-900">
-                      10
+                      {isLoading ? 'Cargando...' : (dashboardData?.metricas?.pedidos || '0')}
                     </div>
                   </dd>
                 </dl>
@@ -1194,7 +1456,7 @@ const Dashboard = () => {
                   </dt>
                   <dd>
                     <div className="text-lg font-medium text-gray-900">
-                      $74,719.4
+                      {isLoading ? 'Cargando...' : `$${dashboardData?.metricas?.ticketPromedio?.toLocaleString() || '0'}`}
                     </div>
                   </dd>
                 </dl>
@@ -1251,8 +1513,12 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <div className="text-lg font-bold text-gray-900 mb-1">Hamburguesa Clásica</div>
-          <div className="text-sm text-gray-500 mb-3">1,254 unidades</div>
+          <div className="text-lg font-bold text-gray-900 mb-1">
+            {isLoadingTopItem ? 'Cargando...' : (dashboardData?.articulo_mas_vendido?.nombre || topSellingItem?.nombre || 'Sin datos')}
+          </div>
+          <div className="text-sm text-gray-500 mb-3">
+            {isLoadingTopItem ? 'Cargando...' : `${dashboardData?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
+          </div>
           <div className="text-sm">
             <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
               Ver todo
@@ -1298,51 +1564,59 @@ const Dashboard = () => {
               Hoy
             </span>
           </h2>
-          <button 
-            onClick={() => {
-              // Simular actualización de datos
-              window.location.reload();
-            }}
-            className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+          <button
+            onClick={() => cargarDatosDashboard(sucursalSeleccionada?.id)}
+            disabled={isLoading}
+            className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
           >
-            <RotateCcwIcon className="h-4 w-4 mr-2" />
-            Actualizar
+            <RotateCcwIcon className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            {isLoading ? 'Actualizando...' : 'Actualizar'}
           </button>
         </div>
         <div className="mt-4 bg-white shadow-md overflow-hidden sm:rounded-lg border border-gray-100">
           <ul className="divide-y divide-gray-200">
-            {datosActuales.pedidosRecientes.map(pedido => <li key={pedido.id} className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer" onClick={() => abrirDetallesPedido(pedido)}>
+            {isLoadingOrders ? (
+              <li className="px-4 py-4 sm:px-6 text-center text-gray-500">
+                Cargando órdenes activas...
+              </li>
+            ) : activeOrders.length > 0 ? (
+              activeOrders.map(order => <li key={order.id} className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer" onClick={() => abrirDetallesPedido(order)}>
                 <div className="px-4 py-4 sm:px-6">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-custom-green-600 truncate">
-                      Pedido {pedido.numeropedido}
+                      Mesa #{order.table_number}
                     </p>
                     <div className="ml-2 flex-shrink-0 flex">
-                      <p className="px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        {pedido.estado}
+                      <p className="px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        {order.status === 'not_paid' ? 'Pendiente' : order.status === 'partial' ? 'Parcial' : order.status}
                       </p>
                     </div>
                   </div>
                   <div className="mt-2 sm:flex sm:justify-between">
                     <div className="sm:flex sm:flex-col sm:space-y-1">
                       <p className="flex items-center text-sm text-gray-500">
-                        <UsersIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                        Cliente: {pedido.cliente}
+                        <DollarSignIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                        Total: ${order.total_amount} | Pagado: ${order.paid_amount}
                       </p>
                       <p className="flex items-center text-xs text-custom-green-600 font-medium">
                         <ShoppingCartIcon className="flex-shrink-0 mr-1.5 h-3 w-3 text-custom-green-500" />
-                        {pedido.canal}
+                        {order.items_count} items
                       </p>
                     </div>
                     <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                       <svg className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <p>{pedido.tiempo}</p>
+                      <p>{new Date(order.created_at).toLocaleString('es-ES')}</p>
                     </div>
                   </div>
                 </div>
-              </li>)}
+              </li>)
+            ) : (
+              <li className="px-4 py-4 sm:px-6 text-center text-gray-500">
+                No hay órdenes activas
+              </li>
+            )}
           </ul>
         </div>
       </div>
