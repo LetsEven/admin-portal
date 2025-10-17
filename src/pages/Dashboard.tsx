@@ -342,6 +342,16 @@ const Dashboard = () => {
       // Último día del mes a las 23:59:59.999
       endDate = new Date(fechaMes.getFullYear(), fechaMes.getMonth() + 1, 0, 23, 59, 59, 999);
     }
+    // Si la granularidad es "mes", usar todo el año seleccionado
+    else if (currentGranularity === 'mes') {
+      const año = mesSeleccionadoParaGrafico.getFullYear();
+
+      // Primer día del año a las 00:00:00
+      startDate = new Date(año, 0, 1, 0, 0, 0, 0);
+
+      // Último día del año a las 23:59:59.999
+      endDate = new Date(año, 11, 31, 23, 59, 59, 999);
+    }
 
     const filtros: AnalyticsFilters = {
       restaurant_id: restaurantId,
@@ -530,6 +540,35 @@ const Dashboard = () => {
       return datosCompletos;
     }
 
+    if (granularidadSeleccionada.id === 'mes') {
+      const datosOriginales = dashboardData.grafico;
+      const datosCompletos = [];
+
+      // Array con los nombres de los meses en español
+      const nombresMeses = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      ];
+
+      for (let mes = 1; mes <= 12; mes++) {
+        const datoExistente = datosOriginales.find(item => item.mes === mes);
+
+        if (datoExistente) {
+          datosCompletos.push({
+            ...datoExistente,
+            mes: nombresMeses[mes - 1] // Usar nombre del mes en lugar del número
+          });
+        } else {
+          datosCompletos.push({
+            mes: nombresMeses[mes - 1],
+            ingresos: 0
+          });
+        }
+      }
+
+      return datosCompletos;
+    }
+
     return dashboardData.grafico;
   };
 
@@ -622,9 +661,9 @@ const Dashboard = () => {
     }
   }, [error]);
 
-  // Recargar datos cuando cambia el mes seleccionado para granularidad "día"
+  // Recargar datos cuando cambia el mes/año seleccionado para granularidad "día" o "mes"
   useEffect(() => {
-    if (granularidadSeleccionada.id === 'dia' && sucursalSeleccionada?.id) {
+    if ((granularidadSeleccionada.id === 'dia' || granularidadSeleccionada.id === 'mes') && sucursalSeleccionada?.id) {
       cargarDatosDashboard(sucursalSeleccionada.id);
     }
   }, [mesSeleccionadoParaGrafico, granularidadSeleccionada.id]);
