@@ -332,6 +332,16 @@ const Dashboard = () => {
       endDate.setHours(rangoActual[1], 59, 59, 999);
 
     }
+    // Si la granularidad es "día", usar el mes seleccionado
+    else if (currentGranularity === 'dia') {
+      const fechaMes = mesSeleccionadoParaGrafico;
+
+      // Primer día del mes a las 00:00:00
+      startDate = new Date(fechaMes.getFullYear(), fechaMes.getMonth(), 1, 0, 0, 0, 0);
+
+      // Último día del mes a las 23:59:59.999
+      endDate = new Date(fechaMes.getFullYear(), fechaMes.getMonth() + 1, 0, 23, 59, 59, 999);
+    }
 
     const filtros: AnalyticsFilters = {
       restaurant_id: restaurantId,
@@ -494,6 +504,32 @@ const Dashboard = () => {
       return datosCompletos;
     }
 
+    if (granularidadSeleccionada.id === 'dia') {
+      const datosOriginales = dashboardData.grafico;
+      const datosCompletos = [];
+
+      const diasEnMes = new Date(
+        mesSeleccionadoParaGrafico.getFullYear(),
+        mesSeleccionadoParaGrafico.getMonth() + 1,
+        0
+      ).getDate();
+
+      for (let dia = 1; dia <= diasEnMes; dia++) {
+        const datoExistente = datosOriginales.find(item => item.dia === dia);
+
+        if (datoExistente) {
+          datosCompletos.push(datoExistente);
+        } else {
+          datosCompletos.push({
+            dia: dia,
+            ingresos: 0
+          });
+        }
+      }
+
+      return datosCompletos;
+    }
+
     return dashboardData.grafico;
   };
 
@@ -585,6 +621,13 @@ const Dashboard = () => {
       // Aquí podrías mostrar una notificación de error al usuario
     }
   }, [error]);
+
+  // Recargar datos cuando cambia el mes seleccionado para granularidad "día"
+  useEffect(() => {
+    if (granularidadSeleccionada.id === 'dia' && sucursalSeleccionada?.id) {
+      cargarDatosDashboard(sucursalSeleccionada.id);
+    }
+  }, [mesSeleccionadoParaGrafico, granularidadSeleccionada.id]);
 
   // Debug: Log automático para verificar datos
   console.log('🔍 DEBUG Dashboard - Datos recibidos:', {
