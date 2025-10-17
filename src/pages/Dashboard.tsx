@@ -260,7 +260,6 @@ const Dashboard = () => {
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarModalPro, setMostrarModalPro] = useState(false);
-  const [mostrarDebugPanel, setMostrarDebugPanel] = useState(false);
 
   // Estados para filtros
   const [generoSeleccionado, setGeneroSeleccionado] = useState(opcionesGenero[0]);
@@ -668,16 +667,6 @@ const Dashboard = () => {
     }
   }, [mesSeleccionadoParaGrafico, granularidadSeleccionada.id]);
 
-  // Debug: Log automático para verificar datos
-  console.log('🔍 DEBUG Dashboard - Datos recibidos:', {
-    dashboardData: dashboardData,
-    filtroAplicados: dashboardData?.filtros_aplicados,
-    activeOrders: activeOrders,
-    topSellingItem: topSellingItem,
-    userRestaurants: userRestaurants,
-    sucursalSeleccionada: sucursalSeleccionada,
-    isLoading: isLoading
-  });
 
   return <div className="w-full">
       {/* Estilos para los sliders */}
@@ -693,39 +682,6 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Botones de Debug */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              console.log('📊 DATOS COMPLETOS DEL DASHBOARD:', {
-                dashboardData,
-                activeOrders,
-                topSellingItem,
-                userRestaurants,
-                filtrosActuales: {
-                  restaurante: sucursalSeleccionada,
-                  genero: generoSeleccionado,
-                  edad: edadSeleccionada,
-                  granularidad: granularidadSeleccionada
-                }
-              });
-              alert('✅ Datos enviados a la consola del navegador.\n\nAbre las herramientas de desarrollador (F12) y ve a la pestaña "Console" para ver los datos detallados.');
-            }}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm font-medium shadow"
-          >
-            🔍 Debug Consola
-          </button>
-          <button
-            onClick={() => setMostrarDebugPanel(!mostrarDebugPanel)}
-            className={`px-4 py-2 text-white rounded text-sm font-medium shadow ${
-              mostrarDebugPanel
-                ? 'bg-red-500 hover:bg-red-600'
-                : 'bg-green-500 hover:bg-green-600'
-            }`}
-          >
-            {mostrarDebugPanel ? '❌ Ocultar Panel' : '📋 Panel Debug'}
-          </button>
-        </div>
       </div>
 
       {/* Filtros superiores */}
@@ -1211,73 +1167,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Panel de Debug */}
-      {mostrarDebugPanel && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-medium text-yellow-800 mb-3 flex items-center">
-            🔧 Panel de Debug - Datos del Dashboard
-          </h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
-            {/* Métricas del Dashboard */}
-            <div className="bg-white p-3 rounded border">
-              <h4 className="font-medium text-gray-700 mb-2">📊 Métricas del Dashboard:</h4>
-              <div className="space-y-1 text-xs">
-                <div><strong>Ventas Totales:</strong> ${dashboardData?.metricas?.ventas_totales || 'Sin datos'}</div>
-                <div><strong>Órdenes Activas:</strong> {dashboardData?.metricas?.ordenes_activas || 'Sin datos'}</div>
-                <div><strong>Total Pedidos:</strong> {dashboardData?.metricas?.pedidos || 'Sin datos'}</div>
-                <div><strong>Ticket Promedio:</strong> ${dashboardData?.metricas?.ticket_promedio || 'Sin datos'}</div>
-                <div><strong>Tiempo Promedio Mesa:</strong> {dashboardData?.tiempo_promedio_mesa?.tiempo_promedio_formateado || 'Sin datos'}</div>
-                <div><strong>Mesas Analizadas:</strong> {dashboardData?.tiempo_promedio_mesa?.mesas_cerradas_analizadas || '0'}</div>
-              </div>
-            </div>
-
-            {/* Estado de Carga */}
-            <div className="bg-white p-3 rounded border">
-              <h4 className="font-medium text-gray-700 mb-2">⏳ Estados de Carga:</h4>
-              <div className="space-y-1 text-xs">
-                <div><strong>Dashboard:</strong> {isLoading ? '🔄 Cargando' : '✅ Listo'}</div>
-                <div><strong>Órdenes:</strong> {isLoadingOrders ? '🔄 Cargando' : '✅ Listo'}</div>
-                <div><strong>Top Item:</strong> {isLoadingTopItem ? '🔄 Cargando' : '✅ Listo'}</div>
-                <div><strong>Restaurantes:</strong> {isLoadingRestaurants ? '🔄 Cargando' : '✅ Listo'}</div>
-              </div>
-            </div>
-
-            {/* Filtros Actuales */}
-            <div className="bg-white p-3 rounded border">
-              <h4 className="font-medium text-gray-700 mb-2">🎛️ Filtros Actuales:</h4>
-              <div className="space-y-1 text-xs">
-                <div><strong>Restaurante:</strong> {sucursalSeleccionada?.name || 'Sin seleccionar'}</div>
-                <div><strong>Género:</strong> {generoSeleccionado?.label || 'Sin filtro'}</div>
-                <div><strong>Edad:</strong> {edadSeleccionada?.label || 'Sin filtro'}</div>
-                <div><strong>Granularidad:</strong> {granularidadSeleccionada?.label || 'Sin seleccionar'}</div>
-                {granularidadSeleccionada?.id === 'hora' && (
-                  <>
-                    <div><strong>📅 Día:</strong> {diaSeleccionado}</div>
-                    <div><strong>⏰ Horas:</strong> {rangoHoras[0]}:00 - {rangoHoras[1]}:00</div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Datos de Gráfico */}
-            <div className="bg-white p-3 rounded border">
-              <h4 className="font-medium text-gray-700 mb-2">📈 Datos del Gráfico:</h4>
-              <div className="space-y-1 text-xs">
-                <div><strong>Puntos de datos:</strong> {dashboardData?.grafico?.length || 0}</div>
-                <div><strong>Órdenes activas:</strong> {activeOrders?.length || 0}</div>
-                <div><strong>Top Item:</strong> {topSellingItem?.nombre || 'Sin datos'}</div>
-                <div><strong>Error:</strong> {error ? '❌ Sí' : '✅ No'}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-3 pt-3 border-t border-yellow-200">
-            <p className="text-xs text-yellow-700">
-              💡 <strong>Tip:</strong> Usa el botón "🔍 Debug Consola" para ver datos completos en la consola del navegador (F12)
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Tarjetas de métricas */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6">
@@ -1588,32 +1477,42 @@ const Dashboard = () => {
                   <div className="flex items-center">
                     <ShoppingCartIcon className="h-5 w-5 text-custom-green-600 mr-2" />
                     <span className="text-lg font-semibold text-custom-green-600">
-                      {pedidoSeleccionado.numeropedido}
+                      Mesa #{pedidoSeleccionado.table_number || 'N/A'}
                     </span>
                   </div>
                   <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                    {pedidoSeleccionado.estado}
+                    {pedidoSeleccionado.status === 'not_paid' ? 'No Pagado' :
+                     pedidoSeleccionado.status === 'paid' ? 'Pagado' :
+                     pedidoSeleccionado.status === 'partial' ? 'Parcial' :
+                     pedidoSeleccionado.status || 'Sin estado'}
                   </span>
                 </div>
                 
                 <div className="flex items-center mb-2">
-                  <UserIcon className="h-4 w-4 text-gray-400 mr-2" />
+                  <ShoppingBagIcon className="h-4 w-4 text-gray-400 mr-2" />
                   <span className="text-sm font-medium text-gray-700">
-                    {pedidoSeleccionado.cliente}
+                    {pedidoSeleccionado.restaurant_name || 'Restaurante no especificado'}
                   </span>
                 </div>
 
                 <div className="flex items-center mb-2">
                   <ClockIcon className="h-4 w-4 text-gray-400 mr-2" />
                   <span className="text-sm text-gray-500">
-                    {pedidoSeleccionado.tiempo}
+                    {pedidoSeleccionado.created_at ?
+                      new Date(pedidoSeleccionado.created_at).toLocaleString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : 'Tiempo no disponible'}
                   </span>
                 </div>
 
                 <div className="flex items-center">
-                  <ShoppingCartIcon className="h-4 w-4 text-custom-green-500 mr-2" />
+                  <UserIcon className="h-4 w-4 text-custom-green-500 mr-2" />
                   <span className="text-sm font-medium text-custom-green-600">
-                    Canal: {pedidoSeleccionado.canal}
+                    ID: {pedidoSeleccionado.id ? pedidoSeleccionado.id.slice(0, 8) + '...' : 'No disponible'}
                   </span>
                 </div>
               </div>
@@ -1625,25 +1524,36 @@ const Dashboard = () => {
                   Items del Pedido
                 </h4>
                 <div className="space-y-3">
-                  {pedidoSeleccionado.items.map((item, index) => (
+                  {pedidoSeleccionado.items && pedidoSeleccionado.items.length > 0 ? (
+                    pedidoSeleccionado.items.map((item, index) => (
                     <div key={index} className="bg-gray-50 rounded-lg p-3">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <p className="font-medium text-gray-900 text-sm">
-                            {item.nombre}
+                            {item.nombre || 'Producto sin nombre'}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
-                            Cantidad: {item.cantidad}
+                            Cantidad: {item.cantidad || 0}
                           </p>
                         </div>
                         <div className="text-right ml-4">
                           <p className="font-medium text-gray-900 text-sm">
-                            ${item.precio.toFixed(2)}
+                            ${item.precio ? item.precio.toFixed(2) : '0.00'}
                           </p>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ))
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500 text-sm">
+                        Este pedido tiene {pedidoSeleccionado.items_count || 0} item(s)
+                      </p>
+                      <p className="text-gray-400 text-xs mt-1">
+                        (Detalles no disponibles - requiere implementar endpoint para items detallados)
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1656,20 +1566,20 @@ const Dashboard = () => {
                 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium">${pedidoSeleccionado.subtotal.toFixed(2)}</span>
+                    <span className="text-gray-600">Cantidad de items:</span>
+                    <span className="font-medium">{pedidoSeleccionado.items_count || 0}</span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Propina:</span>
-                    <span className="font-medium text-custom-green-600">+${pedidoSeleccionado.propina.toFixed(2)}</span>
+                    <span className="text-gray-600">Monto pagado:</span>
+                    <span className="font-medium text-custom-green-600">${pedidoSeleccionado.paid_amount ? pedidoSeleccionado.paid_amount.toFixed(2) : '0.00'}</span>
                   </div>
                   
                   <div className="border-t border-gray-200 pt-2 mt-2">
                     <div className="flex justify-between items-center">
                       <span className="text-base font-semibold text-gray-900">Total:</span>
                       <span className="text-lg font-bold text-custom-green-600">
-                        ${pedidoSeleccionado.total.toFixed(2)}
+                        ${pedidoSeleccionado.total_amount ? pedidoSeleccionado.total_amount.toFixed(2) : '0.00'}
                       </span>
                     </div>
                   </div>
