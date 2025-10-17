@@ -36,39 +36,39 @@ const sliderStyles = `
 `;
 
 // Datos para el gráfico de ingresos
-const datosGrafico = [
-  { dia: 1, ingresos: 16500 },
-  { dia: 2, ingresos: 17000 },
-  { dia: 3, ingresos: 18500 },
-  { dia: 4, ingresos: 19200 },
-  { dia: 5, ingresos: 19800 },
-  { dia: 6, ingresos: 20500 },
-  { dia: 7, ingresos: 21200 },
-  { dia: 8, ingresos: 21800 },
-  { dia: 9, ingresos: 22500 },
-  { dia: 10, ingresos: 22800 },
-  { dia: 11, ingresos: 23200 },
-  { dia: 12, ingresos: 23800 },
-  { dia: 13, ingresos: 24200 },
-  { dia: 14, ingresos: 25000 },
-  { dia: 15, ingresos: 25300 },
-  { dia: 16, ingresos: 24800 },
-  { dia: 17, ingresos: 24500 },
-  { dia: 18, ingresos: 24200 },
-  { dia: 19, ingresos: 24000 },
-  { dia: 20, ingresos: 23800 },
-  { dia: 21, ingresos: 24200 },
-  { dia: 22, ingresos: 24600 },
-  { dia: 23, ingresos: 25100 },
-  { dia: 24, ingresos: 25800 },
-  { dia: 25, ingresos: 26200 },
-  { dia: 26, ingresos: 26800 },
-  { dia: 27, ingresos: 27200 },
-  { dia: 28, ingresos: 27800 },
-  { dia: 29, ingresos: 28200 },
-  { dia: 30, ingresos: 29500 },
-  { dia: 31, ingresos: 30200 }
-];
+// const datosGrafico = [
+//   { dia: 1, ingresos: 16500 },
+//   { dia: 2, ingresos: 17000 },
+//   { dia: 3, ingresos: 18500 },
+//   { dia: 4, ingresos: 19200 },
+//   { dia: 5, ingresos: 19800 },
+//   { dia: 6, ingresos: 20500 },
+//   { dia: 7, ingresos: 21200 },
+//   { dia: 8, ingresos: 21800 },
+//   { dia: 9, ingresos: 22500 },
+//   { dia: 10, ingresos: 22800 },
+//   { dia: 11, ingresos: 23200 },
+//   { dia: 12, ingresos: 23800 },
+//   { dia: 13, ingresos: 24200 },
+//   { dia: 14, ingresos: 25000 },
+//   { dia: 15, ingresos: 25300 },
+//   { dia: 16, ingresos: 24800 },
+//   { dia: 17, ingresos: 24500 },
+//   { dia: 18, ingresos: 24200 },
+//   { dia: 19, ingresos: 24000 },
+//   { dia: 20, ingresos: 23800 },
+//   { dia: 21, ingresos: 24200 },
+//   { dia: 22, ingresos: 24600 },
+//   { dia: 23, ingresos: 25100 },
+//   { dia: 24, ingresos: 25800 },
+//   { dia: 25, ingresos: 26200 },
+//   { dia: 26, ingresos: 26800 },
+//   { dia: 27, ingresos: 27200 },
+//   { dia: 28, ingresos: 27800 },
+//   { dia: 29, ingresos: 28200 },
+//   { dia: 30, ingresos: 29500 },
+//   { dia: 31, ingresos: 30200 }
+// ];
 
 // Opciones de filtros
 const opcionesGenero = [
@@ -103,196 +103,90 @@ const sucursalesDefault = [{
 }];
 
 // Datos de ejemplo para pedidos
-const pedidosEjemplo = [{
-  id: 1123,
-  numeropedido: '#1123',
-  cliente: 'Juan Pérez',
-  canal: 'Tap Order & Pay',
-  tiempo: 'Hace 15 minutos',
-  estado: 'Completado',
-  items: [
-    { nombre: 'Hamburguesa Clásica', cantidad: 2, precio: 12.99 },
-    { nombre: 'Papas Fritas', cantidad: 1, precio: 6.99 },
-    { nombre: 'Coca Cola', cantidad: 2, precio: 3.50 }
-  ],
-  subtotal: 36.47,
-  propina: 5.00,
-  total: 41.47
-}, {
-  id: 1246,
-  numeropedido: '#1246',
-  cliente: 'María González',
-  canal: 'Pick N Go',
-  tiempo: 'Hace 25 minutos',
-  estado: 'Completado',
-  items: [
-    { nombre: 'Pizza Margherita', cantidad: 1, precio: 18.99 },
-    { nombre: 'Ensalada César', cantidad: 1, precio: 8.99 },
-    { nombre: 'Agua Mineral', cantidad: 1, precio: 2.50 }
-  ],
-  subtotal: 30.48,
-  propina: 4.50,
-  total: 34.98
-}, {
-  id: 1369,
-  numeropedido: '#1369',
-  cliente: 'Carlos Mendoza',
-  canal: 'Pick N Go',
-  tiempo: 'Hace 35 minutos',
-  estado: 'Completado',
-  items: [
-    { nombre: 'Tacos al Pastor', cantidad: 3, precio: 4.99 },
-    { nombre: 'Guacamole', cantidad: 1, precio: 5.99 },
-    { nombre: 'Cerveza Corona', cantidad: 2, precio: 4.50 }
-  ],
-  subtotal: 29.96,
-  propina: 6.00,
-  total: 35.96
-}, {
-  id: 1492,
-  numeroPedido: '#1492',
-  cliente: 'Ana López',
-  canal: 'Tap Order & Pay',
-  tiempo: 'Hace 45 minutos',
-  estado: 'Completado',
-  items: [
-    { nombre: 'Sushi Roll', cantidad: 2, precio: 15.99 },
-    { nombre: 'Sopa Miso', cantidad: 1, precio: 6.99 },
-    { nombre: 'Té Verde', cantidad: 1, precio: 3.50 }
-  ],
-  subtotal: 42.47,
-  propina: 8.00,
-  total: 50.47
-}, {
-  id: 1615,
-  numeroPedido: '#1615',
-  cliente: 'Roberto Silva',
-  canal: 'Pick N Go',
-  tiempo: 'Hace 55 minutos',
-  estado: 'Completado',
-  items: [
-    { nombre: 'Pasta Carbonara', cantidad: 1, precio: 16.99 },
-    { nombre: 'Pan de Ajo', cantidad: 1, precio: 4.99 },
-    { nombre: 'Vino Tinto', cantidad: 1, precio: 22.00 }
-  ],
-  subtotal: 43.98,
-  propina: 7.50,
-  total: 51.48
-}];
+// const pedidosEjemplo = [{
+//   id: 1123,
+//   numeropedido: '#1123',
+//   cliente: 'Juan Pérez',
+//   canal: 'Tap Order & Pay',
+//   tiempo: 'Hace 15 minutos',
+//   estado: 'Completado',
+//   items: [
+//     { nombre: 'Hamburguesa Clásica', cantidad: 2, precio: 12.99 },
+//     { nombre: 'Papas Fritas', cantidad: 1, precio: 6.99 },
+//     { nombre: 'Coca Cola', cantidad: 2, precio: 3.50 }
+//   ],
+//   subtotal: 36.47,
+//   propina: 5.00,
+//   total: 41.47
+// }, {
+//   id: 1246,
+//   numeropedido: '#1246',
+//   cliente: 'María González',
+//   canal: 'Pick N Go',
+//   tiempo: 'Hace 25 minutos',
+//   estado: 'Completado',
+//   items: [
+//     { nombre: 'Pizza Margherita', cantidad: 1, precio: 18.99 },
+//     { nombre: 'Ensalada César', cantidad: 1, precio: 8.99 },
+//     { nombre: 'Agua Mineral', cantidad: 1, precio: 2.50 }
+//   ],
+//   subtotal: 30.48,
+//   propina: 4.50,
+//   total: 34.98
+// }, {
+//   id: 1369,
+//   numeropedido: '#1369',
+//   cliente: 'Carlos Mendoza',
+//   canal: 'Pick N Go',
+//   tiempo: 'Hace 35 minutos',
+//   estado: 'Completado',
+//   items: [
+//     { nombre: 'Tacos al Pastor', cantidad: 3, precio: 4.99 },
+//     { nombre: 'Guacamole', cantidad: 1, precio: 5.99 },
+//     { nombre: 'Cerveza Corona', cantidad: 2, precio: 4.50 }
+//   ],
+//   subtotal: 29.96,
+//   propina: 6.00,
+//   total: 35.96
+// }, {
+//   id: 1492,
+//   numeroPedido: '#1492',
+//   cliente: 'Ana López',
+//   canal: 'Tap Order & Pay',
+//   tiempo: 'Hace 45 minutos',
+//   estado: 'Completado',
+//   items: [
+//     { nombre: 'Sushi Roll', cantidad: 2, precio: 15.99 },
+//     { nombre: 'Sopa Miso', cantidad: 1, precio: 6.99 },
+//     { nombre: 'Té Verde', cantidad: 1, precio: 3.50 }
+//   ],
+//   subtotal: 42.47,
+//   propina: 8.00,
+//   total: 50.47
+// }, {
+//   id: 1615,
+//   numeroPedido: '#1615',
+//   cliente: 'Roberto Silva',
+//   canal: 'Pick N Go',
+//   tiempo: 'Hace 55 minutos',
+//   estado: 'Completado',
+//   items: [
+//     { nombre: 'Pasta Carbonara', cantidad: 1, precio: 16.99 },
+//     { nombre: 'Pan de Ajo', cantidad: 1, precio: 4.99 },
+//     { nombre: 'Vino Tinto', cantidad: 1, precio: 22.00 }
+//   ],
+//   subtotal: 43.98,
+//   propina: 7.50,
+//   total: 51.48
+// }];
 
-// Datos específicos por sucursal
-const datosPorSucursal = {
-  1: { // Sucursal Centro
-    ventasTotales: '$24,500',
-    clientesNuevos: 38,
-    pedidos: 156,
-    tasaConversion: '24.5%',
-    pedidosRecientes: pedidosEjemplo
-  },
-  2: { // Sucursal Norte
-    ventasTotales: '$31,200',
-    clientesNuevos: 45,
-    pedidos: 189,
-    tasaConversion: '28.3%',
-    pedidosRecientes: [{
-      id: 2001,
-      numeropedido: '#2001',
-      cliente: 'Sofia Herrera',
-      canal: 'Tap Order & Pay',
-      tiempo: 'Hace 12 minutos',
-      estado: 'Completado',
-      items: [
-        { nombre: 'Ensalada Griega', cantidad: 1, precio: 14.99 },
-        { nombre: 'Agua con Gas', cantidad: 2, precio: 3.00 }
-      ],
-      subtotal: 20.99,
-      propina: 4.00,
-      total: 24.99
-    }, {
-      id: 2002,
-      numeropedido: '#2002',
-      cliente: 'Miguel Torres',
-      canal: 'Pick N Go',
-      tiempo: 'Hace 18 minutos',
-      estado: 'Completado',
-      items: [
-        { nombre: 'Wrap de Pollo', cantidad: 1, precio: 11.99 },
-        { nombre: 'Jugo Natural', cantidad: 1, precio: 4.50 }
-      ],
-      subtotal: 16.49,
-      propina: 2.50,
-      total: 18.99
-    }]
-  },
-  3: { // Sucursal Sur
-    ventasTotales: '$18,750',
-    clientesNuevos: 29,
-    pedidos: 134,
-    tasaConversion: '22.1%',
-    pedidosRecientes: [{
-      id: 3001,
-      numeropedido: '#3001',
-      cliente: 'Carmen Ruiz',
-      canal: 'Tap Order & Pay',
-      tiempo: 'Hace 8 minutos',
-      estado: 'Completado',
-      items: [
-        { nombre: 'Quesadillas', cantidad: 2, precio: 8.99 },
-        { nombre: 'Refresco', cantidad: 1, precio: 2.50 }
-      ],
-      subtotal: 20.48,
-      propina: 3.00,
-      total: 23.48
-    }]
-  },
-  4: { // Sucursal Poniente
-    ventasTotales: '$27,900',
-    clientesNuevos: 52,
-    pedidos: 178,
-    tasaConversion: '26.8%',
-    pedidosRecientes: [{
-      id: 4001,
-      numeropedido: '#4001',
-      cliente: 'Fernando López',
-      canal: 'Pick N Go',
-      tiempo: 'Hace 5 minutos',
-      estado: 'Completado',
-      items: [
-        { nombre: 'Club Sandwich', cantidad: 1, precio: 13.99 },
-        { nombre: 'Café Americano', cantidad: 2, precio: 3.50 },
-        { nombre: 'Muffin', cantidad: 1, precio: 4.99 }
-      ],
-      subtotal: 22.48,
-      propina: 4.50,
-      total: 26.98
-    }, {
-      id: 4002,
-      numeropedido: '#4002',
-      cliente: 'Lucia Mendez',
-      canal: 'Tap Order & Pay',
-      tiempo: 'Hace 22 minutos',
-      estado: 'Completado',
-      items: [
-        { nombre: 'Smoothie Bowl', cantidad: 1, precio: 12.99 },
-        { nombre: 'Té Verde', cantidad: 1, precio: 2.99 }
-      ],
-      subtotal: 15.98,
-      propina: 3.20,
-      total: 19.18
-    }]
-  }
-};
-
-// Componente de tooltip personalizado
 const CustomTooltip = ({ active, payload, label, granularidad, mesSeleccionado, diaSeleccionado }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0];
 
-    // Generar el texto del período según la granularidad
     const obtenerTextoPeriodo = () => {
       switch (granularidad) {
         case 'hora':
-          // Para granularidad hora, usar el día seleccionado específico
           if (diaSeleccionado) {
             const [dia, mes, año] = diaSeleccionado.split('/');
             const fechaSeleccionada = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
@@ -377,7 +271,7 @@ const Dashboard = () => {
   // Estados para granularidad
   const [granularidadSeleccionada, setGranularidadSeleccionada] = useState(opcionesGranularidad[1]); // Día por defecto
   const [dropdownGranularidadAbierto, setDropdownGranularidadAbierto] = useState(false);
-  // Generar fecha actual en formato DD/MM/AAAA
+
   const fechaActual = new Date();
   const diaActual = fechaActual.getDate().toString().padStart(2, '0');
   const mesActualStr = (fechaActual.getMonth() + 1).toString().padStart(2, '0');
@@ -385,27 +279,23 @@ const Dashboard = () => {
   const [diaSeleccionado, setDiaSeleccionado] = useState(`${diaActual}/${mesActualStr}/${añoActual}`);
   const [rangoHoras, setRangoHoras] = useState([0, 23]);
 
-  // Estados para el calendario
   const [calendarioAbierto, setCalendarioAbierto] = useState(false);
   const [mesActual, setMesActual] = useState(new Date()); // Fecha actual del sistema
   const [diaSeleccionadoCalendario, setDiaSeleccionadoCalendario] = useState(new Date().getDate());
   const [mesSeleccionadoParaGrafico, setMesSeleccionadoParaGrafico] = useState(new Date(2025, 9, 1)); // Para granularidades que no sean Hora
   const [selectorMesAbierto, setSelectorMesAbierto] = useState(false);
 
-  // Estados para el selector de años (granularidad Mes)
   const [selectorAnoAbierto, setSelectorAnoAbierto] = useState(false);
   const [anoSeleccionado, setAnoSeleccionado] = useState(2025);
   const [rangoAnosInicio, setRangoAnosInicio] = useState(2017);
 
   
-  // Función para cambiar sucursal y cargar datos
   const cambiarSucursal = (sucursal) => {
     setSucursalSeleccionada(sucursal);
     setDropdownAbierto(false);
     cargarDatosDashboard(sucursal.id);
   };
 
-  // Helper function: convertir Date a string local sin zona horaria
   const formatearFechaLocal = (fecha: Date): string => {
     const año = fecha.getFullYear();
     const mes = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -426,34 +316,21 @@ const Dashboard = () => {
 
     // Si la granularidad es "hora", usar fecha y rango de horas específicos
     if (currentGranularity === 'hora') {
-      // Usar rango personalizado si se proporciona, sino usar el estado actual
       const rangoActual = customRangoHoras || rangoHoras;
 
-      // Usar fecha personalizada si se proporciona, sino usar el estado actual
       const fechaAUsar = customDiaSeleccionado || diaSeleccionado;
 
-      // Convertir diaSeleccionado "14/10/2025" a fecha local
       const [dia, mes, año] = fechaAUsar.split('/');
       const fechaBase = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
 
-      // Fecha de inicio: construcción directa para evitar problemas de zona horaria
       const fechaBaseISO = `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
       const horaInicioStr = rangoActual[0].toString().padStart(2, '0');
       const startDateISO = `${fechaBaseISO}T${horaInicioStr}:00:00.000`;
       startDate = new Date(startDateISO);
 
-      // Fecha de fin: mantener lógica original que funciona
       endDate = new Date(fechaBase);
       endDate.setHours(rangoActual[1], 59, 59, 999);
 
-      // DEBUG: Verificar construcción de fechas
-      console.log('🔍 DEBUG Construcción de Fechas:', {
-        'customDiaSeleccionado pasado': customDiaSeleccionado,
-        'diaSeleccionado estado': diaSeleccionado,
-        'fechaAUsar final': fechaAUsar,
-        'startDateISO construido': startDateISO,
-        'rangoActual usado': rangoActual
-      });
     }
 
     const filtros: AnalyticsFilters = {
@@ -465,16 +342,6 @@ const Dashboard = () => {
       granularity: currentGranularity as any
     };
 
-    // Debug: mostrar los filtros que se están enviando
-    console.log('🔍 Filtros enviados al backend:', filtros);
-    console.log('🔍 Debug customFilters:', {
-      'customFilters recibidos': customFilters,
-      'customFilters.gender': customFilters.gender,
-      'generoSeleccionado.id estado': generoSeleccionado.id,
-      'gender final usado': filtros.gender
-    });
-
-    // Cargar datos completos del dashboard
     getCompleteDashboardData(filtros);
 
     // Cargar órdenes activas si hay restaurante seleccionado
@@ -484,25 +351,21 @@ const Dashboard = () => {
   };
 
   const cambiarGenero = (genero: any) => {
-    console.log('genero', genero);
     
     setGeneroSeleccionado(genero);
     setDropdownGeneroAbierto(false);
-    // Recargar datos con el nuevo filtro, pasando el valor actualizado
     cargarDatosDashboard(sucursalSeleccionada?.id, { gender: genero.id });
   };
 
   const cambiarEdad = (edad: any) => {
     setEdadSeleccionada(edad);
     setDropdownEdadAbierto(false);
-    // Recargar datos con el nuevo filtro, pasando el valor actualizado
     cargarDatosDashboard(sucursalSeleccionada?.id, { age_range: edad.id });
   };
 
   const cambiarGranularidad = (granularidad:any) => {
     setGranularidadSeleccionada(granularidad);
     setDropdownGranularidadAbierto(false);
-    // Recargar datos con el nuevo filtro, pasando el valor actualizado
     cargarDatosDashboard(sucursalSeleccionada?.id, { granularity: granularidad.id });
   };
 
@@ -527,7 +390,6 @@ const Dashboard = () => {
 
   const seleccionarAno = (ano: any) => {
     setAnoSeleccionado(ano);
-    // Actualizar mesSeleccionadoParaGrafico con el nuevo año
     const nuevaFecha = new Date(mesSeleccionadoParaGrafico);
     nuevaFecha.setFullYear(ano);
     setMesSeleccionadoParaGrafico(nuevaFecha);
@@ -535,7 +397,6 @@ const Dashboard = () => {
   };
 
 
-  // Funciones del calendario
   const obtenerDiasDelMes = (fecha:any) => {
     const year = fecha.getFullYear();
     const month = fecha.getMonth();
@@ -546,18 +407,15 @@ const Dashboard = () => {
 
     const dias = [];
 
-    // Días del mes anterior para completar la primera semana
     for (let i = diaInicioSemana - 1; i >= 0; i--) {
       const diaAnterior = new Date(year, month, -i);
       dias.push({ dia: diaAnterior.getDate(), esOtroMes: true });
     }
 
-    // Días del mes actual
     for (let dia = 1; dia <= diasEnMes; dia++) {
       dias.push({ dia, esOtroMes: false });
     }
 
-    // Días del mes siguiente para completar la última semana
     const diasRestantes = 42 - dias.length; // 6 semanas × 7 días = 42
     for (let dia = 1; dia <= diasRestantes; dia++) {
       dias.push({ dia, esOtroMes: true });
@@ -575,72 +433,57 @@ const Dashboard = () => {
   const seleccionarDia = (dia:any) => {
     setDiaSeleccionadoCalendario(dia);
 
-    // Usar mesActual del estado para generar la fecha formateada
     const fechaFormateada = `${dia.toString().padStart(2, '0')}/${(mesActual.getMonth() + 1).toString().padStart(2, '0')}/${mesActual.getFullYear()}`;
     setDiaSeleccionado(fechaFormateada);
     setCalendarioAbierto(false);
 
-    // Si la granularidad es "hora", recargar datos con el nuevo día
     if (granularidadSeleccionada.id === 'hora') {
-      // Pasar customFilters con el día actualizado para evitar problemas de estado
       const customFilters = {
-        // Mantener otros filtros si están activos
         ...(generoSeleccionado.id !== 'todos' && { gender: generoSeleccionado.id }),
         ...(edadSeleccionada.id !== 'todos' && { age_range: edadSeleccionada.id })
       };
 
-      // Recargar inmediatamente pasando la fecha directamente para evitar estado desactualizado
       cargarDatosDashboard(sucursalSeleccionada?.id, customFilters, null, fechaFormateada);
     }
   };
 
-  // Función para cambiar hora de inicio del rango
   const cambiarHoraInicio = (nuevaHora: number) => {
     if (nuevaHora < rangoHoras[1]) {
       const nuevoRango = [nuevaHora, rangoHoras[1]];
       setRangoHoras(nuevoRango);
 
-      // Si la granularidad es "hora", recargar datos pasando el nuevo rango directamente
       if (granularidadSeleccionada.id === 'hora') {
         cargarDatosDashboard(sucursalSeleccionada?.id, {}, nuevoRango);
       }
     }
   };
 
-  // Función para cambiar hora de fin del rango
   const cambiarHoraFin = (nuevaHora: number) => {
     if (nuevaHora > rangoHoras[0]) {
       const nuevoRango = [rangoHoras[0], nuevaHora];
       setRangoHoras(nuevoRango);
 
-      // Si la granularidad es "hora", recargar datos pasando el nuevo rango directamente
       if (granularidadSeleccionada.id === 'hora') {
         cargarDatosDashboard(sucursalSeleccionada?.id, {}, nuevoRango);
       }
     }
   };
 
-  // Función para obtener datos reales del gráfico
   const obtenerDatosGrafico = () => {
     if (!dashboardData?.grafico) {
       return [];
     }
 
-    // Si la granularidad es "hora", completar el rango de horas seleccionado
     if (granularidadSeleccionada.id === 'hora') {
       const datosOriginales = dashboardData.grafico;
       const datosCompletos = [];
 
-      // ZOOM: Generar solo las horas del rango seleccionado (inclusivo)
       for (let hora = rangoHoras[0]; hora <= rangoHoras[1]; hora++) {
-        // Buscar si hay datos para esta hora
         const datoExistente = datosOriginales.find(item => item.hora === hora);
 
         if (datoExistente) {
-          // Si hay datos reales, usarlos
           datosCompletos.push(datoExistente);
         } else {
-          // Si no hay datos reales, poner 0
           datosCompletos.push({
             hora: hora,
             ingresos: 0
@@ -651,15 +494,12 @@ const Dashboard = () => {
       return datosCompletos;
     }
 
-    // Para otras granularidades, retornar datos originales
     return dashboardData.grafico;
   };
 
-  // Función para generar el título dinámico del gráfico
   const obtenerTituloGrafico = () => {
     switch (granularidadSeleccionada.id) {
       case 'hora':
-        // Para granularidad Hora: mostrar la fecha específica seleccionada
         const fechaSeleccionada = new Date(mesActual.getFullYear(), mesActual.getMonth(), diaSeleccionadoCalendario);
         const fechaFormateada = fechaSeleccionada.toLocaleDateString('es-ES', {
           day: 'numeric',
@@ -669,7 +509,6 @@ const Dashboard = () => {
         return `Ingresos Totales por hora (${fechaFormateada})`;
 
       case 'dia':
-        // Para granularidad Día: mostrar el mes y año seleccionado
         const mesAnio = mesSeleccionadoParaGrafico.toLocaleDateString('es-ES', {
           month: 'long',
           year: 'numeric'
@@ -677,11 +516,9 @@ const Dashboard = () => {
         return `Ingresos Totales por día (${mesAnio})`;
 
       case 'mes':
-        // Para granularidad Mes: mostrar el año seleccionado
         return `Ingresos Totales por mes (${mesSeleccionadoParaGrafico.getFullYear()})`;
 
       case 'ano':
-        // Para granularidad Año: título genérico
         return `Ingresos Totales por año`;
 
       default:
@@ -689,7 +526,6 @@ const Dashboard = () => {
     }
   };
 
-  // Función para obtener la configuración del eje X según granularidad
   const obtenerConfiguracionEjeX = () => {
     switch (granularidadSeleccionada.id) {
       case 'hora':
@@ -736,16 +572,13 @@ const Dashboard = () => {
     setPedidoSeleccionado(null);
   };
 
-  // Efecto para inicializar datos
   useEffect(() => {
-    // Seleccionar el primer restaurante cuando estén disponibles
     if (userRestaurants.length > 0 && sucursalSeleccionada.name === 'Cargando...') {
       setSucursalSeleccionada(userRestaurants[0]);
       cargarDatosDashboard(userRestaurants[0].id);
     }
   }, [userRestaurants]);
 
-  // Efecto para manejar errores
   useEffect(() => {
     if (error) {
       console.error('Error en analytics:', error);
@@ -1266,7 +1099,12 @@ const Dashboard = () => {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 12, fill: '#6b7280' }}
-                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                tickFormatter={(value) => {
+                  if (value >= 1000) {
+                    return `$${(value / 1000).toFixed(1)}k`;
+                  }
+                  return `$${value}`;
+                }}
               />
               <Tooltip
                 content={(props) => (
@@ -1306,6 +1144,8 @@ const Dashboard = () => {
                 <div><strong>Órdenes Activas:</strong> {dashboardData?.metricas?.ordenes_activas || 'Sin datos'}</div>
                 <div><strong>Total Pedidos:</strong> {dashboardData?.metricas?.pedidos || 'Sin datos'}</div>
                 <div><strong>Ticket Promedio:</strong> ${dashboardData?.metricas?.ticket_promedio || 'Sin datos'}</div>
+                <div><strong>Tiempo Promedio Mesa:</strong> {dashboardData?.tiempo_promedio_mesa?.tiempo_promedio_formateado || 'Sin datos'}</div>
+                <div><strong>Mesas Analizadas:</strong> {dashboardData?.tiempo_promedio_mesa?.mesas_cerradas_analizadas || '0'}</div>
               </div>
             </div>
 
@@ -1506,7 +1346,9 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <div className="text-2xl font-bold text-gray-900 mb-2">124</div>
+          <div className="text-2xl font-bold text-gray-900 mb-2">
+            {isLoading ? 'Cargando...' : (dashboardData?.metricas?.pedidos || '0')}
+          </div>
           <div className="text-sm">
             <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
               Ver todo
@@ -1560,7 +1402,9 @@ const Dashboard = () => {
               Flex Bill
             </span>
           </div>
-          <div className="text-2xl font-bold text-gray-900 mb-2">23 minutos</div>
+          <div className="text-2xl font-bold text-gray-900 mb-2">
+            {isLoading ? 'Cargando...' : (dashboardData?.tiempo_promedio_mesa?.tiempo_promedio_formateado || 'Sin datos')}
+          </div>
           <div className="text-sm">
             <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
               Ver todo
