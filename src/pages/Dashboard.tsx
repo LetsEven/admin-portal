@@ -243,12 +243,15 @@ const Dashboard = () => {
     userRestaurants,
     isLoading,
     isLoadingOrders,
+    isLoadingMoreOrders,
     isLoadingTopItem,
     isLoadingRestaurants,
+    ordersPagination,
     error,
     getDashboardMetrics,
     getCompleteDashboardData,
     getActiveOrders,
+    loadMoreOrders,
     getTopSellingItem,
     getUserRestaurants,
     getDashboardSummary,
@@ -1419,7 +1422,7 @@ const Dashboard = () => {
                     </p>
                     <div className="ml-2 flex-shrink-0 flex">
                       <p className="px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                        {order.status === 'not_paid' ? 'Pendiente' : order.status === 'partial' ? 'Parcial' : order.status}
+                        {order.status === 'not_paid' ? 'Pendiente' : order.status === 'partial' ? 'Parcial' : order.status === 'paid' ? 'Pagado' : order.status}
                       </p>
                     </div>
                   </div>
@@ -1449,7 +1452,37 @@ const Dashboard = () => {
               </li>
             )}
           </ul>
+
+          {/* Botón Ver más */}
+          {ordersPagination.hasMore && (
+            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-center">
+              <button
+                onClick={() => loadMoreOrders(sucursalSeleccionada?.id)}
+                disabled={isLoadingMoreOrders}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-custom-green-600 bg-white border border-custom-green-300 rounded-md hover:bg-custom-green-50 hover:text-custom-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoadingMoreOrders ? (
+                  <>
+                    <div className="animate-spin -ml-1 mr-2 h-4 w-4 border-2 border-custom-green-600 border-t-transparent rounded-full"></div>
+                    Cargando...
+                  </>
+                ) : (
+                  <>
+                    <ChevronDownIcon className="h-4 w-4 mr-1" />
+                    Ver más ({ordersPagination.totalCount - activeOrders.length} restantes)
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* Información de paginación */}
+        {ordersPagination.totalCount > 0 && (
+          <div className="mt-2 text-center text-xs text-gray-500">
+            Mostrando {activeOrders.length} de {ordersPagination.totalCount} órdenes
+          </div>
+        )}
       </div>
 
       {/* Modal de Detalles del Pedido */}
@@ -1532,14 +1565,29 @@ const Dashboard = () => {
                           <p className="font-medium text-gray-900 text-sm">
                             {item.nombre || 'Producto sin nombre'}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Cantidad: {item.cantidad || 0}
-                          </p>
+                          <div className="flex items-center mt-1 space-x-3">
+                            <p className="text-xs text-gray-500">
+                              Cantidad: {item.cantidad || 0}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Precio unitario: ${item.precio ? item.precio.toFixed(2) : '0.00'}
+                            </p>
+                            {item.estado_pago && (
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                item.estado_pago === 'paid'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {item.estado_pago === 'paid' ? 'Pagado' : 'Pendiente'}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="text-right ml-4">
                           <p className="font-medium text-gray-900 text-sm">
-                            ${item.precio ? item.precio.toFixed(2) : '0.00'}
+                            ${item.precio_total ? item.precio_total.toFixed(2) : (item.precio * item.cantidad).toFixed(2)}
                           </p>
+                          <p className="text-xs text-gray-500">Total</p>
                         </div>
                       </div>
                     </div>
@@ -1550,7 +1598,7 @@ const Dashboard = () => {
                         Este pedido tiene {pedidoSeleccionado.items_count || 0} item(s)
                       </p>
                       <p className="text-gray-400 text-xs mt-1">
-                        (Detalles no disponibles - requiere implementar endpoint para items detallados)
+                        No se encontraron detalles de items para esta orden
                       </p>
                     </div>
                   )}

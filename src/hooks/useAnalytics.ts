@@ -34,6 +34,18 @@ export interface TopSellingItem {
   unidades_vendidas: number;
 }
 
+// Tipos para item de orden
+export interface OrderItem {
+  id: number;
+  nombre: string;
+  cantidad: number;
+  precio: number;
+  precio_total: number;
+  estado_pago: string;
+  extras?: any;
+  imagen?: string;
+}
+
 // Tipos para orden activa
 export interface ActiveOrder {
   id: number;
@@ -42,8 +54,26 @@ export interface ActiveOrder {
   paid_amount: number;
   status: string;
   created_at: string;
+  closed_at?: string;
   restaurant_name: string;
   items_count: number;
+  items: OrderItem[];
+}
+
+// Tipos para respuesta paginada de órdenes
+export interface OrdersPaginationResponse {
+  orders: ActiveOrder[];
+  pagination: {
+    limit: number;
+    offset: number;
+    returned_count: number;
+    total_count: number;
+    has_more: boolean;
+  };
+  filters: {
+    restaurant_id: number;
+    status: string;
+  };
 }
 
 // Tipos para restaurante
@@ -82,8 +112,16 @@ interface UseAnalyticsReturn {
   // Estados de carga
   isLoading: boolean;
   isLoadingOrders: boolean;
+  isLoadingMoreOrders: boolean;
   isLoadingTopItem: boolean;
   isLoadingRestaurants: boolean;
+
+  // Estados de paginación
+  ordersPagination: {
+    hasMore: boolean;
+    totalCount: number;
+    currentOffset: number;
+  };
 
   // Errores
   error: string | null;
@@ -91,7 +129,8 @@ interface UseAnalyticsReturn {
   // Funciones
   getDashboardMetrics: (filters: AnalyticsFilters) => Promise<void>;
   getCompleteDashboardData: (filters: AnalyticsFilters) => Promise<void>;
-  getActiveOrders: (restaurantId: number) => Promise<void>;
+  getActiveOrders: (restaurantId: number, reset?: boolean) => Promise<void>;
+  loadMoreOrders: (restaurantId: number) => Promise<void>;
   getTopSellingItem: (filters: Omit<AnalyticsFilters, 'gender' | 'age_range' | 'granularity'>) => Promise<void>;
   getUserRestaurants: () => Promise<void>;
   getDashboardSummary: (restaurantId: number) => Promise<void>;
@@ -115,8 +154,16 @@ export function useAnalytics(): UseAnalyticsReturn {
   // Estados de carga
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [isLoadingMoreOrders, setIsLoadingMoreOrders] = useState(false);
   const [isLoadingTopItem, setIsLoadingTopItem] = useState(false);
   const [isLoadingRestaurants, setIsLoadingRestaurants] = useState(false);
+
+  // Estados de paginación
+  const [ordersPagination, setOrdersPagination] = useState({
+    hasMore: false,
+    totalCount: 0,
+    currentOffset: 0,
+  });
 
   // Estado de error
   const [error, setError] = useState<string | null>(null);
@@ -222,31 +269,80 @@ export function useAnalytics(): UseAnalyticsReturn {
     }
   }, [getAuthToken]);
 
-  // Obtener órdenes activas
-  const getActiveOrders = useCallback(async (restaurantId: number) => {
+  // Obtener órdenes del dia
+  const getActiveOrders = useCallback(async (restaurantId: number, reset: boolean = true) => {
     try {
       setIsLoadingOrders(true);
       setError(null);
 
       const token = await getAuthToken();
+      const offset = reset ? 0 : ordersPagination.currentOffset;
 
-      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/active-orders/${restaurantId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/orders/${restaurantId}?limit=5&offset=${offset}&status=todos&dateFilter=hoy`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
 
-      const data = await handleApiResponse<ActiveOrder[]>(response);
-      setActiveOrders(Array.isArray(data) ? data : []);
+      const apiResponse = await handleApiResponse<OrdersPaginationResponse>(response);
+
+      if (reset) {
+        setActiveOrders(apiResponse.orders || []);
+      } else {
+        setActiveOrders(prev => [...prev, ...(apiResponse.orders || [])]);
+      }
+
+      setOrdersPagination({
+        hasMore: apiResponse.pagination?.has_more || false,
+        totalCount: apiResponse.pagination?.total_count || 0,
+        currentOffset: offset + (apiResponse.pagination?.returned_count || 0),
+      });
 
     } catch (error) {
-      console.error('❌ Error obteniendo órdenes activas:', error);
+      console.error('❌ Error obteniendo órdenes:', error);
       setError(error instanceof Error ? error.message : 'Error desconocido');
     } finally {
       setIsLoadingOrders(false);
     }
-  }, [getAuthToken]);
+  }, [getAuthToken, ordersPagination.currentOffset]);
+
+  // Nueva función para cargar más órdenes
+  const loadMoreOrders = useCallback(async (restaurantId: number) => {
+    if (!ordersPagination.hasMore || isLoadingMoreOrders) {
+      return;
+    }
+
+    try {
+      setIsLoadingMoreOrders(true);
+      setError(null);
+
+      const token = await getAuthToken();
+
+      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/orders/${restaurantId}?limit=5&offset=${ordersPagination.currentOffset}&status=todos&dateFilter=hoy`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const apiResponse = await handleApiResponse<OrdersPaginationResponse>(response);
+
+      setActiveOrders(prev => [...prev, ...(apiResponse.orders || [])]);
+
+      setOrdersPagination({
+        hasMore: apiResponse.pagination?.has_more || false,
+        totalCount: apiResponse.pagination?.total_count || 0,
+        currentOffset: ordersPagination.currentOffset + (apiResponse.pagination?.returned_count || 0),
+      });
+
+    } catch (error) {
+      console.error('❌ Error cargando más órdenes:', error);
+      setError(error instanceof Error ? error.message : 'Error desconocido');
+    } finally {
+      setIsLoadingMoreOrders(false);
+    }
+  }, [getAuthToken, ordersPagination, isLoadingMoreOrders]);
 
   // Obtener artículo más vendido
   const getTopSellingItem = useCallback(async (filters: Omit<AnalyticsFilters, 'gender' | 'age_range' | 'granularity'>) => {
@@ -349,8 +445,12 @@ export function useAnalytics(): UseAnalyticsReturn {
     // Estados de carga
     isLoading,
     isLoadingOrders,
+    isLoadingMoreOrders,
     isLoadingTopItem,
     isLoadingRestaurants,
+
+    // Estados de paginación
+    ordersPagination,
 
     // Error
     error,
@@ -359,6 +459,7 @@ export function useAnalytics(): UseAnalyticsReturn {
     getDashboardMetrics,
     getCompleteDashboardData,
     getActiveOrders,
+    loadMoreOrders,
     getTopSellingItem,
     getUserRestaurants,
     getDashboardSummary,
