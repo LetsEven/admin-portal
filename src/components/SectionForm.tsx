@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { XIcon, PlusIcon, TrashIcon, GripIcon } from 'lucide-react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { MenuSection } from '../services/menuApi';
 
 interface SectionFormProps {
   sections: MenuSection[];
-  onSubmit: (sections: string[]) => void;
+  onSubmit: (sections: MenuSection[], newSectionNames: string[]) => void;
   onCancel: () => void;
   fixedCategory?: string;
 }
@@ -15,39 +15,51 @@ const SectionForm: React.FC<SectionFormProps> = ({
   onCancel,
   fixedCategory
 }) => {
-  // Extract section names from MenuSection objects
-  const [sectionList, setSectionList] = useState([...sections.map(s => s.name)]);
+  // Manage sections as complete objects to preserve order and IDs
+  const [orderedSections, setOrderedSections] = useState<MenuSection[]>([...sections]);
+  const [newSectionNames, setNewSectionNames] = useState<string[]>([]);
   const [newSection, setNewSection] = useState('');
+
+  // Helper function to create safe draggable IDs
+  const createSafeDraggableId = (index: number) => `section-item-${index}`;
   const handleAddSection = () => {
     const trimmedSection = newSection.trim();
 
-    // Verificar contra lista local Y secciones originales
-    const existsInLocal = sectionList.includes(trimmedSection);
-    const existsInOriginal = sections.some(section => section.name === trimmedSection);
+    // Verificar contra nuevas secciones Y secciones existentes
+    const existsInNew = newSectionNames.includes(trimmedSection);
+    const existsInExisting = orderedSections.some(section => section.name === trimmedSection);
 
-    if (trimmedSection && !existsInLocal && !existsInOriginal) {
-      setSectionList([...sectionList, trimmedSection]);
+    if (trimmedSection && !existsInNew && !existsInExisting) {
+      setNewSectionNames([...newSectionNames, trimmedSection]);
       setNewSection('');
     }
   };
-  const handleRemoveSection = (index: number) => {
-    const updatedSections = [...sectionList];
-    updatedSections.splice(index, 1);
-    setSectionList(updatedSections);
+  const handleRemoveSection = (index: number, isNewSection: boolean) => {
+    if (isNewSection) {
+      const updatedNewSections = [...newSectionNames];
+      updatedNewSections.splice(index, 1);
+      setNewSectionNames(updatedNewSections);
+    } else {
+      const updatedSections = [...orderedSections];
+      updatedSections.splice(index, 1);
+      setOrderedSections(updatedSections);
+    }
   };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(sectionList);
+    onSubmit(orderedSections, newSectionNames);
   };
   const onDragEnd = (result: any) => {
     // Dropped outside the list
     if (!result.destination) {
       return;
     }
-    const items = Array.from(sectionList);
+
+    // Reorder only existing sections (not new ones)
+    const items = Array.from(orderedSections);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
-    setSectionList(items);
+    setOrderedSections(items);
   };
   return <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]" onClick={onCancel}></div>
@@ -82,21 +94,46 @@ const SectionForm: React.FC<SectionFormProps> = ({
             <DragDropContext onDragEnd={onDragEnd}>
               <Droppable droppableId="sections">
                 {provided => <ul {...provided.droppableProps} ref={provided.innerRef} className="border border-gray-200 rounded-md divide-y divide-gray-200 max-h-60 overflow-y-auto">
-                    {sectionList.length === 0 ? <li className="px-4 py-3 text-sm text-gray-500">
+                    {orderedSections.length === 0 && newSectionNames.length === 0 ? <li className="px-4 py-3 text-sm text-gray-500">
                         No hay secciones definidas
-                      </li> : sectionList.map((section, index) => <Draggable key={`section-${index}-${section}`} draggableId={`section-${index}-${section}`} index={index}>
-                          {(provided, snapshot) => <li ref={provided.innerRef} {...provided.draggableProps} className={`px-4 py-3 flex items-center justify-between text-sm ${snapshot.isDragging ? 'bg-gray-50' : ''}`}>
-                              <div className="flex items-center flex-1">
-                                <span {...provided.dragHandleProps} className="mr-2 cursor-grab text-gray-400 hover:text-gray-600">
-                                  <GripIcon className="h-4 w-4" />
-                                </span>
-                                <span className="text-gray-900">{section}</span>
-                              </div>
-                              <button type="button" onClick={() => handleRemoveSection(index)} className="text-red-500 hover:text-red-700 ml-2">
-                                <TrashIcon className="h-5 w-5" />
-                              </button>
-                            </li>}
-                        </Draggable>)}
+                      </li> : (
+                      <>
+                        {/* Existing sections (draggable) */}
+                        {orderedSections.map((section, index) => (
+                          <Draggable key={createSafeDraggableId(index)} draggableId={createSafeDraggableId(index)} index={index}>
+                            {(provided, snapshot) => (
+                              <li ref={provided.innerRef} {...provided.draggableProps} className={`px-4 py-3 flex items-center justify-between text-sm ${snapshot.isDragging ? 'bg-gray-50' : ''}`}>
+                                <div className="flex items-center flex-1">
+                                  <span {...provided.dragHandleProps} className="mr-2 cursor-grab text-gray-400 hover:text-gray-600">
+                                    <GripIcon className="h-4 w-4" />
+                                  </span>
+                                  <span className="text-gray-900">{section.name}</span>
+                                </div>
+                                <button type="button" onClick={() => handleRemoveSection(index, false)} className="text-red-500 hover:text-red-700 ml-2">
+                                  <TrashIcon className="h-5 w-5" />
+                                </button>
+                              </li>
+                            )}
+                          </Draggable>
+                        ))}
+
+                        {/* New sections (not draggable yet) */}
+                        {newSectionNames.map((sectionName, index) => (
+                          <li key={`new-${index}`} className="px-4 py-3 flex items-center justify-between text-sm bg-green-50 border-l-4 border-green-400">
+                            <div className="flex items-center flex-1">
+                              <span className="mr-2 text-green-400">
+                                <PlusIcon className="h-4 w-4" />
+                              </span>
+                              <span className="text-gray-900 font-medium">{sectionName}</span>
+                              <span className="ml-2 text-xs text-green-600 bg-green-100 px-2 py-1 rounded">Nueva</span>
+                            </div>
+                            <button type="button" onClick={() => handleRemoveSection(index, true)} className="text-red-500 hover:text-red-700 ml-2">
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          </li>
+                        ))}
+                      </>
+                    )}
                     {provided.placeholder}
                   </ul>}
               </Droppable>

@@ -122,6 +122,13 @@ class MenuAdminPortalApiService {
     }, token);
   }
 
+  async reorderSections(sections: { id: number; display_order: number }[], token: string): Promise<boolean> {
+    return this.makeRequest<boolean>('/sections/reorder', {
+      method: 'PUT',
+      body: JSON.stringify({ sections }),
+    }, token);
+  }
+
   // ===============================================
   // OPERACIONES DE ITEMS
   // ===============================================
@@ -220,6 +227,9 @@ export function useMenuAdminPortalApi() {
       ),
       delete: (id: number) => makeAuthenticatedRequest(
         (token) => menuAdminPortalApiService.deleteSection(id, token)
+      ),
+      reorder: (sections: { id: number; display_order: number }[]) => makeAuthenticatedRequest(
+        (token) => menuAdminPortalApiService.reorderSections(sections, token)
       ),
     },
 

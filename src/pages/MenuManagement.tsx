@@ -41,13 +41,16 @@ const MenuManagement = () => {
           menuApi.items.getAll()
         ]);
 
-        setSections(sectionsData);
+        // Sort sections by display_order to ensure proper ordering
+        const sortedSections = sectionsData.sort((a, b) => a.display_order - b.display_order);
+        setSections(sortedSections);
         setMenuItems(itemsData);
 
         console.log('✅ Data loaded from backend API:', {
           sections: sectionsData,
           items: itemsData.length
         });
+
       } catch (apiError) {
         const userSectionsKey = `sections_${user.id}`;
         const userItemsKey = `items_${user.id}`;
@@ -59,13 +62,10 @@ const MenuManagement = () => {
           const sectionsData = JSON.parse(savedSections);
           const itemsData = JSON.parse(savedItems);
 
-          setSections(sectionsData);
+          const sortedSections = sectionsData.sort((a, b) => a.display_order - b.display_order);
+          setSections(sortedSections);
           setMenuItems(itemsData);
 
-          console.log('✅ Data loaded from localStorage fallback:', {
-            sections: sectionsData.length,
-            items: itemsData.length
-          });
         } else {
           setSections([]);
           setMenuItems([]);
@@ -218,13 +218,58 @@ const MenuManagement = () => {
       setError(error instanceof Error ? error.message : 'Failed to save item');
     }
   };
-  const handleSectionFormSubmit = async (updatedSectionNames: string[]) => {
+  const handleSectionFormSubmit = async (reorderedSections: MenuSection[], newSectionNames: string[]) => {
     try {
-      const currentSectionNames = sections.map(s => s.name);
+      // 1. Handle reordering of existing sections
+      const orderChanged = reorderedSections.some((section, index) => section.display_order !== index);
 
-      const newSectionNames = updatedSectionNames.filter(name => !currentSectionNames.includes(name));
+      if (orderChanged) {
 
-      const sectionsToDelete = sections.filter(section => !updatedSectionNames.includes(section.name));
+        // Filter out sections with invalid IDs and wrong restaurant_id
+        const validSections = reorderedSections.filter(section => {
+          const id = Number(section.id);
+          const hasValidId = id && !isNaN(id) && id > 0 && id < 1000000000; // Real DB IDs are usually small numbers
+          const belongsToRestaurant = section.restaurant_id === restaurant?.id;
+
+          if (!hasValidId) {
+            console.warn('⚠️ Skipping section with invalid/temporary ID:', section.id, 'Name:', section.name);
+            return false;
+          }
+
+          if (!belongsToRestaurant) {
+            console.warn('⚠️ Skipping section that doesn\'t belong to current restaurant:', section.id, 'Name:', section.name, 'Section restaurant_id:', section.restaurant_id, 'Current restaurant_id:', restaurant?.id);
+            return false;
+          }
+
+          return true;
+        });
+
+        if (validSections.length === 0) {
+          console.warn('⚠️ No valid sections to reorder (all have temporary IDs)');
+          return;
+        }
+
+        const reorderData = validSections.map((section, index) => ({
+          id: Number(section.id), // Ensure it's a number
+          display_order: index
+        }));
+
+        try {
+          await menuApi.sections.reorder(reorderData);
+        } catch (apiError) {
+          console.error('❌ Failed to reorder sections:', apiError);
+          // Update local state anyway for better UX
+          const updatedSections = reorderedSections.map((section, index) => ({
+            ...section,
+            display_order: index
+          }));
+          setSections(updatedSections);
+        }
+      }
+
+      // 2. Handle section deletions
+      const reorderedSectionNames = reorderedSections.map(s => s.name);
+      const sectionsToDelete = sections.filter(section => !reorderedSectionNames.includes(section.name));
 
       for (const section of sectionsToDelete) {
         try {
@@ -240,26 +285,26 @@ const MenuManagement = () => {
         }
       }
 
+      // 3. Handle new section creation
       for (const name of newSectionNames) {
         try {
           await menuApi.sections.create({
             name,
-            display_order: sections.length + newSectionNames.indexOf(name)
+            display_order: reorderedSections.length + newSectionNames.indexOf(name)
           });
         } catch (apiError) {
-
           // Fallback to localStorage if API fails
           const newSection = {
             id: Date.now() + newSectionNames.indexOf(name),
             restaurant_id: restaurant?.id || 0,
             name,
             is_active: true,
-            display_order: sections.length + newSectionNames.indexOf(name),
+            display_order: reorderedSections.length + newSectionNames.indexOf(name),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
 
-          const updatedSections = [...sections, newSection];
+          const updatedSections = [...reorderedSections, newSection];
           setSections(updatedSections);
 
           if (user) {

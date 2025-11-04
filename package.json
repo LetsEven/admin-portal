@@ -12,10 +12,10 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.33.1",
+    "@hello-pangea/dnd": "^18.0.1",
     "lucide-react": "^0.441.0",
     "next": "^14.0.0",
     "react": "^18.3.1",
-    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.3.1",
     "react-easy-crop": "^5.5.1",
     "recharts": "^2.12.7"
@@ -23,7 +23,6 @@
   "devDependencies": {
     "@types/node": "^20.11.18",
     "@types/react": "^18.3.1",
-    "@types/react-beautiful-dnd": "^13.1.1",
     "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.50.0",

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { XIcon, TypeIcon, AlignLeftIcon, ImageIcon, SeparatorHorizontalIcon, MousePointerIcon, GripIcon, TrashIcon, LayoutIcon, TagIcon, BookmarkIcon, RefreshCcwIcon, AlertCircleIcon } from 'lucide-react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import PredefinedTemplatesModal from './PredefinedTemplatesModal';
 interface TemplateDesignerModalProps {
   isOpen: boolean;
