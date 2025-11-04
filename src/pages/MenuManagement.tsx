@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { PlusIcon, FilterIcon } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
+import toast from 'react-hot-toast';
 import { useRestaurant } from '../contexts/RestaurantContext';
 import MenuItemCard from '../components/MenuItemCard';
 import MenuItemForm from '../components/MenuItemForm';
@@ -219,12 +220,13 @@ const MenuManagement = () => {
     }
   };
   const handleSectionFormSubmit = async (reorderedSections: MenuSection[], newSectionNames: string[]) => {
+    const loadingToast = toast.loading('Guardando cambios...');
+
     try {
       // 1. Handle reordering of existing sections
       const orderChanged = reorderedSections.some((section, index) => section.display_order !== index);
 
       if (orderChanged) {
-
         // Filter out sections with invalid IDs and wrong restaurant_id
         const validSections = reorderedSections.filter(section => {
           const id = Number(section.id);
@@ -246,6 +248,8 @@ const MenuManagement = () => {
 
         if (validSections.length === 0) {
           console.warn('⚠️ No valid sections to reorder (all have temporary IDs)');
+          toast.dismiss(loadingToast);
+          toast.success('Cambios guardados correctamente');
           return;
         }
 
@@ -258,12 +262,15 @@ const MenuManagement = () => {
           await menuApi.sections.reorder(reorderData);
         } catch (apiError) {
           console.error('❌ Failed to reorder sections:', apiError);
+          toast.dismiss(loadingToast);
+          toast.error('Error al reordenar secciones');
           // Update local state anyway for better UX
           const updatedSections = reorderedSections.map((section, index) => ({
             ...section,
             display_order: index
           }));
           setSections(updatedSections);
+          return;
         }
       }
 
@@ -276,12 +283,16 @@ const MenuManagement = () => {
           console.log('🗑️ Deleting section:', section.name);
           await menuApi.sections.delete(section.id);
         } catch (apiError) {
+          console.error('❌ Failed to delete section:', apiError);
+          toast.dismiss(loadingToast);
+          toast.error(`Error al eliminar la sección "${section.name}"`);
           const updatedSections = sections.filter(s => s.id !== section.id);
           setSections(updatedSections);
 
           if (user) {
             localStorage.setItem(`sections_${user.id}`, JSON.stringify(updatedSections));
           }
+          return;
         }
       }
 
@@ -293,6 +304,9 @@ const MenuManagement = () => {
             display_order: reorderedSections.length + newSectionNames.indexOf(name)
           });
         } catch (apiError) {
+          console.error('❌ Failed to create section:', apiError);
+          toast.dismiss(loadingToast);
+          toast.error(`Error al crear la sección "${name}"`);
           // Fallback to localStorage if API fails
           const newSection = {
             id: Date.now() + newSectionNames.indexOf(name),
@@ -310,15 +324,21 @@ const MenuManagement = () => {
           if (user) {
             localStorage.setItem(`sections_${user.id}`, JSON.stringify(updatedSections));
           }
+          return;
         }
       }
 
       await loadData();
 
+      toast.dismiss(loadingToast);
+      toast.success('Cambios guardados correctamente');
+
       setShowSectionForm(false);
 
     } catch (error) {
       console.error('❌ Error updating sections:', error);
+      toast.dismiss(loadingToast);
+      toast.error('Error al guardar los cambios');
       setError(error instanceof Error ? error.message : 'Failed to update sections');
     }
   };
