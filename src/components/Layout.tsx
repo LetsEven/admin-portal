@@ -75,32 +75,6 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         </div>
         <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none bg-gray-50">
-          {/* User Header */}
-          <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              <div className="flex items-center justify-between h-16">
-                <div className="flex items-center">
-                  <div>
-                    <h1 className="text-lg font-semibold text-gray-900">
-                      {restaurantLoading ? 'Cargando...' : restaurant?.name || 'Mi Restaurante'}
-                    </h1>
-                    <p className="text-sm text-gray-500">
-                      Portal de Administración
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-700">
-                      {user?.firstName || 'Usuario'}
-                    </span>
-                    <UserButton afterSignOutUrl="/sign-in" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Restaurant Setup Banner */}
           {/* {!restaurantLoading && !restaurant && (
             <div className="bg-gradient-to-r from-custom-green-500 to-custom-green-600 border-b border-custom-green-700">
