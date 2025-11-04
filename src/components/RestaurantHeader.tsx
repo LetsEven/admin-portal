@@ -250,7 +250,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
       <div className="relative px-6 pb-6">
         {/* Logo/Profile Image */}
         <div className="relative -mt-16 mb-4">
-          <div className="relative inline-block group">
+          <div className="relative inline-block group/logo">
             <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white">
               {logoImage ? (
                 <img
@@ -266,7 +266,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
             </div>
 
             {/* Logo Edit Controls */}
-            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover/logo:opacity-100 transition-opacity duration-200 flex items-center justify-center">
               <div className="flex space-x-2">
                 <button
                   onClick={() => {
