@@ -1421,7 +1421,15 @@ const Dashboard = () => {
                       Mesa #{order.table_number}
                     </p>
                     <div className="ml-2 flex-shrink-0 flex">
-                      <p className="px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      <p className={`px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        order.status === 'paid'
+                          ? 'bg-green-100 text-green-800'
+                          : order.status === 'not_paid'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : order.status === 'partial'
+                              ? 'bg-orange-100 text-orange-800'
+                              : 'bg-gray-100 text-gray-800'
+                      }`}>
                         {order.status === 'not_paid' ? 'Pendiente' : order.status === 'partial' ? 'Parcial' : order.status === 'paid' ? 'Pagado' : order.status}
                       </p>
                     </div>
@@ -1513,7 +1521,15 @@ const Dashboard = () => {
                       Mesa #{pedidoSeleccionado.table_number || 'N/A'}
                     </span>
                   </div>
-                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                    pedidoSeleccionado.status === 'paid'
+                      ? 'bg-green-100 text-green-800'
+                      : pedidoSeleccionado.status === 'not_paid'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : pedidoSeleccionado.status === 'partial'
+                          ? 'bg-orange-100 text-orange-800'
+                          : 'bg-gray-100 text-gray-800'
+                  }`}>
                     {pedidoSeleccionado.status === 'not_paid' ? 'No Pagado' :
                      pedidoSeleccionado.status === 'paid' ? 'Pagado' :
                      pedidoSeleccionado.status === 'partial' ? 'Parcial' :
