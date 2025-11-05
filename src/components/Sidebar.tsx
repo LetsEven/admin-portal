@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 import { HomeIcon, BookOpenIcon, TagIcon, TrendingUpIcon, SettingsIcon, LogOutIcon, SparklesIcon } from 'lucide-react';
 interface SidebarProps {
   mobile: boolean;
@@ -12,12 +13,22 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const pathname = usePathname();
+  const { signOut } = useAuth();
   // No aplicamos la lógica de contracción en móvil
   const handleMouseEnter = () => {
     if (!mobile) setIsExpanded(true);
   };
   const handleMouseLeave = () => {
     if (!mobile) setIsExpanded(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      // El usuario será redirigido automáticamente por Clerk
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
   return <div className={`h-0 flex-1 flex flex-col overflow-y-auto transition-all duration-300 ease-in-out ${!mobile && 'group'}`} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       {/* Logo */}
@@ -70,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </span>
         </Link>
         <div className="pt-4 mt-6 border-t border-gray-200">
-          <button onClick={() => alert('Sesión cerrada')} className={`w-full flex items-center text-sm font-medium rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 ${mobile || isExpanded ? 'px-3 py-3' : 'px-0 py-3 justify-center'}`}>
+          <button onClick={handleLogout} className={`w-full flex items-center text-sm font-medium rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 ${mobile || isExpanded ? 'px-3 py-3' : 'px-0 py-3 justify-center'}`}>
             <LogOutIcon className={`flex-shrink-0 h-5 w-5 text-red-500 ${mobile || isExpanded ? 'mr-3' : 'mx-auto'}`} />
             <span className={`${!mobile && !isExpanded ? 'hidden' : 'block'} transition-opacity duration-200`}>
               Cerrar sesión

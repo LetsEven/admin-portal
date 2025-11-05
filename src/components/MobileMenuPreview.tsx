@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { XIcon, SearchIcon, PlusIcon, HeartIcon, MoreHorizontalIcon, StarIcon } from 'lucide-react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { XIcon, Search, Settings } from 'lucide-react';
+import { useRestaurant } from '../contexts/RestaurantContext';
 interface MenuItem {
   id: number;
   name: string;
@@ -25,85 +26,74 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
   sections,
   onClose
 }) => {
-  // Get all unique categories from sections
-  const categories = sections.map(section => section.name).filter(name =>
+  const { restaurant } = useRestaurant();
+
+  // Add "Todo" option like MenuView + Get all unique categories from sections
+  const categories = ["Todo", ...sections.map(section => section.name).filter(name =>
     menuItems.some(item => item.section_id === sections.find(s => s.name === name)?.id)
-  );
-  // State for active tab - default to first category
-  const [activeTab, setActiveTab] = useState(categories[0] || '');
-  // Refs for scrolling
+  )];
+
+  // State for active filter - default to "Todo" like MenuView
+  const [filter, setFilter] = useState("Todo");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Refs for scrolling (mantener funcionalidad existente)
   const mainContentRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [isScrolling, setIsScrolling] = useState(false);
-  // Get discounted items for featured section
-  const discountedItems = menuItems.filter(item => item.discount && item.discount > 0);
-  // Generate random ratings for demo purposes
-  const getRating = () => {
-    return {
-      percentage: Math.floor(Math.random() * 15) + 85,
-      count: Math.floor(Math.random() * 20) + 1 // 1-20 reviews
-    };
-  };
-  // Handle scroll event to update active tab
-  const handleScroll = () => {
-    if (isScrolling || !mainContentRef.current) return;
-    setIsScrolling(true);
-    requestAnimationFrame(() => {
-      if (!mainContentRef.current) {
-        setIsScrolling(false);
-        return;
-      }
-      const scrollTop = mainContentRef.current.scrollTop;
-      const headerOffset = 170; // Ajustar según la altura del encabezado
-      // Find which section is most visible
-      let closestSection = activeTab;
-      let minDistance = Infinity;
-      Object.entries(sectionRefs.current).forEach(([category, sectionRef]) => {
-        if (!sectionRef) return;
-        const sectionTop = sectionRef.offsetTop;
-        const distance = Math.abs(scrollTop - (sectionTop - headerOffset));
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestSection = category;
-        }
-      });
-      // Only update if it's different to avoid infinite loops
-      if (closestSection !== activeTab) {
-        setActiveTab(closestSection);
-      }
-      setIsScrolling(false);
-    });
-  };
-  // Handle category tab click
-  const handleCategoryClick = (category: string) => {
-    if (category === activeTab) return;
-    setActiveTab(category);
-    const sectionElement = sectionRefs.current[category];
-    if (sectionElement && mainContentRef.current) {
-      const headerOffset = 170; // Ajustar según la altura del encabezado
-      const sectionTop = sectionElement.offsetTop;
-      mainContentRef.current.scrollTo({
-        top: sectionTop - headerOffset,
-        behavior: 'smooth'
+
+  // Filter menu like MenuView
+  const filteredSections = useMemo(() => {
+    let filtered = sections.filter(section =>
+      menuItems.some(item => item.section_id === section.id)
+    );
+
+    // Filter by category
+    if (filter !== "Todo") {
+      filtered = filtered.filter(section => section.name === filter);
+    }
+
+    // Filter by search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(section => {
+        const sectionItems = menuItems.filter(item => item.section_id === section.id);
+        return sectionItems.some(item =>
+          item.name.toLowerCase().includes(query) ||
+          item.description?.toLowerCase().includes(query)
+        );
       });
     }
+
+      return filtered;
+  }, [sections, menuItems, filter, searchQuery]);
+
+  // Get filtered menu items for each section
+  const getFilteredItemsForSection = (sectionId: number) => {
+    let items = menuItems.filter(item => item.section_id === sectionId);
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      items = items.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        item.description?.toLowerCase().includes(query)
+      );
+    }
+
+    return items;
   };
-  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-[2px]">
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-[2px]">
       <div className="relative w-full max-w-[375px] mx-auto">
-        <style jsx>{`
-          .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
         {/* Mobile frame with image */}
         <div className="relative">
           {/* Phone frame image */}
-          <img 
-            src="/frame.webp" 
-            alt="Mobile Frame" 
+          <img
+            src="/frame.webp"
+            alt="Mobile Frame"
             className="w-full h-auto relative z-10"
           />
-          
+
           {/* Menu content overlay */}
           <div className="absolute inset-0 z-20" style={{
             top: '4.2%',
@@ -112,162 +102,151 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
             bottom: '2.4%'
           }}>
             <div className="bg-white rounded-[50px] overflow-hidden h-full">
-              {/* Screen - Todo el contenido en un solo contenedor con scroll */}
-              <div 
-                ref={mainContentRef} 
-                className="relative bg-white rounded-[30px] overflow-y-auto h-full touch-auto hide-scrollbar" 
-                style={{
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none',
-                  WebkitOverflowScrolling: 'touch'
-                }} 
-                onScroll={handleScroll}
-              >
-            {/* Top action buttons */}
-            <div className="sticky top-0 z-20 px-4 py-3 pt-8 flex items-center justify-between bg-white">
-              <button onClick={onClose} className="p-1 bg-gray-100 rounded-full">
-                <XIcon className="h-6 w-6 text-black" />
-              </button>
-              <div className="flex items-center space-x-2">
-                <button className="p-1 bg-gray-100 rounded-full">
-                  <SearchIcon className="h-6 w-6 text-black" />
+              {/* Screen with MenuView design */}
+              <div className="relative bg-white rounded-[30px] overflow-y-auto h-full scrollbar-hide">
+                {/* Banner image */}
+                <img
+                  src={
+                    restaurant?.banner_url ||
+                    "https://w0.peakpx.com/wallpaper/531/501/HD-wallpaper-coffee-espresso-latte-art-cup-food.jpg"
+                  }
+                  alt=""
+                  className="absolute top-0 left-0 w-full h-72 object-cover z-0"
+                />
+
+                {/* Close button */}
+                <button
+                  onClick={onClose}
+                  className="absolute top-4 right-4 z-30 bg-white rounded-full p-1.5 shadow-lg"
+                >
+                  <XIcon className="h-5 w-5 text-black" />
                 </button>
-                <button className="p-1 bg-gray-100 rounded-full">
-                  <HeartIcon className="h-6 w-6 text-black" />
-                </button>
-                <button className="p-1 bg-gray-100 rounded-full">
-                  <MoreHorizontalIcon className="h-6 w-6 text-black" />
-                </button>
-              </div>
-            </div>
-            {/* Restaurant Info - Centered */}
-            <div className="flex flex-col items-center px-4 py-6 border-b border-gray-100 bg-white">
-              {/* Logo */}
-              <div className="w-20 h-20 mb-3 overflow-hidden">
-                <img src="/holycow-logo.png" alt="Holy Cow Logo" className="w-full h-full object-contain" />
-              </div>
-              {/* Restaurant Name */}
-              <h1 className="text-2xl font-bold text-gray-900">Holy Cow</h1>
-              {/* Rating Info */}
-              <div className="flex items-center mt-1 text-gray-600 text-sm">
-                <span className="font-semibold text-black text-base mr-1">
-                  4.7
-                </span>
-                <StarIcon className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-                <span className="mx-1 text-gray-400">•</span>
-                <span>(1,000+)</span>
-                <span className="mx-1 text-gray-400">•</span>
-                <span>11.1 km</span>
-              </div>
-              {/* Additional Info */}
-              <div className="mt-1 text-green-600 font-medium text-sm">
-                600+ pidieron de nuevo
-              </div>
-            </div>
-            {/* Navigation Tabs - Sticky para que se desplace con el contenido pero se quede visible */}
-            <div className="sticky top-[68px] z-10 flex px-1 overflow-x-auto bg-white border-b border-gray-100" style={{
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
-          }}>
-              {categories.map(category => <button key={category} className={`px-4 py-3 text-sm font-medium whitespace-nowrap ${activeTab === category ? 'text-black border-b-2 border-black' : 'text-gray-500'}`} onClick={() => handleCategoryClick(category)}>
-                  {category}
-                </button>)}
-            </div>
-            {/* Featured Items (Discounted) */}
-            {discountedItems.length > 0 && <div className="py-4 px-4 bg-white">
-                <h2 className="text-xl font-bold mb-3">
-                  Artículos en promoción
-                </h2>
-                <div className="space-y-3">
-                  {discountedItems.slice(0, 1).map(item => {
-                const discountedPrice = item.price * (1 - item.discount! / 100);
-                return <div key={item.id} className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100">
-                        <div className="relative">
-                          <img src={item.image_url || ''} alt={item.name} className="w-full h-48 object-cover" />
-                          <div className="absolute top-0 left-0 bg-red-600 text-white px-2 py-1 text-xs font-bold">
-                            {item.discount}% OFF
-                          </div>
+
+                <main className="mt-56 relative z-10">
+                    <div className="bg-white rounded-t-3xl flex flex-col items-center px-4 min-h-full pb-8">
+                      <div className="mt-4 flex items-start justify-between w-full">
+                        {/* Settings Icon */}
+                        <div className="bg-white rounded-full p-1 border border-gray-400 shadow-sm">
+                          <Settings className="size-4 text-stone-800" strokeWidth={1.5} />
                         </div>
-                        <div className="p-3">
-                          <h3 className="font-bold text-lg">{item.name}</h3>
-                          <div className="flex justify-between items-center mt-1">
-                            <div>
-                              <span className="text-sm line-through text-gray-500 mr-1">
-                                MXN {item.price.toFixed(2)}
-                              </span>
-                              <span className="text-base font-semibold text-red-600">
-                                MXN {discountedPrice.toFixed(2)}
-                              </span>
-                            </div>
-                            <button className="bg-white rounded-full p-1 shadow border border-gray-200">
-                              <PlusIcon className="h-5 w-5" />
-                            </button>
-                          </div>
+                        {/* Assistant Icon placeholder */}
+                        <div className="bg-white rounded-full text-black border border-gray-400 size-8 shadow-sm flex items-center justify-center">
+                          <span className="text-xs font-bold">AI</span>
                         </div>
-                      </div>;
-              })}
-                </div>
-              </div>}
-            {/* Render all categories one after another */}
-            {categories.map(category => {
-            const section = sections.find(s => s.name === category);
-            if (!section) return null;
-            const categoryItems = menuItems.filter(item => item.section_id === section.id);
-            if (categoryItems.length === 0) return null;
-            return <div key={category} ref={el => sectionRefs.current[category] = el} className="px-4 py-4 bg-white" id={`section-${category?.replace(/\s+/g, '-').toLowerCase() || 'unknown'}`}>
-                  <h2 className="text-2xl font-bold mb-4">{category}</h2>
-                  <div className="space-y-4">
-                    {categoryItems.map(item => {
-                  const rating = getRating();
-                  const hasDiscount = item.discount && item.discount > 0;
-                  const discountedPrice = hasDiscount ? item.price * (1 - item.discount / 100) : item.price;
-                  return <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-4">
-                          <div className="pr-3 flex-1">
-                            <h3 className="font-bold text-lg">{item.name}</h3>
-                            <div className="flex items-center mt-1">
-                              <span className="text-base font-medium text-gray-900">
-                                MXN{' '}
-                                {hasDiscount ? discountedPrice.toFixed(2) : item.price.toFixed(2)}
-                              </span>
-                              <span className="mx-2 text-gray-400">•</span>
-                              <div className="flex items-center text-sm">
-                                <span className="text-gray-700">
-                                  {rating.percentage}%
-                                </span>
-                                <span className="text-gray-400 ml-1">
-                                  ({rating.count})
-                                </span>
+                      </div>
+
+                      {/* Restaurant info */}
+                      <div className="mb-3 flex flex-col items-center">
+                        <div className="size-20 rounded-full bg-gray-200 overflow-hidden border border-gray-400 shadow-sm">
+                          <img
+                            src={
+                              restaurant?.logo_url ||
+                              "https://t4.ftcdn.net/jpg/02/15/84/43/360_F_215844325_ttX9YiIIyeaR7Ne6EaLLjMAmy4GvPC69.jpg"
+                            }
+                            alt="Restaurant Logo"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <h1 className="text-black text-xl font-medium mt-2 mb-4">
+                          ¡Vista previa!
+                        </h1>
+                      </div>
+
+                      {/* Search Input */}
+                      <div className="w-full">
+                        <div className="flex items-center justify-center border-b border-black">
+                          <Search className="text-black" strokeWidth={1} size={16} />
+                          <input
+                            type="text"
+                            placeholder="Buscar artículo"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full text-black px-2 py-1.5 text-sm focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Filters */}
+                      <div className="flex gap-1 mt-2 mb-4 w-full overflow-x-auto scrollbar-hide">
+                        {categories.map((cat) => (
+                          <div
+                            key={cat}
+                            onClick={() => setFilter(cat)}
+                            className={`px-2 py-1 rounded-full cursor-pointer whitespace-nowrap flex-shrink-0 text-xs ${
+                              filter === cat
+                                ? "bg-black text-white hover:bg-slate-800"
+                                : "text-gray-500 hover:bg-gray-100"
+                            }`}
+                          >
+                            {cat}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Menu sections */}
+                      <div className="w-full">
+                        {filteredSections.length > 0 ? (
+                          filteredSections.map((section) => {
+                            const sectionItems = getFilteredItemsForSection(section.id);
+                            if (sectionItems.length === 0) return null;
+
+                            return (
+                              <div key={section.id} className="mb-6">
+                                <h2 className="text-lg font-bold mb-3 text-black">{section.name}</h2>
+                                <div className="space-y-3">
+                                  {sectionItems.map((item) => (
+                                    <div
+                                      key={item.id}
+                                      className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg"
+                                    >
+                                      {item.image_url && (
+                                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                                          <img
+                                            src={item.image_url}
+                                            alt={item.name}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </div>
+                                      )}
+                                      <div className="flex-1">
+                                        <h3 className="text-sm font-semibold text-black">{item.name}</h3>
+                                        <p className="text-gray-600 text-xs mt-1 line-clamp-2">{item.description}</p>
+                                        <div className="flex items-center mt-1">
+                                          <span className="text-sm font-bold text-black">
+                                            ${item.price}
+                                          </span>
+                                          {item.discount && item.discount > 0 && (
+                                            <span className="ml-2 text-xs text-red-600 font-medium">
+                                              {item.discount}% OFF
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                            <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-                              {item.description}
+                            );
+                          })
+                        ) : (
+                          <div className="text-center py-8">
+                            <p className="text-gray-500 text-sm">
+                              {searchQuery.trim()
+                                ? `No se encontraron resultados para "${searchQuery}"`
+                                : "No hay items disponibles"}
                             </p>
-                            {hasDiscount && <div className="mt-1">
-                                <span className="text-sm line-through text-gray-500">
-                                  MXN {item.price.toFixed(2)}
-                                </span>
-                              </div>}
                           </div>
-                          <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden">
-                            <img src={item.image_url || ''} alt={item.name} className="w-full h-full object-cover" />
-                            {hasDiscount && <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5">
-                                {item.discount}% OFF
-                              </div>}
-                            <button className="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow-md">
-                              <PlusIcon className="h-5 w-5" />
-                            </button>
-                          </div>
-                        </div>;
-                })}
-                  </div>
-                </div>;
-          })}
-                <div className="h-16"></div> {/* Bottom spacing */}
+                        )}
+                      </div>
+                    </div>
+                  </main>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>;
+    
+  );
 };
 export default MobileMenuPreview;
