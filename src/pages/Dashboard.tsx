@@ -1325,19 +1325,25 @@ const Dashboard = () => {
       {/* Secciones adicionales */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
         {/* Órdenes Totales */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-10">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          <div className="p-8">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-custom-green-100 p-2 rounded-full">
                 <CheckIcon className="h-5 w-5 text-custom-green-600" />
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-gray-900">Órdenes Totales</h3>
+              <div className="ml-4 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Órdenes Totales
+                  </dt>
+                  <dd>
+                    <div className="text-base font-medium text-gray-900">
+                      {isLoading ? 'Cargando...' : (dashboardData?.metricas?.pedidos || '0')}
+                    </div>
+                  </dd>
+                </dl>
               </div>
             </div>
-          </div>
-          <div className="text-2xl font-bold text-gray-900 mb-2">
-            {isLoading ? 'Cargando...' : (dashboardData?.metricas?.pedidos || '0')}
           </div>
           {/* <div className="text-sm">
             <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
@@ -1350,22 +1356,28 @@ const Dashboard = () => {
         </div>
 
         {/* Artículo más vendido */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          <div className="p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-amber-100 p-2 rounded-full">
                 <CrownIcon className="h-5 w-5 text-amber-600" />
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-gray-900">Artículo más vendido</h3>
+              <div className="ml-4 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Artículo más vendido
+                  </dt>
+                  <dd>
+                    <div className="text-base font-medium text-gray-900">
+                      {isLoadingTopItem ? 'Cargando...' : (dashboardData?.articulo_mas_vendido?.nombre || topSellingItem?.nombre || 'Sin datos')}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {isLoadingTopItem ? '' : `${dashboardData?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
+                    </div>
+                  </dd>
+                </dl>
               </div>
             </div>
-          </div>
-          <div className="text-lg font-bold text-gray-900 mb-1">
-            {isLoadingTopItem ? 'Cargando...' : (dashboardData?.articulo_mas_vendido?.nombre || topSellingItem?.nombre || 'Sin datos')}
-          </div>
-          <div className="text-sm text-gray-500 mb-3">
-            {isLoadingTopItem ? 'Cargando...' : `${dashboardData?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
           </div>
           {/* <div className="text-sm">
             <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
@@ -1378,22 +1390,30 @@ const Dashboard = () => {
         </div>
 
         {/* Tiempo Promedio x cuenta */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
-                <ClockIcon className="h-5 w-5 text-red-600" />
+        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center flex-1">
+                <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
+                  <ClockIcon className="h-5 w-5 text-red-600" />
+                </div>
+                <div className="ml-4 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Tiempo Promedio x cuenta
+                    </dt>
+                    <dd>
+                      <div className="text-base font-medium text-gray-900">
+                        {isLoading ? 'Cargando...' : (dashboardData?.tiempo_promedio_mesa?.tiempo_promedio_formateado || 'Sin datos')}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-gray-900">Tiempo Promedio x cuenta</h3>
-              </div>
+              <span className="bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded ml-3">
+                Flex Bill
+              </span>
             </div>
-            <span className="bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded">
-              Flex Bill
-            </span>
-          </div>
-          <div className="text-2xl font-bold text-gray-900 mb-2">
-            {isLoading ? 'Cargando...' : (dashboardData?.tiempo_promedio_mesa?.tiempo_promedio_formateado || 'Sin datos')}
           </div>
           {/* <div className="text-sm">
             <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
