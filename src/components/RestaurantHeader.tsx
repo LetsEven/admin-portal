@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Camera, Edit3, Trash2, Upload, PlusIcon } from 'lucide-react';
+import toast from 'react-hot-toast';
 import ImageCropModal from './ImageCropModal';
+import BannerCropModal from './BannerCropModal';
 import { ImageUploadService } from '../services/imageUploadService';
 import { useUser } from '@clerk/nextjs';
 
@@ -40,6 +42,10 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
   const [showCropModal, setShowCropModal] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState('');
 
+  // Banner crop modal state
+  const [showBannerCropModal, setShowBannerCropModal] = useState(false);
+  const [tempBannerSrc, setTempBannerSrc] = useState('');
+
   // Upload states
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -58,22 +64,10 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
       if (file) {
         try {
           if (type === 'banner') {
-            // For banner, upload directly to storage
-            setIsUploadingBanner(true);
-
-            // Resize image before upload
-            const resizedFile = await ImageUploadService.resizeImage(file, 1200, 400, 0.8);
-
-            // Upload to storage
-            const publicUrl = await ImageUploadService.updateImage(
-              resizedFile,
-              'banner',
-              bannerImage // Delete old image if exists
-            );
-
-            if (onUpdateBanner) {
-              onUpdateBanner(publicUrl);
-            }
+            // For banner, show preview for cropping/positioning
+            const base64 = await ImageUploadService.fileToBase64(file);
+            setTempBannerSrc(base64);
+            setShowBannerCropModal(true);
           } else if (type === 'logo') {
             // For logo, show preview for cropping
             const base64 = await ImageUploadService.fileToBase64(file);
@@ -98,9 +92,12 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
 
   const handleCropSave = async (croppedImage: string) => {
     if (!user) {
-      alert('Debes estar autenticado para subir imágenes');
+      toast.error('Debes estar autenticado para subir imágenes');
       return;
     }
+
+    // Show loading toast
+    const loadingToast = toast.loading('Procesando y subiendo logo...');
 
     try {
       setIsUploadingLogo(true);
@@ -109,6 +106,9 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
       const response = await fetch(croppedImage);
       const blob = await response.blob();
       const file = new File([blob], `logo_${user.id}.jpg`, { type: 'image/jpeg' });
+
+      // Update loading message
+      toast.loading('Subiendo logo al servidor...', { id: loadingToast });
 
       // Upload to storage
       const publicUrl = await ImageUploadService.updateImage(
@@ -120,9 +120,18 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
       if (onUpdateLogo) {
         onUpdateLogo(publicUrl);
       }
+
+      // Success toast
+      toast.success('¡Logo actualizado correctamente!', {
+        id: loadingToast,
+        duration: 4000
+      });
     } catch (error) {
       console.error('❌ Error uploading logo:', error);
-      alert('Error al subir el logo. Por favor intenta de nuevo.');
+      toast.error('Error al subir el logo. Por favor intenta de nuevo.', {
+        id: loadingToast,
+        duration: 5000
+      });
     } finally {
       setIsUploadingLogo(false);
       setShowCropModal(false);
@@ -133,6 +142,72 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
   const handleCropClose = () => {
     setShowCropModal(false);
     setTempImageSrc('');
+  };
+
+  const handleBannerImageUploadFromModal = async (file: File) => {
+    const base64 = await ImageUploadService.fileToBase64(file);
+    setTempBannerSrc(base64);
+  };
+
+  const handleBannerCropSave = async (croppedImage: string) => {
+    if (!user) {
+      toast.error('Debes estar autenticado para subir imágenes');
+      return;
+    }
+
+    // Show loading toast
+    const loadingToast = toast.loading('Procesando y subiendo banner...');
+
+    try {
+      setIsUploadingBanner(true);
+
+      // Convert base64 to blob/file
+      const response = await fetch(croppedImage);
+      const blob = await response.blob();
+      const file = new File([blob], `banner_${user.id}.jpg`, { type: 'image/jpeg' });
+
+      // Update loading message
+      toast.loading('Subiendo imagen al servidor...', { id: loadingToast });
+
+      // Upload to storage
+      const publicUrl = await ImageUploadService.updateImage(
+        file,
+        'banner',
+        bannerImage // Delete old image if exists
+      );
+
+      if (onUpdateBanner) {
+        onUpdateBanner(publicUrl);
+      }
+
+      // Success toast
+      toast.success('¡Banner actualizado correctamente!', {
+        id: loadingToast,
+        duration: 4000
+      });
+    } catch (error) {
+      console.error('❌ Error uploading banner:', error);
+      toast.error('Error al subir el banner. Por favor intenta de nuevo.', {
+        id: loadingToast,
+        duration: 5000
+      });
+    } finally {
+      setIsUploadingBanner(false);
+      setShowBannerCropModal(false);
+      setTempBannerSrc('');
+    }
+  };
+
+  const handleBannerCropClose = () => {
+    setShowBannerCropModal(false);
+    setTempBannerSrc('');
+  };
+
+  const handleDeleteBanner = () => {
+    if (onUpdateBanner) {
+      onUpdateBanner('');
+      toast.success('Banner eliminado correctamente');
+    }
   };
 
   const handleNameSave = () => {
@@ -199,12 +274,19 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-8 relative">
       {/* Banner Section */}
-      <div className="relative h-48 group">
+      <div className="relative h-40 group">
         {bannerImage ? (
-          <img
-            src={bannerImage}
-            alt="Banner del restaurante"
-            className="w-full h-full object-cover"
+          <div
+            className="w-full h-full"
+            style={{
+              backgroundImage: `url(${bannerImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              imageRendering: 'high-quality'
+            }}
+            role="img"
+            aria-label="Banner del restaurante"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center">
@@ -234,7 +316,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
             </button>
             {bannerImage && (
               <button
-                onClick={() => onUpdateBanner && onUpdateBanner('')}
+                onClick={handleDeleteBanner}
                 className="bg-white bg-opacity-90 backdrop-blur-sm hover:bg-opacity-100 text-red-600 p-2 rounded-lg shadow-md transition-all duration-200"
                 title="Eliminar imagen"
               >
@@ -389,6 +471,16 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
         onSave={handleCropSave}
         onImageUpload={handleImageUploadFromModal}
         title="Ajustar Logo del Restaurante"
+      />
+
+      {/* Banner Crop Modal */}
+      <BannerCropModal
+        isOpen={showBannerCropModal}
+        imageSrc={tempBannerSrc}
+        onClose={handleBannerCropClose}
+        onSave={handleBannerCropSave}
+        onImageUpload={handleBannerImageUploadFromModal}
+        title="Ajustar Banner del Restaurante"
       />
       </div>
     </div>
