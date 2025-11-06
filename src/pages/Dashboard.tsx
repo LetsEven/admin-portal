@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart2Icon, UsersIcon, ShoppingBagIcon, TrendingUpIcon, ChevronDownIcon, MapPinIcon, CheckIcon, XIcon, ClockIcon, DollarSignIcon, UserIcon, ShoppingCartIcon, RotateCcwIcon, CrownIcon, StarIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAnalytics, type AnalyticsFilters } from '../hooks/useAnalytics';
+import { useRestaurant } from '../hooks/useRestaurant';
 
 // Estilos CSS en línea para los sliders
 const sliderStyles = `
@@ -258,6 +259,7 @@ const Dashboard = () => {
     clearError
   } = useAnalytics();
 
+  const { restaurant } = useRestaurant();
   const [sucursalSeleccionada, setSucursalSeleccionada] = useState(sucursalesDefault[0]);
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
@@ -675,136 +677,150 @@ const Dashboard = () => {
       {/* Estilos para los sliders */}
       <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
 
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2 mt-4">
-            Xquisito Administrador
-          </h1>
-          <p className="text-sm text-gray-500">
-            Bienvenido al panel de administración
-          </p>
-        </div>
 
-      </div>
-
-      {/* Filtros superiores */}
-      <div className="flex flex-wrap gap-4 mb-6 justify-center">
-        {/* Filtro Género */}
-        <div className="relative">
-          <button
-            onClick={() => setDropdownGeneroAbierto(!dropdownGeneroAbierto)}
-            className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
-          >
-            <UsersIcon className="h-4 w-4 text-gray-500" />
-            <span className="text-sm text-gray-600">Género:</span>
-            <span className="text-sm font-medium text-gray-800">{generoSeleccionado.label}</span>
-            <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownGeneroAbierto ? 'transform rotate-180' : ''}`} />
-          </button>
-          {dropdownGeneroAbierto && (
-            <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
-              <div className="px-3 py-2 border-b border-gray-100">
-                <p className="text-xs font-medium text-gray-500 uppercase">
-                  Seleccionar género
-                </p>
-              </div>
-              <ul className="py-1">
-                {opcionesGenero.map(genero => (
-                  <li key={genero.id}>
-                    <button
-                      onClick={() => cambiarGenero(genero)}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
-                    >
-                      <span className="text-sm text-gray-800">{genero.label}</span>
-                      {generoSeleccionado.id === genero.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        {/* Filtro Edad */}
-        <div className="relative">
-          <button
-            onClick={() => setDropdownEdadAbierto(!dropdownEdadAbierto)}
-            className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
-          >
-            <UserIcon className="h-4 w-4 text-gray-500" />
-            <span className="text-sm text-gray-600">Edad:</span>
-            <span className="text-sm font-medium text-gray-800">{edadSeleccionada.label}</span>
-            <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownEdadAbierto ? 'transform rotate-180' : ''}`} />
-          </button>
-          {dropdownEdadAbierto && (
-            <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
-              <div className="px-3 py-2 border-b border-gray-100">
-                <p className="text-xs font-medium text-gray-500 uppercase">
-                  Seleccionar edad
-                </p>
-              </div>
-              <ul className="py-1">
-                {opcionesEdad.map(edad => (
-                  <li key={edad.id}>
-                    <button
-                      onClick={() => cambiarEdad(edad)}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
-                    >
-                      <span className="text-sm text-gray-800">{edad.label}</span>
-                      {edadSeleccionada.id === edad.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        {/* Filtro Sucursal */}
-        <div className="relative">
-          <button
-            onClick={() => setDropdownAbierto(!dropdownAbierto)}
-            className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
-          >
-            <MapPinIcon className="h-4 w-4 text-gray-500" />
-            <span className="text-sm text-gray-600">Sucursal:</span>
-            <span className="text-sm font-medium text-gray-800">{sucursalSeleccionada.name}</span>
-            <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownAbierto ? 'transform rotate-180' : ''}`} />
-          </button>
-          {dropdownAbierto && (
-            <div className="absolute left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
-              <div className="px-3 py-2 border-b border-gray-100">
-                <p className="text-xs font-medium text-gray-500 uppercase">
-                  Seleccionar sucursal
-                </p>
-              </div>
-              <ul className="max-h-64 overflow-y-auto py-1">
-                {isLoadingRestaurants ? (
-                  <li className="px-4 py-2 text-sm text-gray-500">Cargando restaurantes...</li>
-                ) : userRestaurants.length > 0 ? (
-                  userRestaurants.map(restaurant => (
-                    <li key={restaurant.id}>
+      {/* Filtros superiores y header del restaurante */}
+      <div className="flex items-start justify-between mb-6 gap-6">
+        {/* Filtros superiores  */}
+        <div className="flex flex-wrap gap-4">
+          {/* Filtro Género */}
+          <div className="relative">
+            <button
+              onClick={() => setDropdownGeneroAbierto(!dropdownGeneroAbierto)}
+              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+            >
+              <UsersIcon className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-600">Género:</span>
+              <span className="text-sm font-medium text-gray-800">{generoSeleccionado.label}</span>
+              <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownGeneroAbierto ? 'transform rotate-180' : ''}`} />
+            </button>
+            {dropdownGeneroAbierto && (
+              <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
+                <div className="px-3 py-2 border-b border-gray-100">
+                  <p className="text-xs font-medium text-gray-500 uppercase">
+                    Seleccionar género
+                  </p>
+                </div>
+                <ul className="py-1">
+                  {opcionesGenero.map(genero => (
+                    <li key={genero.id}>
                       <button
-                        onClick={() => cambiarSucursal(restaurant)}
+                        onClick={() => cambiarGenero(genero)}
                         className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
                       >
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">
-                            {restaurant.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            ID: {restaurant.id}
-                          </p>
-                        </div>
-                        {sucursalSeleccionada.id === restaurant.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
+                        <span className="text-sm text-gray-800">{genero.label}</span>
+                        {generoSeleccionado.id === genero.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
                       </button>
                     </li>
-                  ))
-                ) : (
-                  <li className="px-4 py-2 text-sm text-gray-500">No hay restaurantes disponibles</li>
-                )}
-              </ul>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Filtro Edad */}
+          <div className="relative">
+            <button
+              onClick={() => setDropdownEdadAbierto(!dropdownEdadAbierto)}
+              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+            >
+              <UserIcon className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-600">Edad:</span>
+              <span className="text-sm font-medium text-gray-800">{edadSeleccionada.label}</span>
+              <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownEdadAbierto ? 'transform rotate-180' : ''}`} />
+            </button>
+            {dropdownEdadAbierto && (
+              <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
+                <div className="px-3 py-2 border-b border-gray-100">
+                  <p className="text-xs font-medium text-gray-500 uppercase">
+                    Seleccionar edad
+                  </p>
+                </div>
+                <ul className="py-1">
+                  {opcionesEdad.map(edad => (
+                    <li key={edad.id}>
+                      <button
+                        onClick={() => cambiarEdad(edad)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
+                      >
+                        <span className="text-sm text-gray-800">{edad.label}</span>
+                        {edadSeleccionada.id === edad.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Filtro Sucursal */}
+          <div className="relative">
+            <button
+              onClick={() => setDropdownAbierto(!dropdownAbierto)}
+              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+            >
+              <MapPinIcon className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-600">Sucursal:</span>
+              <span className="text-sm font-medium text-gray-800">{sucursalSeleccionada.name}</span>
+              <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownAbierto ? 'transform rotate-180' : ''}`} />
+            </button>
+            {dropdownAbierto && (
+              <div className="absolute left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
+                <div className="px-3 py-2 border-b border-gray-100">
+                  <p className="text-xs font-medium text-gray-500 uppercase">
+                    Seleccionar sucursal
+                  </p>
+                </div>
+                <ul className="max-h-64 overflow-y-auto py-1">
+                  {isLoadingRestaurants ? (
+                    <li className="px-4 py-2 text-sm text-gray-500">Cargando restaurantes...</li>
+                  ) : userRestaurants.length > 0 ? (
+                    userRestaurants.map(restaurant => (
+                      <li key={restaurant.id}>
+                        <button
+                          onClick={() => cambiarSucursal(restaurant)}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-gray-800">
+                              {restaurant.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              ID: {restaurant.id}
+                            </p>
+                          </div>
+                          {sucursalSeleccionada.id === restaurant.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
+                        </button>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="px-4 py-2 text-sm text-gray-500">No hay restaurantes disponibles</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Header del restaurante */}
+        <div className="flex items-center">
+          {restaurant?.logo_url ? (
+            <img
+              src={restaurant.logo_url}
+              alt={`Logo de ${restaurant.name}`}
+              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 mr-4"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-custom-green-100 flex items-center justify-center mr-4">
+              <span className="text-custom-green-600 text-xl font-bold">
+                {restaurant?.name?.charAt(0) || sucursalSeleccionada?.name?.charAt(0) || 'R'}
+              </span>
             </div>
           )}
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">
+              {restaurant?.name || sucursalSeleccionada?.name || 'Cargando...'}
+            </h1>
+          </div>
         </div>
       </div>
 
@@ -1175,7 +1191,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         {/* Ventas totales */}
         <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-          <div className="p-5">
+          <div className="p-8">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-custom-green-100 p-3 rounded-full">
                 <BarChart2Icon className="h-6 w-6 text-custom-green-600" />
@@ -1194,7 +1210,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+          {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
             <div className="text-sm">
               <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
                 Ver todo
@@ -1203,12 +1219,12 @@ const Dashboard = () => {
                 </svg>
               </a>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Órdenes Activas */}
         <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-          <div className="p-5">
+          <div className="p-8">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-blue-100 p-3 rounded-full">
                 <ShoppingCartIcon className="h-6 w-6 text-blue-600" />
@@ -1227,7 +1243,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+          {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
             <div className="text-sm">
               <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
                 Ver todo
@@ -1236,12 +1252,12 @@ const Dashboard = () => {
                 </svg>
               </a>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Pedidos */}
         <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-          <div className="p-5">
+          <div className="p-8">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-amber-100 p-3 rounded-full">
                 <ShoppingBagIcon className="h-6 w-6 text-amber-600" />
@@ -1260,7 +1276,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+          {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
             <div className="text-sm">
               <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
                 Ver todo
@@ -1269,12 +1285,12 @@ const Dashboard = () => {
                 </svg>
               </a>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Ticket Promedio */}
         <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-          <div className="p-5">
+          <div className="p-8">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-purple-100 p-3 rounded-full">
                 <DollarSignIcon className="h-6 w-6 text-purple-600" />
@@ -1293,7 +1309,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+          {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
             <div className="text-sm">
               <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
                 Ver todo
@@ -1302,91 +1318,111 @@ const Dashboard = () => {
                 </svg>
               </a>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 
       {/* Secciones adicionales */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
         {/* Órdenes Totales */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          <div className="p-8">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-custom-green-100 p-2 rounded-full">
                 <CheckIcon className="h-5 w-5 text-custom-green-600" />
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-gray-900">Órdenes Totales</h3>
+              <div className="ml-4 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Órdenes Totales
+                  </dt>
+                  <dd>
+                    <div className="text-base font-medium text-gray-900">
+                      {isLoading ? 'Cargando...' : (dashboardData?.metricas?.pedidos || '0')}
+                    </div>
+                  </dd>
+                </dl>
               </div>
             </div>
           </div>
-          <div className="text-2xl font-bold text-gray-900 mb-2">
-            {isLoading ? 'Cargando...' : (dashboardData?.metricas?.pedidos || '0')}
-          </div>
-          <div className="text-sm">
+          {/* <div className="text-sm">
             <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
               Ver todo
               <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </a>
-          </div>
+          </div> */}
         </div>
 
         {/* Artículo más vendido */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          <div className="p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-amber-100 p-2 rounded-full">
                 <CrownIcon className="h-5 w-5 text-amber-600" />
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-gray-900">Artículo más vendido</h3>
+              <div className="ml-4 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Artículo más vendido
+                  </dt>
+                  <dd>
+                    <div className="text-base font-medium text-gray-900">
+                      {isLoadingTopItem ? 'Cargando...' : (dashboardData?.articulo_mas_vendido?.nombre || topSellingItem?.nombre || 'Sin datos')}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {isLoadingTopItem ? '' : `${dashboardData?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
+                    </div>
+                  </dd>
+                </dl>
               </div>
             </div>
           </div>
-          <div className="text-lg font-bold text-gray-900 mb-1">
-            {isLoadingTopItem ? 'Cargando...' : (dashboardData?.articulo_mas_vendido?.nombre || topSellingItem?.nombre || 'Sin datos')}
-          </div>
-          <div className="text-sm text-gray-500 mb-3">
-            {isLoadingTopItem ? 'Cargando...' : `${dashboardData?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
-          </div>
-          <div className="text-sm">
+          {/* <div className="text-sm">
             <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
               Ver todo
               <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </a>
-          </div>
+          </div> */}
         </div>
 
         {/* Tiempo Promedio x cuenta */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
-                <ClockIcon className="h-5 w-5 text-red-600" />
+        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center flex-1">
+                <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
+                  <ClockIcon className="h-5 w-5 text-red-600" />
+                </div>
+                <div className="ml-4 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Tiempo Promedio x cuenta
+                    </dt>
+                    <dd>
+                      <div className="text-base font-medium text-gray-900">
+                        {isLoading ? 'Cargando...' : (dashboardData?.tiempo_promedio_mesa?.tiempo_promedio_formateado || 'Sin datos')}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-gray-900">Tiempo Promedio x cuenta</h3>
-              </div>
+              <span className="bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded ml-3">
+                Flex Bill
+              </span>
             </div>
-            <span className="bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded">
-              Flex Bill
-            </span>
           </div>
-          <div className="text-2xl font-bold text-gray-900 mb-2">
-            {isLoading ? 'Cargando...' : (dashboardData?.tiempo_promedio_mesa?.tiempo_promedio_formateado || 'Sin datos')}
-          </div>
-          <div className="text-sm">
+          {/* <div className="text-sm">
             <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
               Ver todo
               <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </a>
-          </div>
+          </div> */}
         </div>
       </div>
       {/* Recent Activity */}
@@ -1421,7 +1457,15 @@ const Dashboard = () => {
                       Mesa #{order.table_number}
                     </p>
                     <div className="ml-2 flex-shrink-0 flex">
-                      <p className="px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      <p className={`px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        order.status === 'paid'
+                          ? 'bg-green-100 text-green-800'
+                          : order.status === 'not_paid'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : order.status === 'partial'
+                              ? 'bg-orange-100 text-orange-800'
+                              : 'bg-gray-100 text-gray-800'
+                      }`}>
                         {order.status === 'not_paid' ? 'Pendiente' : order.status === 'partial' ? 'Parcial' : order.status === 'paid' ? 'Pagado' : order.status}
                       </p>
                     </div>
@@ -1513,7 +1557,15 @@ const Dashboard = () => {
                       Mesa #{pedidoSeleccionado.table_number || 'N/A'}
                     </span>
                   </div>
-                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                    pedidoSeleccionado.status === 'paid'
+                      ? 'bg-green-100 text-green-800'
+                      : pedidoSeleccionado.status === 'not_paid'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : pedidoSeleccionado.status === 'partial'
+                          ? 'bg-orange-100 text-orange-800'
+                          : 'bg-gray-100 text-gray-800'
+                  }`}>
                     {pedidoSeleccionado.status === 'not_paid' ? 'No Pagado' :
                      pedidoSeleccionado.status === 'paid' ? 'Pagado' :
                      pedidoSeleccionado.status === 'partial' ? 'Parcial' :
@@ -1572,7 +1624,7 @@ const Dashboard = () => {
                             <p className="text-xs text-gray-500">
                               Precio unitario: ${item.precio ? item.precio.toFixed(2) : '0.00'}
                             </p>
-                            {item.estado_pago && (
+                            {/* {item.estado_pago && (
                               <span className={`px-2 py-1 text-xs rounded-full ${
                                 item.estado_pago === 'paid'
                                   ? 'bg-green-100 text-green-800'
@@ -1580,7 +1632,7 @@ const Dashboard = () => {
                               }`}>
                                 {item.estado_pago === 'paid' ? 'Pagado' : 'Pendiente'}
                               </span>
-                            )}
+                            )} */}
                           </div>
                         </div>
                         <div className="text-right ml-4">

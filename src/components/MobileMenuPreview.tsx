@@ -130,8 +130,14 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
                           <Settings className="size-4 text-stone-800" strokeWidth={1.5} />
                         </div>
                         {/* Assistant Icon placeholder */}
-                        <div className="bg-white rounded-full text-black border border-gray-400 size-8 shadow-sm flex items-center justify-center">
-                          <span className="text-xs font-bold">AI</span>
+                        <div className="bg-white rounded-full text-black border border-gray-400 size-8 shadow-sm flex items-center justify-center overflow-hidden">
+                          <video
+                            src="/video-icon-pepper.webm"
+                            autoPlay
+                            loop
+                            muted
+                            className="w-full h-full object-cover rounded-full"
+                          />
                         </div>
                       </div>
 
