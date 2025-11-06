@@ -45,8 +45,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   preselectedCategory,
 }) => {
   const { user } = useUser();
+  // Si estamos editando (tiene id), mostrar el precio sin IVA (dividir entre 1.16)
+  const displayPrice = initialValues.id ? initialValues.price / 1.16 : initialValues.price;
+
   const [values, setValues] = useState({
     ...initialValues,
+    price: displayPrice,
     category: preselectedCategory || initialValues.category,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -249,7 +253,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Aplicar el 16% al precio antes de enviar
+    // Siempre aplicar el 16% de IVA al precio antes de guardar en BD
     const priceWithTax = values.price * 1.16;
     onSubmit({ ...values, price: priceWithTax, customFields });
   };
