@@ -1604,7 +1604,7 @@ const Dashboard = () => {
                             <p className="text-xs text-gray-500">
                               Precio unitario: ${item.precio ? item.precio.toFixed(2) : '0.00'}
                             </p>
-                            {item.estado_pago && (
+                            {/* {item.estado_pago && (
                               <span className={`px-2 py-1 text-xs rounded-full ${
                                 item.estado_pago === 'paid'
                                   ? 'bg-green-100 text-green-800'
@@ -1612,7 +1612,7 @@ const Dashboard = () => {
                               }`}>
                                 {item.estado_pago === 'paid' ? 'Pagado' : 'Pendiente'}
                               </span>
-                            )}
+                            )} */}
                           </div>
                         </div>
                         <div className="text-right ml-4">
