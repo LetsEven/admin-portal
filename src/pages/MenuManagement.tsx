@@ -104,6 +104,10 @@ const MenuManagement = () => {
 
   const allCategories = sections.map(s => s.name);
   const handleAddItemClick = (category: string) => {
+    toast.success(`Agregando producto a la sección "${category}"`, {
+      duration: 2000,
+      icon: '🍽️'
+    });
     setCurrentItem(null);
     setSelectedCategory(category);
     setShowItemForm(true);
@@ -141,12 +145,30 @@ const MenuManagement = () => {
     }
   };
   const handleDeleteClick = async (id: number) => {
+    const itemToDelete = menuItems.find(item => item.id === id);
+    const itemName = itemToDelete?.name || 'platillo';
+
     if (window.confirm('¿Estás seguro de que deseas eliminar este platillo?')) {
+      const loadingToast = toast.loading(`Eliminando "${itemName}"...`);
+
       try {
         await menuApi.items.delete(id);
         await loadData();
+
+        toast.dismiss(loadingToast);
+        toast.success(`"${itemName}" eliminado correctamente`, {
+          duration: 3000,
+          icon: '🗑️'
+        });
       } catch (error) {
         console.error('❌ Error deleting item:', error);
+
+        toast.dismiss(loadingToast);
+        toast.error(`Error al eliminar "${itemName}". Por favor intenta de nuevo.`, {
+          duration: 4000,
+          icon: '❌'
+        });
+
         setError(error instanceof Error ? error.message : 'Failed to delete item');
       }
     }
@@ -445,7 +467,20 @@ const MenuManagement = () => {
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
-              {items.map(item => <MenuItemCard key={item.id} id={item.id} name={item.name} description={item.description} price={item.price} discount={item.discount} category={sections.find(s => s.id === item.section_id)?.name || ''} image={item.image_url || ''} onEdit={handleEditClick} onDelete={handleDeleteClick} />)}
+              {items.map( item => 
+                <MenuItemCard 
+                  key={item.id} 
+                  id={item.id} 
+                  name={item.name} 
+                  description={item.description} 
+                  price={item.price} 
+                  discount={item.discount} 
+                  category={sections.find(s => s.id === item.section_id)?.name || ''} 
+                  image={item.image_url || ''} 
+                  onEdit={handleEditClick} 
+                  onDelete={handleDeleteClick} 
+                />)
+              }
 
               <button onClick={() => handleAddItemClick(category)} className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-48 hover:bg-gray-50 transition-colors">
                 <div className="text-center">

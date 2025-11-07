@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { XIcon, UploadIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { ImageUploadService } from "../services/imageUploadService";
 import { useUser } from "@clerk/nextjs";
+import toast from "react-hot-toast";
 
 interface CustomField {
   id: string;
@@ -79,7 +80,10 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   };
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!user) {
-      alert("Debes estar autenticado para subir imágenes");
+      toast.error("Debes estar autenticado para subir imágenes", {
+        duration: 3000,
+        icon: '🔐'
+      });
       return;
     }
 
@@ -119,9 +123,16 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
         setImagePreview(publicUrl);
 
         console.log("✅ Item image uploaded successfully:", publicUrl);
+        toast.success("Imagen subida correctamente", {
+          duration: 2000,
+          icon: '📷'
+        });
       } catch (error) {
         console.error("❌ Error uploading item image:", error);
-        alert("Error al subir la imagen. Por favor intenta de nuevo.");
+        toast.error("Error al subir la imagen. Por favor intenta de nuevo.", {
+          duration: 4000,
+          icon: '⚠️'
+        });
 
         // Reset on error
         setImageFile(null);
@@ -253,6 +264,19 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (initialValues.id) {
+      toast.success(`Actualizando "${values.name}"`, {
+        duration: 2000,
+        icon: '✏️'
+      });
+    } else {
+      toast.success(`Guardando platillo "${values.name}"`, {
+        duration: 2000,
+        icon: '💾'
+      });
+    }
+
     // Siempre aplicar el 16% de IVA al precio antes de guardar en BD
     const priceWithTax = values.price * 1.16;
     onSubmit({ ...values, price: priceWithTax, customFields });
