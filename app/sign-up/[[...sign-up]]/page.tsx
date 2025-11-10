@@ -35,7 +35,7 @@ export default function Page() {
     if (user && user.emailAddresses[0] && emailFromUrl) {
       const completeRegistration = async () => {
         try {
-          await fetch('http://localhost:5000/api/admin-portal/complete-registration', {
+          await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin-portal/complete-registration`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -57,7 +57,7 @@ export default function Page() {
 
   const validateEmailAccess = async (email: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/admin-portal/validate-email/${encodeURIComponent(email)}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin-portal/validate-email/${encodeURIComponent(email)}`);
       const data = await response.json();
 
       setEmailValidation({
