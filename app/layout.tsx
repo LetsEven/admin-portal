@@ -18,7 +18,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider 
+      signUpFallbackRedirectUrl="/"
+      signInFallbackRedirectUrl="/"
+    >
       <RestaurantProvider>
         <html lang="es">
           <body className={inter.className}>
