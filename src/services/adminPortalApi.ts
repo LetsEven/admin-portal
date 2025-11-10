@@ -109,6 +109,20 @@ export interface SetupStatus {
   setup_complete: boolean;
 }
 
+export interface EnabledServices {
+  enabled_services: string[];
+  client_id: string;
+}
+
+export interface ServiceInfo {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  enabled: boolean; // Si el super admin lo habilitó
+  // Removido: active - ya no manejamos estado local
+}
+
 // ===============================================
 // CLASE PRINCIPAL DEL SERVICIO API
 // ===============================================
@@ -257,6 +271,16 @@ class AdminPortalApiService {
       method: 'GET',
     }, token);
   }
+
+  // ===============================================
+  // MÉTODOS DE SERVICIOS
+  // ===============================================
+
+  async getEnabledServices(token: string): Promise<EnabledServices> {
+    return this.makeRequest<EnabledServices>('/services/enabled', {
+      method: 'GET',
+    }, token);
+  }
 }
 
 // ===============================================
@@ -320,6 +344,11 @@ export function useAdminPortalApi() {
       ),
     getSetupStatus: () => makeAuthenticatedRequest(
       (token) => adminPortalApiService.getSetupStatus(token)
+    ),
+
+    // Métodos de servicios
+    getEnabledServices: () => makeAuthenticatedRequest(
+      (token) => adminPortalApiService.getEnabledServices(token)
     ),
 
     // Sincronización inicial (puede no requerir auth)
