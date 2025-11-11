@@ -1,16 +1,42 @@
-'use client'
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { PlusIcon, MicIcon, SendIcon } from 'lucide-react';
-import Layout from '../../src/components/Layout';
+import React, { useState, useRef, useEffect } from "react";
+import { PlusIcon, MicIcon, SendIcon } from "lucide-react";
+import Layout from "../../src/components/Layout";
+import { useRestaurant } from "../../src/contexts/RestaurantContext";
+import { useUser } from "@clerk/nextjs";
+
+// Función para comunicarse con el agente a través del backend
+async function chatWithAgent(message: string, sessionId: string | null = null) {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/ai-agent/chat`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message,
+        session_id: sessionId,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Error del servidor: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data;
+}
 
 // Custom hook for responsive screen size
 const useResponsive = () => {
   const [screenSize, setScreenSize] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1024,
-    isMobile: typeof window !== 'undefined' ? window.innerWidth < 640 : false,
-    isTablet: typeof window !== 'undefined' ? window.innerWidth < 768 : false,
-    isDesktop: typeof window !== 'undefined' ? window.innerWidth >= 768 : true,
+    width: typeof window !== "undefined" ? window.innerWidth : 1024,
+    isMobile: typeof window !== "undefined" ? window.innerWidth < 640 : false,
+    isTablet: typeof window !== "undefined" ? window.innerWidth < 768 : false,
+    isDesktop: typeof window !== "undefined" ? window.innerWidth >= 768 : true,
   });
 
   useEffect(() => {
@@ -24,14 +50,14 @@ const useResponsive = () => {
       });
     };
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', handleResize);
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", handleResize);
       handleResize(); // Set initial size
     }
 
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('resize', handleResize);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("resize", handleResize);
       }
     };
   }, []);
@@ -42,21 +68,62 @@ const useResponsive = () => {
 interface Message {
   id: string;
   content: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   timestamp: Date;
+}
+
+// Componente para renderizar mensajes con imágenes
+function MessageContent({ content }: { content: string }) {
+  // Regex para detectar URLs de imágenes (incluyendo avif)
+  const imageUrlRegex =
+    /(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg|avif)(?:\?[^\s]*)?)/gi;
+
+  // Dividir el contenido en partes (texto e imágenes)
+  const parts = content.split(imageUrlRegex);
+
+  return (
+    <div className="space-y-2">
+      {parts.map((part, index) => {
+        // Si la parte coincide con una URL de imagen
+        if (part.match(imageUrlRegex)) {
+          return (
+            <img
+              key={index}
+              src={part}
+              alt="Imagen del agente"
+              className="rounded-lg max-w-full h-auto"
+              onError={(e) => {
+                // Si la imagen falla, mostrar el URL como texto
+                e.currentTarget.style.display = "none";
+                const textNode = document.createTextNode(part);
+                e.currentTarget.parentNode?.appendChild(textNode);
+              }}
+            />
+          );
+        }
+        // Si es texto normal
+        return part ? <p key={index}>{part}</p> : null;
+      })}
+    </div>
+  );
 }
 
 const PepperPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { isMobile, isTablet, isDesktop, width } = useResponsive();
 
+  // Obtener contextos
+  const { restaurant } = useRestaurant();
+  const { user } = useUser();
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -69,38 +136,67 @@ const PepperPage: React.FC = () => {
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       content: inputValue.trim(),
-      role: 'user',
-      timestamp: new Date()
+      role: "user",
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
+    setMessages((prev) => [...prev, userMessage]);
+    const messageContent = inputValue.trim();
+    setInputValue("");
     setIsLoading(true);
 
-    // Simulated AI response
-    setTimeout(() => {
+    try {
+      // Determinar userId (en admin-portal solo hay usuarios autenticados)
+      const userId = user?.id || null;
+      const restaurantId = restaurant?.id || null;
+
+      // Construir el mensaje con el contexto separado
+      const contextualMessage = `[CONTEXT: restaurant_id=${restaurantId || "null"}, user_id=${userId || "null"}, admin_portal=true]
+[USER_MESSAGE: ${messageContent}]`;
+
+      console.log("📤 Enviando mensaje a Pepper (Admin Portal):", {
+        originalMessage: messageContent,
+        contextualMessage,
+        restaurantId,
+        userId,
+      });
+
+      // Llamar al agente con el mensaje que incluye el contexto
+      const result = await chatWithAgent(contextualMessage, sessionId);
+
+      // Guardar el session_id si es la primera vez
+      if (result.session_id && !sessionId) {
+        setSessionId(result.session_id);
+      }
+
+      // Agregar la respuesta de Pepper
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
-        content: `Hola! Soy Pepper, tu asistente de IA para el restaurante. He recibido tu pregunta: "${userMessage.content}".
-
-Por ahora estoy en modo de desarrollo, pero pronto podré ayudarte con:
-• Análisis de ventas y métricas
-• Información sobre clientes y órdenes
-• Reportes de rendimiento
-• Recomendaciones para tu negocio
-
-¿En qué más te gustaría que te ayude?`,
-        role: 'assistant',
-        timestamp: new Date()
+        content: result.response,
+        role: "assistant",
+        timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Error al comunicarse con Pepper:", error);
+
+      const errorMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        content:
+          "Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.",
+        role: "assistant",
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -108,7 +204,7 @@ Por ahora estoy en modo de desarrollo, pero pronto podré ayudarte con:
 
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
   };
@@ -119,17 +215,17 @@ Por ahora estoy en modo de desarrollo, pero pronto podré ayudarte con:
 
   // Detectar cuando el sidebar se expande/contrae
   useEffect(() => {
-    const sidebar = document.querySelector('.hidden.md\\:flex .group');
+    const sidebar = document.querySelector(".hidden.md\\:flex .group");
     if (sidebar) {
       const handleMouseEnter = () => setSidebarExpanded(true);
       const handleMouseLeave = () => setSidebarExpanded(false);
 
-      sidebar.addEventListener('mouseenter', handleMouseEnter);
-      sidebar.addEventListener('mouseleave', handleMouseLeave);
+      sidebar.addEventListener("mouseenter", handleMouseEnter);
+      sidebar.addEventListener("mouseleave", handleMouseLeave);
 
       return () => {
-        sidebar.removeEventListener('mouseenter', handleMouseEnter);
-        sidebar.removeEventListener('mouseleave', handleMouseLeave);
+        sidebar.removeEventListener("mouseenter", handleMouseEnter);
+        sidebar.removeEventListener("mouseleave", handleMouseLeave);
       };
     }
   }, []);
@@ -146,9 +242,11 @@ Por ahora estoy en modo de desarrollo, pero pronto podré ayudarte con:
               <div
                 className="flex-none text-center transition-all duration-300 ease-in-out px-4"
                 style={{
-                  paddingTop: isTablet ? '40px' : '60px',
-                  paddingBottom: isTablet ? '16px' : '32px',
-                  transform: sidebarExpanded ? 'translateX(30px)' : 'translateX(0)'
+                  paddingTop: isTablet ? "40px" : "60px",
+                  paddingBottom: isTablet ? "16px" : "32px",
+                  transform: sidebarExpanded
+                    ? "translateX(30px)"
+                    : "translateX(0)",
                 }}
               >
                 {/* Gradient Circle Icon - Responsive */}
@@ -183,31 +281,31 @@ Por ahora estoy en modo de desarrollo, pero pronto podré ayudarte con:
             <div
               className="h-full overflow-y-auto px-3 sm:px-4 md:px-6"
               style={{
-                paddingTop: isTablet ? '60px' : '80px',
-                paddingBottom: isTablet ? '60px' : '80px'
+                paddingTop: isTablet ? "60px" : "80px",
+                paddingBottom: isTablet ? "60px" : "80px",
               }}
             >
               <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 md:space-y-10">
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
                       className={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 relative ${
-                        message.role === 'user'
-                          ? 'bg-[#173E44] text-white max-w-[85%] sm:max-w-xs md:max-w-md lg:max-w-lg xl:max-w-xl'
-                          : 'bg-white text-gray-900 shadow-sm border border-gray-200 max-w-[90%] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl'
+                        message.role === "user"
+                          ? "bg-[#173E44] text-white max-w-[85%] sm:max-w-xs md:max-w-md lg:max-w-lg xl:max-w-xl"
+                          : "bg-white text-gray-900 shadow-sm border border-gray-200 max-w-[90%] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl"
                       }`}
                     >
                       {/* Pepper Icon Video - Solo para respuestas de Pepper - Responsive */}
-                      {message.role === 'assistant' && (
+                      {message.role === "assistant" && (
                         <div
                           className="absolute rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-emerald-400 shadow-lg flex items-center justify-center overflow-hidden
                             w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8"
                           style={{
-                            bottom: '-2px',
-                            left: isMobile ? '-28px' : '-35px'
+                            bottom: "-2px",
+                            left: isMobile ? "-28px" : "-35px",
                           }}
                         >
                           <video
@@ -221,15 +319,19 @@ Por ahora estoy en modo de desarrollo, pero pronto podré ayudarte con:
                         </div>
                       )}
 
-                      <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
-                        {message.content}
-                      </p>
-                      <p className={`text-xs mt-1 sm:mt-2 ${
-                        message.role === 'user' ? 'text-green-100' : 'text-gray-500'
-                      }`}>
+                      <div className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
+                        <MessageContent content={message.content} />
+                      </div>
+                      <p
+                        className={`text-xs mt-1 sm:mt-2 ${
+                          message.role === "user"
+                            ? "text-green-100"
+                            : "text-gray-500"
+                        }`}
+                      >
                         {message.timestamp.toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </p>
                     </div>
@@ -242,10 +344,18 @@ Por ahora estoy en modo de desarrollo, pero pronto podré ayudarte con:
                       <div className="flex items-center space-x-2">
                         <div className="flex space-x-1">
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                          <div
+                            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0.1s" }}
+                          ></div>
+                          <div
+                            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0.2s" }}
+                          ></div>
                         </div>
-                        <span className="text-sm text-gray-500">Pepper está escribiendo...</span>
+                        <span className="text-sm text-gray-500">
+                          Pepper está escribiendo...
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -261,17 +371,29 @@ Por ahora estoy en modo de desarrollo, pero pronto podré ayudarte con:
         <div
           className="fixed z-10 transition-all duration-300 ease-in-out"
           style={{
-            bottom: messages.length === 0
-              ? isMobile ? '60px' : isTablet ? '250px' : '50px'
-              : isMobile ? '20px' : '40px',
-            left: sidebarExpanded && !isTablet ? '280px' : isTablet ? '16px' : '80px',
-            right: '16px'
+            bottom:
+              messages.length === 0
+                ? isMobile
+                  ? "60px"
+                  : isTablet
+                    ? "250px"
+                    : "50px"
+                : isMobile
+                  ? "20px"
+                  : "40px",
+            left:
+              sidebarExpanded && !isTablet
+                ? "280px"
+                : isTablet
+                  ? "16px"
+                  : "80px",
+            right: "16px",
           }}
         >
           <div
             className="mx-auto transition-all duration-300 ease-in-out"
             style={{
-              maxWidth: isMobile ? '400px' : isTablet ? '500px' : '700px'
+              maxWidth: isMobile ? "400px" : isTablet ? "500px" : "700px",
             }}
           >
             <div className="bg-white rounded-full shadow-md px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-3 flex items-center space-x-2 sm:space-x-3">
@@ -303,8 +425,8 @@ Por ahora estoy en modo de desarrollo, pero pronto podré ayudarte con:
                 disabled={!inputValue.trim() || isLoading}
                 className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
                   inputValue.trim() && !isLoading
-                    ? 'bg-[#173E44] text-white hover:bg-[#0f2c31]'
-                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    ? "bg-[#173E44] text-white hover:bg-[#0f2c31]"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
                 }`}
               >
                 <SendIcon className="w-3 h-3 sm:w-4 sm:h-4" />
