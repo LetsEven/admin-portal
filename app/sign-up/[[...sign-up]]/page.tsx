@@ -145,7 +145,7 @@ export default function Page() {
         {/* Formulario de registro */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <SignUp
-            afterSignUpUrl="/dashboard"
+            fallbackRedirectUrl="/"
             appearance={{
               elements: {
                 formButtonPrimary: 'bg-blue-600 hover:bg-blue-700 text-white',

@@ -51,8 +51,8 @@ export default function Page() {
           </p>
         </div>
         <SignIn
-          afterSignInUrl="/"
-          redirectUrl="/"
+          fallbackRedirectUrl="/"
+          signUpUrl="/sign-up"
         />
       </div>
     </div>

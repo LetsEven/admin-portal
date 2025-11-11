@@ -1,7 +1,7 @@
 'use client'
 
 import Layout from '../../src/components/Layout'
-import MenuManagement from '../../src/pages-backup/MenuManagement'
+import MenuManagement from '../../src/views/MenuManagement'
 
 export default function MenuPage() {
   return (
