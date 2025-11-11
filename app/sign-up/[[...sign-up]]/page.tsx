@@ -19,6 +19,8 @@ export default function Page() {
 
   useEffect(() => {
     if (isInvited && emailFromUrl) {
+      // Guardar email de invitación en localStorage para el Layout
+      localStorage.setItem('invitation_email', emailFromUrl);
       validateEmailAccess(emailFromUrl);
     } else {
       setEmailValidation({
@@ -30,30 +32,7 @@ export default function Page() {
     }
   }, [isInvited, emailFromUrl]);
 
-  // Marcar invitación como completada cuando el usuario se registre
-  useEffect(() => {
-    if (user && user.emailAddresses[0] && emailFromUrl) {
-      const completeRegistration = async () => {
-        try {
-          await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin-portal/complete-registration`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: user.emailAddresses[0].emailAddress,
-              user_id: user.id
-            })
-          });
-          console.log('✅ Registration completed for:', user.emailAddresses[0].emailAddress);
-        } catch (error) {
-          console.error('❌ Error completing registration:', error);
-        }
-      };
-
-      completeRegistration();
-    }
-  }, [user, emailFromUrl]);
+  // La lógica de complete registration ahora se maneja en Layout.tsx
 
   const validateEmailAccess = async (email: string) => {
     try {

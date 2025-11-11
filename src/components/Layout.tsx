@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserButton, useUser, useAuth } from '@clerk/nextjs';
 import { useRestaurant } from '../contexts/RestaurantContext';
 import Link from 'next/link';
@@ -14,6 +14,54 @@ const Layout: React.FC<LayoutProps> = ({
   const { user } = useUser();
   const { isLoaded, isSignedIn } = useAuth();
   const { restaurant, loading: restaurantLoading } = useRestaurant();
+
+  // Completar registro si el usuario viene de una invitación
+  useEffect(() => {
+    const completeRegistrationIfNeeded = async () => {
+      if (!user || !user.emailAddresses[0]) return;
+
+      const userEmail = user.emailAddresses[0].emailAddress;
+
+      // Verificar si hay información de invitación en localStorage
+      const invitationEmail = localStorage.getItem('invitation_email');
+
+      // O verificar si el email contiene +test u otros indicadores de invitación
+      const isFromInvitation = invitationEmail === userEmail ||
+                              userEmail.includes('+') ||
+                              localStorage.getItem('registration_completed') !== 'true';
+
+      if (isFromInvitation) {
+        try {
+          console.log('🔄 Attempting to complete registration for:', userEmail);
+
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin-portal/complete-registration`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: userEmail,
+              user_id: user.id
+            })
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            console.log('✅ Registration completed successfully for:', userEmail);
+            localStorage.setItem('registration_completed', 'true');
+            localStorage.removeItem('invitation_email');
+          } else {
+            console.log('ℹ️ Registration completion response:', data);
+          }
+        } catch (error) {
+          console.error('❌ Error completing registration:', error);
+        }
+      }
+    };
+
+    completeRegistrationIfNeeded();
+  }, [user]);
 
   // Show loading while authentication is being verified
   if (!isLoaded) {
