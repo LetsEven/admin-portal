@@ -210,7 +210,9 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
                                           <img
                                             src={item.image_url}
                                             alt={item.name}
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-cover img-food-quality img-smooth-transition"
+                                            loading="lazy"
+                                            decoding="async"
                                           />
                                         </div>
                                       )}

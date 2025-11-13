@@ -81,3 +81,58 @@
   cursor: pointer;
   border: none;
 }
+
+/* Optimizaciones para imágenes de alta calidad */
+.image-rendering-high-quality {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: high-quality;
+}
+
+.image-rendering-crisp-edges {
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+.image-rendering-auto {
+  image-rendering: auto;
+}
+
+.image-rendering-pixelated {
+  image-rendering: pixelated;
+}
+
+/* Clases utilitarias para imágenes optimizadas */
+.img-food-quality {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: high-quality;
+  filter: contrast(1.05) saturate(1.1);
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.img-smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.img-hover-enhance:hover {
+  filter: contrast(1.1) saturate(1.15) brightness(1.05);
+  transform: scale(1.02);
+}
+
+/* Optimización para loading de imágenes */
+.img-loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 2s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

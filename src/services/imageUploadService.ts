@@ -119,9 +119,9 @@ export class ImageUploadService {
   }
 
   /**
-   * Redimensionar imagen si es muy grande
+   * Redimensionar imagen manteniendo alta calidad
    */
-  static async resizeImage(file: File, maxWidth: number = 1200, maxHeight: number = 800, quality: number = 0.8): Promise<File> {
+  static async resizeImage(file: File, maxWidth: number = 1920, maxHeight: number = 1280, quality: number = 0.92): Promise<File> {
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d')!;
@@ -141,9 +141,15 @@ export class ImageUploadService {
           height = maxHeight;
         }
 
-        // Redimensionar
+        // Configurar canvas con alta resolución
         canvas.width = width;
         canvas.height = height;
+
+        // Optimizaciones para mejor calidad
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        // Redimensionar con mejor algoritmo
         ctx.drawImage(img, 0, 0, width, height);
 
         // Convertir a blob

@@ -33,7 +33,9 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
           <img
             src={image}
             alt={name}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            className="w-full h-full object-cover img-food-quality img-smooth-transition img-hover-enhance"
+            loading="lazy"
+            decoding="async"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';

@@ -98,12 +98,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
         const base64Preview = await ImageUploadService.fileToBase64(file);
         setImagePreview(base64Preview);
 
-        // Resize image before upload
+        // Resize image before upload - mayor resolución y calidad para comida
         const resizedFile = await ImageUploadService.resizeImage(
           file,
-          800,
-          600,
-          0.8
+          1920, // Ancho máximo mayor para mejor calidad
+          1280, // Alto máximo mayor
+          0.92  // Mayor calidad para imágenes de comida
         );
 
         // Upload to storage
@@ -316,7 +316,9 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                       <img
                         src={imagePreview}
                         alt="Vista previa"
-                        className="h-24 w-24 object-cover"
+                        className="h-24 w-24 object-cover img-food-quality rounded-md"
+                        loading="eager"
+                        decoding="async"
                       />
                       {isUploadingImage && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-md">
