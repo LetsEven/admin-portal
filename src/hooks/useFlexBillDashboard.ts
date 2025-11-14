@@ -36,7 +36,24 @@ export function useFlexBillDashboard(
         time_range: timeRange,
       };
 
-      const dashboardData = await flexBillApi.getCompleteDashboardData(filters);
+      const [metrics, dinersChartData, sharedOrdersChartData, paymentAnalytics, tableUsage] = await Promise.all([
+        flexBillApi.getMetrics(filters),
+        flexBillApi.getDinersChartData(filters),
+        flexBillApi.getChartData(filters),
+        flexBillApi.getPaymentAnalytics({ restaurant_id: restaurantId }),
+        flexBillApi.getTableUsage({ restaurant_id: restaurantId })
+      ]);
+
+      const dashboardData: FlexBillDashboardData = {
+        success: true,
+        metrics,
+        chart_data: dinersChartData,
+        shared_orders_chart_data: sharedOrdersChartData,
+        payment_analytics: paymentAnalytics,
+        table_usage: tableUsage,
+        timestamp: new Date().toISOString()
+      };
+
       setData(dashboardData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch dashboard data';

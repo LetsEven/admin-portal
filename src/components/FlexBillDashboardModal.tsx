@@ -141,7 +141,8 @@ const FlexBillDashboardModal: React.FC<FlexBillDashboardModalProps> = ({
   }
 
   const metrics = dashboardData?.metrics;
-  const chartData = dashboardData?.chart_data || [];
+  const dinersChartData = dashboardData?.chart_data || [];
+  const sharedOrdersChartData = dashboardData?.shared_orders_chart_data || [];
   const tableUsageData = dashboardData?.table_usage || [];
   const paymentTypeData = getPaymentTypeData();
   const paymentTimeData = getPaymentTimeData();
@@ -410,7 +411,7 @@ const FlexBillDashboardModal: React.FC<FlexBillDashboardModalProps> = ({
               </div>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{
+                  <BarChart data={sharedOrdersChartData} margin={{
                     top: 10,
                     right: 30,
                     left: 0,
@@ -448,15 +449,19 @@ const FlexBillDashboardModal: React.FC<FlexBillDashboardModalProps> = ({
                   {timeRange === 'daily' ? 'día' : timeRange === 'weekly' ? 'semana' : 'mes'}
                 </h3>
                 <div className="flex items-center">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    <ArrowUpIcon className="h-3 w-3 mr-1" />
-                    16.8%
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${(metrics?.diners_growth_percentage || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {(metrics?.diners_growth_percentage || 0) >= 0 ? (
+                      <ArrowUpIcon className="h-3 w-3 mr-1" />
+                    ) : (
+                      <ArrowDownIcon className="h-3 w-3 mr-1" />
+                    )}
+                    {Math.abs(metrics?.diners_growth_percentage || 0).toFixed(1)}%
                   </span>
                 </div>
               </div>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{
+                  <LineChart data={dinersChartData} margin={{
                     top: 10,
                     right: 30,
                     left: 0,

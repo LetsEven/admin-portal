@@ -52,6 +52,7 @@ export interface FlexBillDashboardData {
   success: boolean;
   metrics: FlexBillMetrics;
   chart_data: FlexBillChartData[];
+  shared_orders_chart_data?: FlexBillChartData[];
   payment_analytics: PaymentAnalytics;
   table_usage: TableUsage[];
   timestamp: string;
@@ -154,6 +155,28 @@ class FlexBillApiService {
       return result.chart_data;
     } catch (error) {
       console.error('Error fetching FlexBill chart data:', error);
+      return this.getDefaultChartData(filters.time_range || 'daily');
+    }
+  }
+
+  async getDinersChartData(filters: FlexBillFilters, token?: string): Promise<FlexBillChartData[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, value.toString());
+        }
+      });
+
+      const result = await this.makeRequest<{ chart_data: FlexBillChartData[] }>(
+        `/dashboard/diners?${queryParams.toString()}`,
+        { method: 'GET' },
+        token
+      );
+
+      return result.chart_data;
+    } catch (error) {
+      console.error('Error fetching FlexBill diners chart data:', error);
       return this.getDefaultChartData(filters.time_range || 'daily');
     }
   }
@@ -349,6 +372,10 @@ export function useFlexBillApi() {
 
     getChartData: (filters: FlexBillFilters) => makeAuthenticatedRequest(
       (token) => flexBillApiService.getChartData(filters, token)
+    ),
+
+    getDinersChartData: (filters: FlexBillFilters) => makeAuthenticatedRequest(
+      (token) => flexBillApiService.getDinersChartData(filters, token)
     ),
 
     getPaymentAnalytics: (filters: Pick<FlexBillFilters, 'restaurant_id'>) => makeAuthenticatedRequest(
