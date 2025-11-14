@@ -113,8 +113,6 @@ const PromotionsManagement = () => {
     }
   };
 
-  // Removido: handleToggleActive - ya no se permite activar/desactivar servicios
-
   const handleServiceClick = (service: ServiceInfo) => {
     setSelectedService(service);
 
@@ -201,7 +199,6 @@ const PromotionsManagement = () => {
         <div className="mt-6 flex flex-col space-y-4">
           {services.map((service) => {
             const isEnabled = service.enabled;
-            // Removido: isActive - ya no manejamos estado local
 
             return (
               <div
@@ -227,11 +224,6 @@ const PromotionsManagement = () => {
                       <h3 className="text-base font-medium text-gray-900 group-hover:text-gray-900 transition-colors duration-200">
                         {service.name}
                       </h3>
-                      {/* {!isEnabled && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                          No disponible
-                        </span>
-                      )} */}
                     </div>
                     <p className="mt-1.5 text-sm text-gray-500 group-hover:text-gray-500 transition-colors duration-200 line-clamp-2">
                       {service.description}
