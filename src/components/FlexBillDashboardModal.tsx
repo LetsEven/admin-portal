@@ -70,18 +70,21 @@ const FlexBillDashboardModal: React.FC<FlexBillDashboardModalProps> = ({
 
   // Convertir datos de analytics a formato de gráficos
   const getPaymentTypeData = () => {
+
     if (!dashboardData?.payment_analytics?.payment_type_distribution) {
       return [
-        { name: 'Pago dividido', value: 65 },
-        { name: 'Pago único', value: 35 }
+        { name: 'Pago dividido', value: 0 },
+        { name: 'Pago único', value: 0 }
       ];
     }
 
     const { split, single } = dashboardData.payment_analytics.payment_type_distribution;
-    return [
+    const result = [
       { name: 'Pago dividido', value: split },
       { name: 'Pago único', value: single }
     ];
+
+    return result;
   };
 
   const getPaymentTimeData = () => {
@@ -538,13 +541,13 @@ const FlexBillDashboardModal: React.FC<FlexBillDashboardModalProps> = ({
                         Pago dividido
                       </span>
                       <span className="text-sm font-medium text-blue-600">
-                        {paymentTypeData[0]?.value || 65}%
+                        {paymentTypeData.find(item => item.name === 'Pago dividido')?.value || 0}%
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div
                         className="bg-blue-600 h-2.5 rounded-full"
-                        style={{ width: `${paymentTypeData[0]?.value || 65}%` }}
+                        style={{ width: `${paymentTypeData.find(item => item.name === 'Pago dividido')?.value || 0}%` }}
                       />
                     </div>
                   </div>
@@ -553,20 +556,31 @@ const FlexBillDashboardModal: React.FC<FlexBillDashboardModalProps> = ({
                       <span className="text-sm font-medium text-gray-700">
                         Pago único
                       </span>
-                      <span className="text-sm font-medium text-gray-500">
-                        {paymentTypeData[1]?.value || 35}%
+                      <span className="text-sm font-medium text-green-600">
+                        {paymentTypeData.find(item => item.name === 'Pago único')?.value || 0}%
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div
-                        className="bg-gray-400 h-2.5 rounded-full"
-                        style={{ width: `${paymentTypeData[1]?.value || 35}%` }}
+                        className="bg-green-600 h-2.5 rounded-full"
+                        style={{ width: `${paymentTypeData.find(item => item.name === 'Pago único')?.value || 0}%` }}
                       />
                     </div>
                   </div>
                   <div className="text-center mt-4">
                     <p className="text-sm text-gray-500">
-                      El {paymentTypeData[0]?.value || 65}% de los clientes prefiere dividir la cuenta entre los comensales
+                      {(() => {
+                        const splitValue = paymentTypeData.find(item => item.name === 'Pago dividido')?.value || 0;
+                        const singleValue = paymentTypeData.find(item => item.name === 'Pago único')?.value || 0;
+
+                        if (splitValue === 0 && singleValue === 0) {
+                          return 'No hay datos de pagos disponibles para este período';
+                        } else if (splitValue > singleValue) {
+                          return `El ${splitValue}% de los clientes prefiere dividir la cuenta entre los comensales`;
+                        } else {
+                          return `El ${singleValue}% de los clientes prefiere pago único`;
+                        }
+                      })()}
                     </p>
                   </div>
                 </div>

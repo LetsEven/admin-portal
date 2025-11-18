@@ -181,10 +181,13 @@ class FlexBillApiService {
     }
   }
 
-  async getPaymentAnalytics(filters: Pick<FlexBillFilters, 'restaurant_id'>, token?: string): Promise<PaymentAnalytics> {
+  async getPaymentAnalytics(filters: FlexBillFilters, token?: string): Promise<PaymentAnalytics> {
     try {
-      const queryParams = new URLSearchParams({
-        restaurant_id: filters.restaurant_id.toString()
+      const queryParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, value.toString());
+        }
       });
 
       const result = await this.makeRequest<{ payment_analytics: PaymentAnalytics }>(
@@ -378,7 +381,7 @@ export function useFlexBillApi() {
       (token) => flexBillApiService.getDinersChartData(filters, token)
     ),
 
-    getPaymentAnalytics: (filters: Pick<FlexBillFilters, 'restaurant_id'>) => makeAuthenticatedRequest(
+    getPaymentAnalytics: (filters: FlexBillFilters) => makeAuthenticatedRequest(
       (token) => flexBillApiService.getPaymentAnalytics(filters, token)
     ),
 

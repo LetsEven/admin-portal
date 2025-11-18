@@ -40,7 +40,7 @@ export function useFlexBillDashboard(
         flexBillApi.getMetrics(filters),
         flexBillApi.getDinersChartData(filters),
         flexBillApi.getChartData(filters),
-        flexBillApi.getPaymentAnalytics({ restaurant_id: restaurantId }),
+        flexBillApi.getPaymentAnalytics(filters),
         flexBillApi.getTableUsage({ restaurant_id: restaurantId })
       ]);
 
