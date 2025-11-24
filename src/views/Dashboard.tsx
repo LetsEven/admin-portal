@@ -36,41 +36,6 @@ const sliderStyles = `
   }
 `;
 
-// Datos para el gráfico de ingresos
-// const datosGrafico = [
-//   { dia: 1, ingresos: 16500 },
-//   { dia: 2, ingresos: 17000 },
-//   { dia: 3, ingresos: 18500 },
-//   { dia: 4, ingresos: 19200 },
-//   { dia: 5, ingresos: 19800 },
-//   { dia: 6, ingresos: 20500 },
-//   { dia: 7, ingresos: 21200 },
-//   { dia: 8, ingresos: 21800 },
-//   { dia: 9, ingresos: 22500 },
-//   { dia: 10, ingresos: 22800 },
-//   { dia: 11, ingresos: 23200 },
-//   { dia: 12, ingresos: 23800 },
-//   { dia: 13, ingresos: 24200 },
-//   { dia: 14, ingresos: 25000 },
-//   { dia: 15, ingresos: 25300 },
-//   { dia: 16, ingresos: 24800 },
-//   { dia: 17, ingresos: 24500 },
-//   { dia: 18, ingresos: 24200 },
-//   { dia: 19, ingresos: 24000 },
-//   { dia: 20, ingresos: 23800 },
-//   { dia: 21, ingresos: 24200 },
-//   { dia: 22, ingresos: 24600 },
-//   { dia: 23, ingresos: 25100 },
-//   { dia: 24, ingresos: 25800 },
-//   { dia: 25, ingresos: 26200 },
-//   { dia: 26, ingresos: 26800 },
-//   { dia: 27, ingresos: 27200 },
-//   { dia: 28, ingresos: 27800 },
-//   { dia: 29, ingresos: 28200 },
-//   { dia: 30, ingresos: 29500 },
-//   { dia: 31, ingresos: 30200 }
-// ];
-
 // Opciones de filtros
 const opcionesGenero = [
   { id: 'todos', label: 'Todos' },
@@ -102,84 +67,6 @@ const sucursalesDefault = [{
   name: 'Cargando...',
   is_active: true
 }];
-
-// Datos de ejemplo para pedidos
-// const pedidosEjemplo = [{
-//   id: 1123,
-//   numeropedido: '#1123',
-//   cliente: 'Juan Pérez',
-//   canal: 'Tap Order & Pay',
-//   tiempo: 'Hace 15 minutos',
-//   estado: 'Completado',
-//   items: [
-//     { nombre: 'Hamburguesa Clásica', cantidad: 2, precio: 12.99 },
-//     { nombre: 'Papas Fritas', cantidad: 1, precio: 6.99 },
-//     { nombre: 'Coca Cola', cantidad: 2, precio: 3.50 }
-//   ],
-//   subtotal: 36.47,
-//   propina: 5.00,
-//   total: 41.47
-// }, {
-//   id: 1246,
-//   numeropedido: '#1246',
-//   cliente: 'María González',
-//   canal: 'Pick N Go',
-//   tiempo: 'Hace 25 minutos',
-//   estado: 'Completado',
-//   items: [
-//     { nombre: 'Pizza Margherita', cantidad: 1, precio: 18.99 },
-//     { nombre: 'Ensalada César', cantidad: 1, precio: 8.99 },
-//     { nombre: 'Agua Mineral', cantidad: 1, precio: 2.50 }
-//   ],
-//   subtotal: 30.48,
-//   propina: 4.50,
-//   total: 34.98
-// }, {
-//   id: 1369,
-//   numeropedido: '#1369',
-//   cliente: 'Carlos Mendoza',
-//   canal: 'Pick N Go',
-//   tiempo: 'Hace 35 minutos',
-//   estado: 'Completado',
-//   items: [
-//     { nombre: 'Tacos al Pastor', cantidad: 3, precio: 4.99 },
-//     { nombre: 'Guacamole', cantidad: 1, precio: 5.99 },
-//     { nombre: 'Cerveza Corona', cantidad: 2, precio: 4.50 }
-//   ],
-//   subtotal: 29.96,
-//   propina: 6.00,
-//   total: 35.96
-// }, {
-//   id: 1492,
-//   numeroPedido: '#1492',
-//   cliente: 'Ana López',
-//   canal: 'Tap Order & Pay',
-//   tiempo: 'Hace 45 minutos',
-//   estado: 'Completado',
-//   items: [
-//     { nombre: 'Sushi Roll', cantidad: 2, precio: 15.99 },
-//     { nombre: 'Sopa Miso', cantidad: 1, precio: 6.99 },
-//     { nombre: 'Té Verde', cantidad: 1, precio: 3.50 }
-//   ],
-//   subtotal: 42.47,
-//   propina: 8.00,
-//   total: 50.47
-// }, {
-//   id: 1615,
-//   numeroPedido: '#1615',
-//   cliente: 'Roberto Silva',
-//   canal: 'Pick N Go',
-//   tiempo: 'Hace 55 minutos',
-//   estado: 'Completado',
-//   items: [
-//     { nombre: 'Pasta Carbonara', cantidad: 1, precio: 16.99 },
-//     { nombre: 'Pan de Ajo', cantidad: 1, precio: 4.99 },
-//     { nombre: 'Vino Tinto', cantidad: 1, precio: 22.00 }
-//   ],
-//   subtotal: 43.98,
-//   propina: 7.50,
-//   total: 51.48
-// }];
 
 const CustomTooltip = ({ active, payload, label, granularidad, mesSeleccionado, diaSeleccionado }: any) => {
   if (active && payload && payload.length) {
@@ -802,7 +689,7 @@ const Dashboard = () => {
         </div>
 
         {/* Header del restaurante */}
-        <div className="flex items-center">
+        <div className="flex items-center mr-8">
           {restaurant?.logo_url ? (
             <img
               src={restaurant.logo_url}
@@ -816,11 +703,11 @@ const Dashboard = () => {
               </span>
             </div>
           )}
-          <div>
+          {/* <div>
             <h1 className="text-2xl font-semibold text-gray-900">
               {restaurant?.name || sucursalSeleccionada?.name || 'Cargando...'}
             </h1>
-          </div>
+          </div> */}
         </div>
       </div>
 
