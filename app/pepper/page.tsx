@@ -240,15 +240,16 @@ const PepperPage: React.FC = () => {
             <div className="h-full flex flex-col">
               {/* Header responsive */}
               <div
-                className="flex-none text-center transition-all duration-300 ease-in-out px-4"
+                className="flex-none transition-all duration-300 ease-in-out px-3 sm:px-4 md:px-6"
                 style={{
-                  paddingTop: isTablet ? "40px" : "60px",
+                  paddingTop: isTablet ? "40px" : "400px",
                   paddingBottom: isTablet ? "16px" : "32px",
                   transform: sidebarExpanded
                     ? "translateX(30px)"
                     : "translateX(0)",
                 }}
               >
+                <div className="max-w-4xl mx-auto text-center">
                 {/* Gradient Circle Icon - Responsive */}
                 <div
                   className={`mx-auto rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-emerald-400 shadow-lg flex items-center justify-center overflow-hidden
@@ -271,6 +272,7 @@ const PepperPage: React.FC = () => {
                 <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mt-8 sm:mt-12 md:mt-16 lg:mt-20">
                   ¿En qué te puedo ayudar hoy?
                 </p>
+                </div>
               </div>
 
               {/* Espacio flexible */}
