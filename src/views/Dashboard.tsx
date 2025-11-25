@@ -173,11 +173,11 @@ const Dashboard = () => {
   const [calendarioAbierto, setCalendarioAbierto] = useState(false);
   const [mesActual, setMesActual] = useState(new Date()); // Fecha actual del sistema
   const [diaSeleccionadoCalendario, setDiaSeleccionadoCalendario] = useState(new Date().getDate());
-  const [mesSeleccionadoParaGrafico, setMesSeleccionadoParaGrafico] = useState(new Date(2025, 9, 1)); // Para granularidades que no sean Hora
+  const [mesSeleccionadoParaGrafico, setMesSeleccionadoParaGrafico] = useState(new Date()); // Para granularidades que no sean Hora - Usa fecha actual
   const [selectorMesAbierto, setSelectorMesAbierto] = useState(false);
 
   const [selectorAnoAbierto, setSelectorAnoAbierto] = useState(false);
-  const [anoSeleccionado, setAnoSeleccionado] = useState(2025);
+  const [anoSeleccionado, setAnoSeleccionado] = useState(new Date().getFullYear());
   const [rangoAnosInicio, setRangoAnosInicio] = useState(2017);
 
   
@@ -488,7 +488,7 @@ const Dashboard = () => {
         return `Ingresos Totales por año`;
 
       default:
-        return `Ingresos Totales por día (octubre de 2025)`;
+        return `Ingresos Totales por día (${mesSeleccionadoParaGrafico.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })})`;
     }
   };
 

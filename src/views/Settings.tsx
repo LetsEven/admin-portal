@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { SaveIcon, Upload, Camera, Edit3, Trash2 } from 'lucide-react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { SaveIcon, Upload, Camera, Edit3, Trash2, ExternalLink, Copy, Check } from 'lucide-react';
 import { useUser, UserButton } from '@clerk/nextjs';
 import { useRestaurant } from '../hooks/useRestaurant';
 import { ImageUploadService } from '../services/imageUploadService';
 import ImageCropModal from '../components/ImageCropModal';
+import { useAdminPortalApi } from '../services/adminPortalApi';
 
 interface SettingsData {
   name: string;
@@ -28,7 +29,13 @@ interface SettingsData {
 const Settings = () => {
   const { user, isLoaded, isSignedIn } = useUser();
   const { restaurant, isLoading, isUpdating, error, updateRestaurant } = useRestaurant();
+  const adminPortalApi = useAdminPortalApi();
   const [settings, setSettings] = useState<SettingsData | null>(null);
+
+  // Estados para servicios habilitados
+  const [isPickNGoEnabled, setIsPickNGoEnabled] = useState(false);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [servicesLoaded, setServicesLoaded] = useState(false);  
 
   // Debug del estado de autenticación
   useEffect(() => {
@@ -113,6 +120,9 @@ const Settings = () => {
   const [saveStatus, setSaveStatus] = useState(null);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
 
+  // Pick & Go URL state
+  const [copySuccess, setCopySuccess] = useState(false);
+
   // Sincronizar estado local con datos del restaurante
   useEffect(() => {
     if (restaurant) {
@@ -141,6 +151,53 @@ const Settings = () => {
       setLogoPreview(restaurant.logo_url || '');
     }
   }, [restaurant]);
+
+  // Cargar servicios habilitados - optimizado para evitar re-renderizados
+  useEffect(() => {
+    let isMounted = true; // Para evitar setState si el componente se desmonta
+
+    const loadEnabledServices = async () => {
+      try {
+        setServicesLoading(true);
+        const response = await adminPortalApi.getEnabledServices();
+
+        if (!isMounted) return; // Component unmounted, don't update state
+
+        const enabledServiceIds = response.enabled_services;
+
+        // Verificar si pick-n-go está habilitado
+        setIsPickNGoEnabled(enabledServiceIds.includes('pick-n-go'));
+
+        console.log('🔍 [Settings] Pick & Go enabled:', enabledServiceIds.includes('pick-n-go'));
+        console.log('🔍 [Settings] Enabled services:', enabledServiceIds);
+      } catch (error) {
+        if (!isMounted) return;
+
+        console.error('❌ [Settings] Error loading enabled services:', error);
+        // En caso de error, asumir que no está habilitado
+        setIsPickNGoEnabled(false);
+      } finally {
+        if (isMounted) {
+          setServicesLoading(false);
+          setServicesLoaded(true); // Marcar como cargado para evitar re-cargas
+        }
+      }
+    };
+
+    // Solo cargar una vez cuando el usuario está autenticado
+    if (user && isSignedIn && !servicesLoaded) {
+      loadEnabledServices();
+    } else if (!user || !isSignedIn) {
+      // Si no hay usuario, resetear estados
+      setIsPickNGoEnabled(false);
+      setServicesLoading(false);
+      setServicesLoaded(false);
+    }
+
+    return () => {
+      isMounted = false; // Cleanup function
+    };
+  }, [user?.id, isSignedIn]); // Solo dependencias esenciales
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const {
@@ -265,6 +322,48 @@ const Settings = () => {
       alert('Error al eliminar el logo.');
     } finally {
       setIsUploadingLogo(false);
+    }
+  };
+
+  // Generar URL de Pick & Go
+  const getPickAndGoUrl = () => {
+    if (!restaurant?.id) return '';
+    return `https://pickandgo.xquisito.ai/${restaurant.id}/menu`;
+  };
+
+  // Copiar URL al portapapeles
+  const copyPickAndGoUrl = async () => {
+    const url = getPickAndGoUrl();
+    if (!url) return;
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      // Fallback para navegadores que no soportan clipboard API
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      } catch (fallbackError) {
+        console.error('Fallback copy failed:', fallbackError);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  // Abrir URL en nueva pestaña
+  const openPickAndGoUrl = () => {
+    const url = getPickAndGoUrl();
+    if (url) {
+      window.open(url, '_blank');
     }
   };
 
@@ -458,6 +557,58 @@ const Settings = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Pick & Go URL Section - Solo mostrar si el servicio está habilitado */}
+              {!servicesLoading && isPickNGoEnabled && (
+                <div className="col-span-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    URL de Pick & Go
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-1 bg-gray-50 border border-gray-300 rounded-md px-3 py-2">
+                      <code className="text-sm text-gray-700 break-all">
+                        {restaurant?.id ? getPickAndGoUrl() : 'Cargando...'}
+                      </code>
+                    </div>
+
+                    {restaurant?.id && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={copyPickAndGoUrl}
+                          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
+                          title="Copiar URL"
+                        >
+                          {copySuccess ? (
+                            <>
+                              <Check className="h-4 w-4 text-green-500 mr-1" />
+                              <span className="text-green-500">¡Copiado!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-4 w-4 mr-1" />
+                              Copiar
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={openPickAndGoUrl}
+                          className="inline-flex items-center px-3 py-2 border border-custom-green-300 shadow-sm text-sm font-medium rounded-md text-custom-green-700 bg-custom-green-50 hover:bg-custom-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
+                          title="Abrir en nueva pestaña"
+                        >
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          Abrir
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Esta es la URL pública de tu menú Pick & Go que los clientes pueden usar para hacer pedidos.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

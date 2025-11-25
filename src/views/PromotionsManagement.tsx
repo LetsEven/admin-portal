@@ -74,13 +74,15 @@ const PromotionsManagement = () => {
       const response = await adminPortalApi.getEnabledServices();      
 
       const enabledServiceIds = response.enabled_services;
+      console.log(enabledServiceIds);
+      
 
       // Crear lista de servicios con estado enabled/disabled basado en main-portal
       const allServices = Object.values(SERVICE_MAPPING).map(service => ({
         ...service,
         enabled: enabledServiceIds.includes(service.id)
-        // Removido: active (ya no necesitamos estado local)
-      }));      
+      }));    
+      console.log(allServices);  
 
       // Ordenar: habilitados primero, luego por nombre
       const sortedServices = allServices.sort((a, b) => {
