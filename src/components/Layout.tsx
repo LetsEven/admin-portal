@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserButton, useUser, useAuth } from '@clerk/nextjs';
 import { useRestaurant } from '../contexts/RestaurantContext';
-import Link from 'next/link';
 import Sidebar from './Sidebar';
 import { MenuIcon, XIcon, StoreIcon, ArrowRightIcon } from 'lucide-react';
 interface LayoutProps {
@@ -25,7 +24,6 @@ const Layout: React.FC<LayoutProps> = ({
       // Verificar si hay información de invitación en localStorage
       const invitationEmail = localStorage.getItem('invitation_email');
 
-      // O verificar si el email contiene +test u otros indicadores de invitación
       const isFromInvitation = invitationEmail === userEmail ||
                               userEmail.includes('+') ||
                               localStorage.getItem('registration_completed') !== 'true';
@@ -118,7 +116,7 @@ const Layout: React.FC<LayoutProps> = ({
             <MenuIcon className="h-6 w-6" />
           </button>
           <div className="ml-4 flex items-center">
-            <img src="/iso-1-white.png" alt="Xquisito Logo" className="h-8 w-auto mr-2" />
+            <img src="/iso-1-white.webp" alt="Xquisito Logo" className="h-8 w-auto mr-2" />
             <span className="text-lg font-medium text-gray-800">Xquisito</span>
           </div>
         </div>

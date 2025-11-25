@@ -3,6 +3,8 @@ import { BarChart2Icon, UsersIcon, ShoppingBagIcon, TrendingUpIcon, ChevronDownI
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAnalytics, type AnalyticsFilters } from '../hooks/useAnalytics';
 import { useRestaurant } from '../hooks/useRestaurant';
+import { useAdminPortalApi } from '../services/adminPortalApi';
+import { useUser, useAuth } from '@clerk/nextjs';
 
 // Estilos CSS en línea para los sliders
 const sliderStyles = `
@@ -179,6 +181,15 @@ const Dashboard = () => {
   const [selectorAnoAbierto, setSelectorAnoAbierto] = useState(false);
   const [anoSeleccionado, setAnoSeleccionado] = useState(new Date().getFullYear());
   const [rangoAnosInicio, setRangoAnosInicio] = useState(2017);
+
+  // Estados para verificar servicio FlexBill
+  const [isFlexBillEnabled, setIsFlexBillEnabled] = useState(false);
+  const [servicesLoaded, setServicesLoaded] = useState(false);
+
+  // Hooks necesarios para verificar servicios
+  const { user } = useUser();
+  const { isSignedIn } = useAuth();
+  const adminPortalApi = useAdminPortalApi();
 
   
   const cambiarSucursal = (sucursal) => {
@@ -558,6 +569,25 @@ const Dashboard = () => {
       cargarDatosDashboard(sucursalSeleccionada.id);
     }
   }, [mesSeleccionadoParaGrafico, granularidadSeleccionada.id]);
+
+  // Verificar si FlexBill está habilitado
+  useEffect(() => {
+    const loadEnabledServices = async () => {
+      if (!user || !isSignedIn || servicesLoaded) return;
+
+      try {
+        const response = await adminPortalApi.getEnabledServices();
+        const enabledServiceIds = response.enabled_services;
+        setIsFlexBillEnabled(enabledServiceIds.includes('flex-bill'));
+        setServicesLoaded(true);
+      } catch (error) {
+        console.error('Error al cargar servicios habilitados:', error);
+        setServicesLoaded(true);
+      }
+    };
+
+    loadEnabledServices();
+  }, [user?.id, isSignedIn]);
 
 
   return <div className="w-full">
@@ -1210,7 +1240,9 @@ const Dashboard = () => {
       </div>
 
       {/* Secciones adicionales */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
+      <div className={`grid grid-cols-1 gap-6 mb-6 ${
+        servicesLoaded ? ( isFlexBillEnabled ? 'lg:grid-cols-3' : 'lg:grid-cols-2') :'lg:grid-cols-3'
+      }`}>
         {/* Órdenes Totales */}
         <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
           <div className="p-8">
@@ -1276,8 +1308,9 @@ const Dashboard = () => {
           </div> */}
         </div>
 
-        {/* Tiempo Promedio x cuenta */}
-        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+        {/* Tiempo Promedio x cuenta - Solo mostrar si FlexBill está habilitado */}
+        {(servicesLoaded && isFlexBillEnabled) && (
+          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
           <div className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center flex-1">
@@ -1311,6 +1344,7 @@ const Dashboard = () => {
             </a>
           </div> */}
         </div>
+        )}
       </div>
       {/* Recent Activity */}
       <div className="mt-7">
