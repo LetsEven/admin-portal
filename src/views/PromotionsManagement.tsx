@@ -207,10 +207,10 @@ const PromotionsManagement = () => {
                 key={service.id}
                 className={`group bg-white overflow-hidden shadow rounded-lg border transition-all duration-200 ease-out ${
                   isEnabled
-                    ? 'hover:bg-[#E9F2F2] hover:border-[#D6E6E6] hover:shadow-md cursor-pointer hover:scale-[1.01] border-custom-green-200'
+                    ? 'border-custom-green-200'  // Removido hover effects y cursor-pointer temporalmente
                     : 'border-gray-200 opacity-60 cursor-not-allowed'
                 }`}
-                onClick={() => handleServiceClick(service)}
+                // onClick={() => handleServiceClick(service)} // Temporalmente deshabilitado
               >
                 <div className="p-4 flex">
                   <div className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-full transition-colors duration-200 ${
