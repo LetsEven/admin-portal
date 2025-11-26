@@ -11,6 +11,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/elements": "^0.23.86",
     "@clerk/nextjs": "^6.33.1",
     "@hello-pangea/dnd": "^18.0.1",
     "lucide-react": "^0.441.0",
