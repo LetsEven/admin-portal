@@ -151,6 +151,7 @@ export function useRestaurant(): UseRestaurantReturn {
             orderNotifications: result.data.order_notifications ?? true,
             emailNotifications: result.data.email_notifications ?? false,
             smsNotifications: result.data.sms_notifications ?? false,
+            tableCount: result.data.table_count ?? 0,
             language: 'es',
             currency: 'MXN'
           };
@@ -197,6 +198,7 @@ export function useRestaurant(): UseRestaurantReturn {
     orderNotifications: true,
     emailNotifications: false,
     smsNotifications: false,
+    tableCount: 0,
     language: 'es',
     currency: 'MXN'
   });
@@ -225,6 +227,7 @@ export function useRestaurant(): UseRestaurantReturn {
         order_notifications: updateData.orderNotifications,
         email_notifications: updateData.emailNotifications,
         sms_notifications: updateData.smsNotifications,
+        table_count: updateData.tableCount,
       };
 
       // Si se incluyen horarios, convertirlos al formato del backend
@@ -232,11 +235,15 @@ export function useRestaurant(): UseRestaurantReturn {
         backendData.opening_hours = convertFrontendHoursToBackend(updateData.openingHours);
       }
 
+      // DEBUG: Log datos antes y después del filtrado
+      console.log('🔍 [DEBUG] backendData antes del filtrado:', backendData);
+
       // Filtrar campos undefined
       const filteredData = Object.fromEntries(
         Object.entries(backendData).filter(([_, value]) => value !== undefined)
       );
 
+      console.log('🔍 [DEBUG] filteredData después del filtrado:', filteredData);
       console.log('🔄 Actualizando restaurante:', filteredData);
 
       const response = await fetch(`${API_BASE_URL}/api/admin-portal/restaurant`, {
