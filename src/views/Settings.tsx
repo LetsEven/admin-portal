@@ -24,6 +24,7 @@ interface SettingsData {
   smsNotifications: boolean;
   language: string;
   currency: string;
+  tableCount: number;
 }
 
 const Settings = () => {
@@ -34,6 +35,8 @@ const Settings = () => {
 
   // Estados para servicios habilitados
   const [isPickNGoEnabled, setIsPickNGoEnabled] = useState(false);
+  const [isFlexBillEnabled, setIsFlexBillEnabled] = useState(false);
+  const [isTapOrderPayEnabled, setIsTapOrderPayEnabled] = useState(false);
   const [servicesLoading, setServicesLoading] = useState(true);
   const [servicesLoaded, setServicesLoaded] = useState(false);  
 
@@ -146,7 +149,8 @@ const Settings = () => {
         emailNotifications: restaurant.emailNotifications ?? false,
         smsNotifications: restaurant.smsNotifications ?? false,
         language: restaurant.language || 'es',
-        currency: restaurant.currency || 'MXN'
+        currency: restaurant.currency || 'MXN',
+        tableCount: restaurant.tableCount || 0
       });
       setLogoPreview(restaurant.logo_url || '');
     }
@@ -165,17 +169,25 @@ const Settings = () => {
 
         const enabledServiceIds = response.enabled_services;
 
-        // Verificar si pick-n-go está habilitado
+        // Verificar qué servicios están habilitados
         setIsPickNGoEnabled(enabledServiceIds.includes('pick-n-go'));
+        setIsFlexBillEnabled(enabledServiceIds.includes('flex-bill'));
+        setIsTapOrderPayEnabled(enabledServiceIds.includes('tap-order-pay'));
 
-        console.log('🔍 [Settings] Pick & Go enabled:', enabledServiceIds.includes('pick-n-go'));
-        console.log('🔍 [Settings] Enabled services:', enabledServiceIds);
+        console.log('🔍 [Settings] Services enabled:', {
+          pickNGo: enabledServiceIds.includes('pick-n-go'),
+          flexBill: enabledServiceIds.includes('flex-bill'),
+          tapOrderPay: enabledServiceIds.includes('tap-order-pay')
+        });
+        console.log('🔍 [Settings] All enabled services:', enabledServiceIds);
       } catch (error) {
         if (!isMounted) return;
 
         console.error('❌ [Settings] Error loading enabled services:', error);
-        // En caso de error, asumir que no está habilitado
+        // En caso de error, asumir que no están habilitados
         setIsPickNGoEnabled(false);
+        setIsFlexBillEnabled(false);
+        setIsTapOrderPayEnabled(false);
       } finally {
         if (isMounted) {
           setServicesLoading(false);
@@ -190,6 +202,8 @@ const Settings = () => {
     } else if (!user || !isSignedIn) {
       // Si no hay usuario, resetear estados
       setIsPickNGoEnabled(false);
+      setIsFlexBillEnabled(false);
+      setIsTapOrderPayEnabled(false);
       setServicesLoading(false);
       setServicesLoaded(false);
     }
@@ -393,6 +407,7 @@ const Settings = () => {
         orderNotifications: settings.orderNotifications,
         emailNotifications: settings.emailNotifications,
         smsNotifications: settings.smsNotifications,
+        tableCount: settings.tableCount,
       };
 
       console.log('🚀 Sending update data:', updateData);
@@ -520,7 +535,7 @@ const Settings = () => {
                 </label>
                 <input type="email" name="email" id="email" value={settings.email} onChange={handleChange} className="mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
               </div>
-              <div className="col-span-6">
+              <div className="col-span-6 sm:col-span-3">
                 <label htmlFor="logo" className="block text-sm font-medium text-gray-700">
                   Logo del restaurante
                 </label>
@@ -557,6 +572,54 @@ const Settings = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Selector de mesas - Solo mostrar si FlexBill o TapOrderPay están habilitados */}
+              {!servicesLoading && (isFlexBillEnabled || isTapOrderPayEnabled) && (
+                <div className="col-span-6 sm:col-span-3">
+                  <label htmlFor="tableCount" className="block text-sm font-medium text-gray-700">
+                    Número de mesas
+                  </label>
+                  <div className="mt-2">
+                    <select
+                      id="tableCount"
+                      name="tableCount"
+                      value={settings.tableCount}
+                      onChange={handleChange}
+                      className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
+                    >
+                      <option value={0}>Seleccionar número de mesas</option>
+                      {Array.from({ length: 50 }, (_, i) => i + 1).map(num => (
+                        <option key={num} value={num}>
+                          {num} mesa{num !== 1 ? 's' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Selecciona el número total de mesas de tu restaurante.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Mensaje informativo si no hay servicios que requieren mesas */}
+              {!servicesLoading && !isFlexBillEnabled && !isTapOrderPayEnabled && (
+                <div className="col-span-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-blue-700">
+                          <strong>Configuración de mesas:</strong> El selector de número de mesas aparecerá cuando tengas habilitados los servicios FlexBill o TapOrderPay, que requieren gestión de mesas.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Pick & Go URL Section - Solo mostrar si el servicio está habilitado */}
               {!servicesLoading && isPickNGoEnabled && (

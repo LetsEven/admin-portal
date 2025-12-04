@@ -23,6 +23,7 @@ interface RestaurantData {
   smsNotifications?: boolean;
   language?: string;
   currency?: string;
+  tableCount?: number;
 }
 
 interface UseRestaurantReturn {
