@@ -407,7 +407,6 @@ const Settings = () => {
         orderNotifications: settings.orderNotifications,
         emailNotifications: settings.emailNotifications,
         smsNotifications: settings.smsNotifications,
-        tableCount: settings.tableCount,
       };
 
       console.log('🚀 Sending update data:', updateData);
@@ -573,30 +572,18 @@ const Settings = () => {
                 </div>
               </div>
 
-              {/* Selector de mesas - Solo mostrar si FlexBill o TapOrderPay están habilitados */}
+              {/* Configuración de mesas - Solo mostrar si FlexBill o TapOrderPay están habilitados */}
               {!servicesLoading && (isFlexBillEnabled || isTapOrderPayEnabled) && (
                 <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="tableCount" className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700">
                     Número de mesas
                   </label>
                   <div className="mt-2">
-                    <select
-                      id="tableCount"
-                      name="tableCount"
-                      value={settings.tableCount}
-                      onChange={handleChange}
-                      className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
-                    >
-                      <option value={0}>Seleccionar número de mesas</option>
-                      {Array.from({ length: 50 }, (_, i) => i + 1).map(num => (
-                        <option key={num} value={num}>
-                          {num} mesa{num !== 1 ? 's' : ''}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Selecciona el número total de mesas de tu restaurante.
-                    </p>
+                    <div className=" border-gray-300 rounded-md py-2">
+                      <div className="text-lg font-semibold text-gray-900">
+                        {restaurant?.tableCount || 0} mesa{(restaurant?.tableCount || 0) !== 1 ? 's' : ''} configuradas
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
