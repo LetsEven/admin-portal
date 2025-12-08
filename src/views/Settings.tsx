@@ -54,7 +54,12 @@ const Settings = () => {
   // Estados para sucursales
   const [branches, setBranches] = useState<BranchData[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
-  const [branchesLoading, setBranchesLoading] = useState<boolean>(true);  
+  const [branchesLoading, setBranchesLoading] = useState<boolean>(true);
+
+  // Estados para edición de direcciones
+  const [originalAddress, setOriginalAddress] = useState<string>('');
+  const [isAddressChanged, setIsAddressChanged] = useState<boolean>(false);
+  const [isUpdatingAddress, setIsUpdatingAddress] = useState<boolean>(false);  
 
   // Debug del estado de autenticación
   useEffect(() => {
@@ -314,12 +319,18 @@ const Settings = () => {
       if (selectedBranchData && settings) {
         console.log('🏢 [Settings] Selected branch:', selectedBranchData);
 
+        const branchAddress = selectedBranchData.address || settings.address;
+
         // Actualizar dirección y número de mesas con datos de la sucursal
         setSettings(prev => prev ? {
           ...prev,
-          address: selectedBranchData.address || prev.address,
+          address: branchAddress,
           tableCount: selectedBranchData.tables || 0
         } : null);
+
+        // Actualizar dirección original y resetear estado de cambio
+        setOriginalAddress(branchAddress);
+        setIsAddressChanged(false);
       }
     }
   };
@@ -465,6 +476,53 @@ const Settings = () => {
     if (url) {
       window.open(url, '_blank');
     }
+  };
+
+  // Manejar cambios en el input de dirección
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newAddress = e.target.value;
+
+    // Actualizar estado local
+    setSettings(prev => prev ? { ...prev, address: newAddress } : null);
+
+    // Detectar si ha cambiado respecto a la dirección original
+    setIsAddressChanged(newAddress.trim() !== originalAddress.trim());
+  };
+
+  // Guardar cambios de dirección
+  const handleSaveBranchAddress = async () => {
+    if (selectedBranch === 'all' || !settings?.address) return;
+
+    try {
+      setIsUpdatingAddress(true);
+
+      const response = await adminPortalApi.updateBranchAddress(selectedBranch, settings.address);
+
+      if (response.success) {
+        // Actualizar la branch en el estado local
+        setBranches(prev => prev.map(branch =>
+          branch.id === selectedBranch
+            ? { ...branch, address: settings.address }
+            : branch
+        ));
+
+        // Actualizar dirección original y resetear estado de cambio
+        setOriginalAddress(settings.address);
+        setIsAddressChanged(false);
+
+        console.log('✅ Dirección actualizada correctamente');
+      }
+    } catch (error) {
+      console.error('❌ Error actualizando dirección:', error);
+    } finally {
+      setIsUpdatingAddress(false);
+    }
+  };
+
+  // Descartar cambios de dirección
+  const handleDiscardAddressChanges = () => {
+    setSettings(prev => prev ? { ...prev, address: originalAddress } : null);
+    setIsAddressChanged(false);
   };
 
   const handleSubmit = async (e) => {
@@ -631,22 +689,51 @@ const Settings = () => {
                 <label htmlFor="address" className="block text-sm font-medium text-gray-700">
                   Dirección
                 </label>
-                <input
-                  type="text"
-                  name="address"
-                  id="address"
-                  value={settings.address}
-                  onChange={handleChange}
-                  className={`mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm rounded-md ${
-                    selectedBranch !== 'all'
-                      ? 'border-blue-300 bg-blue-50'
-                      : 'border-gray-300'
-                  }`}
-                  placeholder={selectedBranch !== 'all' ? 'Dirección de la sucursal seleccionada' : 'Dirección del restaurante'}
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    name="address"
+                    id="address"
+                    value={settings.address}
+                    onChange={selectedBranch !== 'all' ? handleAddressChange : handleChange}
+                    className={`mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm rounded-md ${
+                      selectedBranch !== 'all'
+                        ? 'border-blue-300 bg-blue-50'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder={selectedBranch !== 'all' ? 'Dirección de la sucursal seleccionada' : 'Dirección del restaurante'}
+                  />
+                  {selectedBranch !== 'all' && isAddressChanged && (
+                    <div className="flex gap-2 mt-1">
+                      <button
+                        type="button"
+                        onClick={handleSaveBranchAddress}
+                        disabled={isUpdatingAddress}
+                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                      >
+                        {isUpdatingAddress ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <SaveIcon className="w-4 h-4" />
+                        )}
+                        {isUpdatingAddress ? 'Guardando...' : 'Guardar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDiscardAddressChanges}
+                        disabled={isUpdatingAddress}
+                        className="px-3 py-1 bg-gray-500 text-white text-sm rounded-md hover:bg-gray-600 disabled:opacity-50"
+                      >
+                        Descartar
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {selectedBranch !== 'all' && (
                   <p className="mt-1 text-xs text-gray-700">
-                    Esta dirección corresponde a la sucursal seleccionada
+                    {isAddressChanged
+                      ? '⚠️ Has modificado la dirección. Guarda los cambios para aplicarlos.'
+                      : 'Esta dirección corresponde a la sucursal seleccionada.'}
                   </p>
                 )}
               </div>

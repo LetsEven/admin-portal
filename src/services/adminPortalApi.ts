@@ -129,6 +129,12 @@ export interface ClientBranches {
   branches: Branch[];
 }
 
+export interface UpdateBranchAddressResponse {
+  success: boolean;
+  data: Branch;
+  message: string;
+}
+
 export interface ServiceInfo {
   id: string;
   name: string;
@@ -302,6 +308,13 @@ class AdminPortalApiService {
       method: 'GET',
     }, token);
   }
+
+  async updateBranchAddress(branchId: string, address: string, token: string): Promise<UpdateBranchAddressResponse> {
+    return this.makeRequest<UpdateBranchAddressResponse>(`/branches/${branchId}/address`, {
+      method: 'PUT',
+      body: JSON.stringify({ address }),
+    }, token);
+  }
 }
 
 // ===============================================
@@ -373,6 +386,9 @@ export function useAdminPortalApi() {
     ),
     getBranches: () => makeAuthenticatedRequest(
       (token) => adminPortalApiService.getBranches(token)
+    ),
+    updateBranchAddress: (branchId: string, address: string) => makeAuthenticatedRequest(
+      (token) => adminPortalApiService.updateBranchAddress(branchId, address, token)
     ),
 
     // Sincronización inicial (puede no requerir auth)
