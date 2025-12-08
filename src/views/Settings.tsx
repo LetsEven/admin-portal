@@ -27,6 +27,17 @@ interface SettingsData {
   tableCount: number;
 }
 
+interface BranchData {
+  id: string;
+  client_id: string;
+  name: string;
+  address: string;
+  tables: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 const Settings = () => {
   const { user, isLoaded, isSignedIn } = useUser();
   const { restaurant, isLoading, isUpdating, error, updateRestaurant } = useRestaurant();
@@ -38,7 +49,12 @@ const Settings = () => {
   const [isFlexBillEnabled, setIsFlexBillEnabled] = useState(false);
   const [isTapOrderPayEnabled, setIsTapOrderPayEnabled] = useState(false);
   const [servicesLoading, setServicesLoading] = useState(true);
-  const [servicesLoaded, setServicesLoaded] = useState(false);  
+  const [servicesLoaded, setServicesLoaded] = useState(false);
+
+  // Estados para sucursales
+  const [branches, setBranches] = useState<BranchData[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [branchesLoading, setBranchesLoading] = useState<boolean>(true);  
 
   // Debug del estado de autenticación
   useEffect(() => {
@@ -213,6 +229,46 @@ const Settings = () => {
     };
   }, [user?.id, isSignedIn]); // Solo dependencias esenciales
 
+  // Cargar sucursales del cliente
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadBranches = async () => {
+      try {
+        setBranchesLoading(true);
+        console.log('🔍 [Settings] Loading branches for user:', user?.id);
+
+        const response = await adminPortalApi.getBranches();
+
+        if (!isMounted) return;
+
+        console.log('✅ [Settings] Branches loaded:', response);
+        setBranches(response.branches || []);
+
+      } catch (error) {
+        if (!isMounted) return;
+
+        console.error('❌ [Settings] Error loading branches:', error);
+        setBranches([]);
+      } finally {
+        if (isMounted) {
+          setBranchesLoading(false);
+        }
+      }
+    };
+
+    if (user && isSignedIn) {
+      loadBranches();
+    } else {
+      setBranches([]);
+      setBranchesLoading(false);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, isSignedIn]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const {
       name,
@@ -236,6 +292,36 @@ const Settings = () => {
     }
 
     setSettings(newSettings);
+  };
+
+  // Manejar cambio de sucursal seleccionada
+  const handleBranchChange = (branchId: string) => {
+    setSelectedBranch(branchId);
+
+    if (!settings) return;
+
+    if (branchId === 'all') {
+      // Si selecciona "Todas las sucursales", limpiar los campos o mantener valores por defecto
+      setSettings(prev => prev ? {
+        ...prev,
+        address: restaurant?.address || '',
+        tableCount: restaurant?.tableCount || 0
+      } : null);
+    } else {
+      // Buscar la sucursal seleccionada
+      const selectedBranchData = branches.find(branch => branch.id === branchId);
+
+      if (selectedBranchData && settings) {
+        console.log('🏢 [Settings] Selected branch:', selectedBranchData);
+
+        // Actualizar dirección y número de mesas con datos de la sucursal
+        setSettings(prev => prev ? {
+          ...prev,
+          address: selectedBranchData.address || prev.address,
+          tableCount: selectedBranchData.tables || 0
+        } : null);
+      }
+    }
   };
 
   const handleHoursChange = (day: string, field: string, value: string | null) => {
@@ -482,8 +568,33 @@ const Settings = () => {
 
   return <div className="w-full">
     <div className="flex items-center justify-between mb-6">
-      <h1 className="text-2xl font-semibold text-gray-900">Configuración</h1>
+      <div className="flex items-center space-x-6">
+        <h1 className="text-2xl font-semibold text-gray-900">Configuración</h1>
+
+        
+      </div>
+
       <div className="flex items-center space-x-2">
+        {/* Selector de Sucursal */}
+        <div className="flex items-center space-x-2 mr-8">
+          <label className="text-sm font-medium text-gray-700">
+            Sucursal:
+          </label>
+          <select
+            value={selectedBranch}
+            onChange={(e) => handleBranchChange(e.target.value)}
+            className="text-sm border border-gray-300 rounded-md px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:border-transparent"
+            disabled={branchesLoading}
+          >
+            <option value="all">Todas las sucursales</option>
+            {branches.map(branch => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <span className="text-sm text-gray-700">
           {user?.firstName || 'Usuario'}
         </span>
@@ -520,7 +631,24 @@ const Settings = () => {
                 <label htmlFor="address" className="block text-sm font-medium text-gray-700">
                   Dirección
                 </label>
-                <input type="text" name="address" id="address" value={settings.address} onChange={handleChange} className="mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
+                <input
+                  type="text"
+                  name="address"
+                  id="address"
+                  value={settings.address}
+                  onChange={handleChange}
+                  className={`mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm rounded-md ${
+                    selectedBranch !== 'all'
+                      ? 'border-blue-300 bg-blue-50'
+                      : 'border-gray-300'
+                  }`}
+                  placeholder={selectedBranch !== 'all' ? 'Dirección de la sucursal seleccionada' : 'Dirección del restaurante'}
+                />
+                {selectedBranch !== 'all' && (
+                  <p className="mt-1 text-xs text-gray-700">
+                    Esta dirección corresponde a la sucursal seleccionada
+                  </p>
+                )}
               </div>
               <div className="col-span-6 sm:col-span-3">
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
@@ -579,9 +707,24 @@ const Settings = () => {
                     Número de mesas
                   </label>
                   <div className="mt-2">
-                    <div className=" border-gray-300 rounded-md py-2">
+                    <div className={` rounded-md px-3 py-2 ${
+                      selectedBranch !== 'all'
+                        ? 'bg-blue-0 '
+                        : 'bg-gray-50 border-gray-300'
+                    }`}>
                       <div className="text-lg font-semibold text-gray-900">
-                        {restaurant?.tableCount || 0} mesa{(restaurant?.tableCount || 0) !== 1 ? 's' : ''} configuradas
+                        {selectedBranch !== 'all' ? (
+                          (() => {
+                            const selectedBranchData = branches.find(b => b.id === selectedBranch);
+                            return selectedBranchData ? (
+                              <>
+                                {selectedBranchData.tables} mesa{selectedBranchData.tables !== 1 ? 's' : ''}
+                              </>
+                            ) : '0 mesas';
+                          })()
+                        ) : (
+                          `${restaurant?.tableCount || 0} mesa${(restaurant?.tableCount || 0) !== 1 ? 's' : ''} configuradas`
+                        )}
                       </div>
                     </div>
                   </div>

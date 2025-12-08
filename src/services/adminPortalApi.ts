@@ -114,6 +114,21 @@ export interface EnabledServices {
   client_id: string;
 }
 
+export interface Branch {
+  id: string;
+  name: string;
+  address?: string;
+  tables: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientBranches {
+  client_id: string;
+  branches: Branch[];
+}
+
 export interface ServiceInfo {
   id: string;
   name: string;
@@ -281,6 +296,12 @@ class AdminPortalApiService {
       method: 'GET',
     }, token);
   }
+
+  async getBranches(token: string): Promise<ClientBranches> {
+    return this.makeRequest<ClientBranches>('/branches', {
+      method: 'GET',
+    }, token);
+  }
 }
 
 // ===============================================
@@ -349,6 +370,9 @@ export function useAdminPortalApi() {
     // Métodos de servicios
     getEnabledServices: () => makeAuthenticatedRequest(
       (token) => adminPortalApiService.getEnabledServices(token)
+    ),
+    getBranches: () => makeAuthenticatedRequest(
+      (token) => adminPortalApiService.getBranches(token)
     ),
 
     // Sincronización inicial (puede no requerir auth)
