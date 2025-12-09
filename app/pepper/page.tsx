@@ -251,7 +251,7 @@ const PepperPage: React.FC = () => {
                 <div
                   className="flex-none transition-all duration-300 ease-in-out px-3 sm:px-4 md:px-6"
                   style={{
-                    paddingTop: isTablet ? "40px" : "400px",
+                    paddingTop: isTablet ? "40px" : "200px",
                     paddingBottom: isTablet ? "16px" : "32px",
                     transform: sidebarExpanded
                       ? "translateX(30px)"
