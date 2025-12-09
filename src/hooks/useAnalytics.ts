@@ -4,6 +4,7 @@ import { useUser, useAuth } from '@clerk/nextjs';
 // Tipos para los filtros de analytics
 export interface AnalyticsFilters {
   restaurant_id?: number | null;
+  branch_id?: string | null;  // ✅ NUEVO: Filtro por sucursal
   start_date?: string | null;
   end_date?: string | null;
   gender?: 'todos' | 'hombre' | 'mujer' | 'otro';

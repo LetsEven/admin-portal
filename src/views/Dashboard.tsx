@@ -65,7 +65,7 @@ const opcionesGranularidad = [
 
 // Esta será reemplazada por datos reales del hook
 const sucursalesDefault = [{
-  id: 1,
+  id: null,  // ✅ CAMBIO: null en lugar de 1 para evitar UUID inválido
   name: 'Cargando...',
   is_active: true
 }];
@@ -151,6 +151,10 @@ const Dashboard = () => {
   const { restaurant } = useRestaurant();
   const [sucursalSeleccionada, setSucursalSeleccionada] = useState(sucursalesDefault[0]);
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
+
+  // Estados para branches/sucursales
+  const [branches, setBranches] = useState([]);
+  const [branchesLoading, setBranchesLoading] = useState(true);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarModalPro, setMostrarModalPro] = useState(false);
@@ -195,7 +199,9 @@ const Dashboard = () => {
   const cambiarSucursal = (sucursal) => {
     setSucursalSeleccionada(sucursal);
     setDropdownAbierto(false);
-    cargarDatosDashboard(sucursal.id);
+    // ✅ Ahora usamos el restaurant_id del usuario, no el branch UUID
+    const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+    cargarDatosDashboard(restaurantId);
   };
 
   const formatearFechaLocal = (fecha: Date): string => {
@@ -257,12 +263,17 @@ const Dashboard = () => {
 
     const filtros: AnalyticsFilters = {
       restaurant_id: restaurantId,
+      branch_id: sucursalSeleccionada?.id,  // ✅ NUEVO: Incluir branch_id
       start_date: startDate ? formatearFechaLocal(startDate) : null,
       end_date: endDate ? formatearFechaLocal(endDate) : null,
       gender: customFilters.gender || generoSeleccionado.id as any,
       age_range: customFilters.age_range || edadSeleccionada.id as any,
       granularity: currentGranularity as any
     };
+
+    // 🔍 DEBUG: Ver qué valores se están enviando
+    console.log('🔍 [cargarDatosDashboard] sucursalSeleccionada:', sucursalSeleccionada);
+    console.log('🔍 [cargarDatosDashboard] filtros enviados:', filtros);
 
     getCompleteDashboardData(filtros);
 
@@ -273,22 +284,28 @@ const Dashboard = () => {
   };
 
   const cambiarGenero = (genero: any) => {
-    
+
     setGeneroSeleccionado(genero);
     setDropdownGeneroAbierto(false);
-    cargarDatosDashboard(sucursalSeleccionada?.id, { gender: genero.id });
+    // ✅ Usar restaurant_id correcto, no branch UUID
+    const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+    cargarDatosDashboard(restaurantId, { gender: genero.id });
   };
 
   const cambiarEdad = (edad: any) => {
     setEdadSeleccionada(edad);
     setDropdownEdadAbierto(false);
-    cargarDatosDashboard(sucursalSeleccionada?.id, { age_range: edad.id });
+    // ✅ Usar restaurant_id correcto, no branch UUID
+    const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+    cargarDatosDashboard(restaurantId, { age_range: edad.id });
   };
 
   const cambiarGranularidad = (granularidad:any) => {
     setGranularidadSeleccionada(granularidad);
     setDropdownGranularidadAbierto(false);
-    cargarDatosDashboard(sucursalSeleccionada?.id, { granularity: granularidad.id });
+    // ✅ Usar restaurant_id correcto, no branch UUID
+    const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+    cargarDatosDashboard(restaurantId, { granularity: granularidad.id });
   };
 
   const cambiarMesParaGrafico = (direccion: any) => {
@@ -549,12 +566,58 @@ const Dashboard = () => {
     setPedidoSeleccionado(null);
   };
 
-  useEffect(() => {
-    if (userRestaurants.length > 0 && sucursalSeleccionada.name === 'Cargando...') {
-      setSucursalSeleccionada(userRestaurants[0]);
-      cargarDatosDashboard(userRestaurants[0].id);
+  // Función para cargar branches/sucursales
+  const loadBranches = async () => {
+    try {
+      setBranchesLoading(true);
+      console.log('🔍 [Dashboard] Loading branches...');
+
+      const response = await adminPortalApi.getBranches();
+      console.log('✅ [Dashboard] Branches loaded:', response);
+
+      setBranches(response.branches || []);
+
+      // Si hay branches y aún está en "Cargando...", seleccionar el primero
+      if (response.branches && response.branches.length > 0 && sucursalSeleccionada.name === 'Cargando...') {
+        const firstBranch = response.branches[0];
+        setSucursalSeleccionada(firstBranch);
+        // 🔄 Solo cargar datos si userRestaurants ya está disponible
+        if (userRestaurants.length > 0) {
+          const restaurantId = userRestaurants[0]?.id;
+          console.log('🎯 [Dashboard] Auto-loading data with branch:', firstBranch.id, 'and restaurant:', restaurantId);
+          cargarDatosDashboard(restaurantId);
+        } else {
+          console.log('⏳ [Dashboard] Waiting for userRestaurants to load before calling dashboard...');
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ [Dashboard] Error loading branches:', error);
+      setBranches([]);
+    } finally {
+      setBranchesLoading(false);
     }
-  }, [userRestaurants]);
+  };
+
+  // Cargar branches al montar el componente
+  useEffect(() => {
+    loadBranches();
+  }, []);
+
+  // ✅ NUEVO: Cargar datos cuando tanto userRestaurants como sucursal real estén disponibles
+  useEffect(() => {
+    if (
+      userRestaurants.length > 0 &&
+      sucursalSeleccionada.name !== 'Cargando...' &&
+      sucursalSeleccionada.id &&
+      !dashboardData // Solo si aún no hay datos cargados
+    ) {
+      const restaurantId = userRestaurants[0]?.id;
+      console.log('🚀 [Dashboard] Both userRestaurants and branch ready, loading dashboard data...');
+      console.log('🎯 [Dashboard] Using restaurant:', restaurantId, 'and branch:', sucursalSeleccionada.id);
+      cargarDatosDashboard(restaurantId);
+    }
+  }, [userRestaurants, sucursalSeleccionada, dashboardData]);
 
   useEffect(() => {
     if (error) {
@@ -688,29 +751,29 @@ const Dashboard = () => {
                   </p>
                 </div>
                 <ul className="max-h-64 overflow-y-auto py-1">
-                  {isLoadingRestaurants ? (
-                    <li className="px-4 py-2 text-sm text-gray-500">Cargando restaurantes...</li>
-                  ) : userRestaurants.length > 0 ? (
-                    userRestaurants.map(restaurant => (
-                      <li key={restaurant.id}>
+                  {branchesLoading ? (
+                    <li className="px-4 py-2 text-sm text-gray-500">Cargando sucursales...</li>
+                  ) : branches.length > 0 ? (
+                    branches.map(branch => (
+                      <li key={branch.id}>
                         <button
-                          onClick={() => cambiarSucursal(restaurant)}
+                          onClick={() => cambiarSucursal(branch)}
                           className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
                         >
                           <div>
                             <p className="text-sm font-medium text-gray-800">
-                              {restaurant.name}
+                              {branch.name}
                             </p>
                             <p className="text-xs text-gray-500">
-                              ID: {restaurant.id}
+                              {branch.address || 'Sin dirección'}
                             </p>
                           </div>
-                          {sucursalSeleccionada.id === restaurant.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
+                          {sucursalSeleccionada.id === branch.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
                         </button>
                       </li>
                     ))
                   ) : (
-                    <li className="px-4 py-2 text-sm text-gray-500">No hay restaurantes disponibles</li>
+                    <li className="px-4 py-2 text-sm text-gray-500">No hay sucursales disponibles</li>
                   )}
                 </ul>
               </div>
