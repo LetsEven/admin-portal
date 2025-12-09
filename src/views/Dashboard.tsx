@@ -41,10 +41,9 @@ const sliderStyles = `
 // Opciones de filtros
 const opcionesGenero = [
   { id: 'todos', label: 'Todos' },
-  { id: 'male', label: 'Hombre' },
-  { id: 'female', label: 'Mujer' },
-  { id: 'non-binary', label: 'No binario' },
-  { id: 'prefer-not-to-say', label: 'Prefiero no decir' }
+  { id: 'hombre', label: 'Hombre' },     // ✅ Corregido: envía 'hombre'
+  { id: 'mujer', label: 'Mujer' },       // ✅ Corregido: envía 'mujer'
+  { id: 'otro', label: 'No binario' },   // ✅ Corregido: envía 'otro'
 ];
 
 const opcionesEdad = [
@@ -201,7 +200,8 @@ const Dashboard = () => {
     setDropdownAbierto(false);
     // ✅ Ahora usamos el restaurant_id del usuario, no el branch UUID
     const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
-    cargarDatosDashboard(restaurantId);
+    // ✅ CORREGIR: Pasar la sucursal directamente para evitar problema de timing
+    cargarDatosDashboard(restaurantId, {}, null, null, sucursal);
   };
 
   const formatearFechaLocal = (fecha: Date): string => {
@@ -217,7 +217,7 @@ const Dashboard = () => {
   };
 
   // Función para cargar datos del dashboard
-  const cargarDatosDashboard = (restaurantId = null, customFilters = {}, customRangoHoras = null, customDiaSeleccionado = null) => {
+  const cargarDatosDashboard = (restaurantId = null, customFilters = {}, customRangoHoras = null, customDiaSeleccionado = null, customSucursal = null) => {
     const currentGranularity = customFilters.granularity || granularidadSeleccionada.id;
     let startDate = null;
     let endDate = null;
@@ -261,9 +261,12 @@ const Dashboard = () => {
       endDate = new Date(año, 11, 31, 23, 59, 59, 999);
     }
 
+    // ✅ CORREGIR: Usar la sucursal pasada como parámetro o la del estado
+    const sucursalAUtilizar = customSucursal || sucursalSeleccionada;
+
     const filtros: AnalyticsFilters = {
       restaurant_id: restaurantId,
-      branch_id: sucursalSeleccionada?.id,  // ✅ NUEVO: Incluir branch_id
+      branch_id: sucursalAUtilizar?.id,  // ✅ CORREGIDO: Usar la sucursal correcta
       start_date: startDate ? formatearFechaLocal(startDate) : null,
       end_date: endDate ? formatearFechaLocal(endDate) : null,
       gender: customFilters.gender || generoSeleccionado.id as any,
@@ -273,6 +276,8 @@ const Dashboard = () => {
 
     // 🔍 DEBUG: Ver qué valores se están enviando
     console.log('🔍 [cargarDatosDashboard] sucursalSeleccionada:', sucursalSeleccionada);
+    console.log('🔍 [cargarDatosDashboard] customSucursal:', customSucursal);
+    console.log('🔍 [cargarDatosDashboard] sucursalAUtilizar:', sucursalAUtilizar);
     console.log('🔍 [cargarDatosDashboard] filtros enviados:', filtros);
 
     getCompleteDashboardData(filtros);

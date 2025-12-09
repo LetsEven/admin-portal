@@ -793,28 +793,31 @@ const Settings = () => {
                   <label className="block text-sm font-medium text-gray-700">
                     Número de mesas
                   </label>
-                  <div className="mt-2">
-                    <div className={` rounded-md px-3 py-2 ${
-                      selectedBranch !== 'all'
-                        ? 'bg-blue-0 '
-                        : 'bg-gray-50 border-gray-300'
-                    }`}>
-                      <div className="text-lg font-semibold text-gray-900">
-                        {selectedBranch !== 'all' ? (
-                          (() => {
-                            const selectedBranchData = branches.find(b => b.id === selectedBranch);
-                            return selectedBranchData ? (
-                              <>
-                                {selectedBranchData.tables} mesa{selectedBranchData.tables !== 1 ? 's' : ''}
-                              </>
-                            ) : '0 mesas';
-                          })()
-                        ) : (
-                          `${restaurant?.tableCount || 0} mesa${(restaurant?.tableCount || 0) !== 1 ? 's' : ''} configuradas`
-                        )}
-                      </div>
+                  <div className={`mt-1 block w-full shadow-sm sm:text-sm rounded-md px-3 py-2 ${
+                    selectedBranch !== 'all'
+                      ? ' text-blue-900'
+                      : ' text-gray-900'
+                  }`}>
+                    <div className="text-sm font-medium">
+                      {selectedBranch !== 'all' ? (
+                        (() => {
+                          const selectedBranchData = branches.find(b => b.id === selectedBranch);
+                          return selectedBranchData ? (
+                            <>
+                              {selectedBranchData.tables} mesa{selectedBranchData.tables !== 1 ? 's' : ''}
+                            </>
+                          ) : '0 mesas';
+                        })()
+                      ) : (
+                        `${restaurant?.tableCount || 0} mesa${(restaurant?.tableCount || 0) !== 1 ? 's' : ''} configuradas`
+                      )}
                     </div>
                   </div>
+                  {/* {selectedBranch !== 'all' && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Esta configuración corresponde a la sucursal seleccionada.
+                    </p>
+                  )} */}
                 </div>
               )}
 
