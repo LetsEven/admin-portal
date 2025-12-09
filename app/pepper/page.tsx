@@ -290,7 +290,7 @@ const PepperPage: React.FC = () => {
             ) : (
               // Messages Area - Responsive
               <div
-                className="h-full overflow-y-auto px-3 sm:px-4 md:px-6"
+                className="h-full overflow-y-auto px-3 sm:px-4 md:px-9"
                 style={{
                   paddingTop: isTablet ? "60px" : "80px",
                   paddingBottom: isTablet ? "60px" : "80px",
