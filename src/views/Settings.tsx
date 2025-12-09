@@ -795,8 +795,8 @@ const Settings = () => {
                   </label>
                   <div className={`mt-1 block w-full shadow-sm sm:text-sm rounded-md px-3 py-2 ${
                     selectedBranch !== 'all'
-                      ? ' text-blue-900'
-                      : ' text-gray-900'
+                      ? ' text-gray-800'
+                      : ' text-gray-800'
                   }`}>
                     <div className="text-sm font-medium">
                       {selectedBranch !== 'all' ? (
@@ -813,11 +813,6 @@ const Settings = () => {
                       )}
                     </div>
                   </div>
-                  {/* {selectedBranch !== 'all' && (
-                    <p className="mt-1 text-xs text-gray-500">
-                      Esta configuración corresponde a la sucursal seleccionada.
-                    </p>
-                  )} */}
                 </div>
               )}
 

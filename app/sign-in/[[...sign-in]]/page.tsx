@@ -50,7 +50,7 @@ export default function Page() {
           <img
             src="logo-short-green.webp"
             alt="Xquisito Logo"
-            className="size-18 justify-self-center"
+            className="size-16 justify-self-center"
           />
         </div>
 
