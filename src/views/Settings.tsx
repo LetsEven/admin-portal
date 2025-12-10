@@ -59,7 +59,13 @@ const Settings = () => {
   // Estados para edición de direcciones
   const [originalAddress, setOriginalAddress] = useState<string>('');
   const [isAddressChanged, setIsAddressChanged] = useState<boolean>(false);
-  const [isUpdatingAddress, setIsUpdatingAddress] = useState<boolean>(false);  
+  const [isUpdatingAddress, setIsUpdatingAddress] = useState<boolean>(false);
+
+  // Estados para edición de horarios por sucursal
+  const [originalOpeningHours, setOriginalOpeningHours] = useState<any>(null);
+  const [areHoursChanged, setAreHoursChanged] = useState<boolean>(false);
+  const [isUpdatingHours, setIsUpdatingHours] = useState<boolean>(false);
+  const [hideHoursButtons, setHideHoursButtons] = useState<boolean>(false);  
 
   // Debug del estado de autenticación
   useEffect(() => {
@@ -288,17 +294,47 @@ const Settings = () => {
       const selectedBranchData = branches.find(branch => branch.id === selectedBranch);
       if (selectedBranchData) {
         const branchAddress = selectedBranchData.address || '';
+
+        // Cargar horarios de la sucursal o usar horarios predeterminados
+        const branchOpeningHours = selectedBranchData.opening_hours || {
+          monday: { open_time: "09:00", close_time: "22:00", is_closed: false },
+          tuesday: { open_time: "09:00", close_time: "22:00", is_closed: false },
+          wednesday: { open_time: "09:00", close_time: "22:00", is_closed: false },
+          thursday: { open_time: "09:00", close_time: "22:00", is_closed: false },
+          friday: { open_time: "09:00", close_time: "23:00", is_closed: false },
+          saturday: { open_time: "10:00", close_time: "23:00", is_closed: false },
+          sunday: { open_time: "10:00", close_time: "20:00", is_closed: false }
+        };
+
+        // Convertir formato de base de datos a formato del frontend
+        const formattedOpeningHours = {};
+        Object.keys(branchOpeningHours).forEach(day => {
+          const dayData = branchOpeningHours[day];
+          formattedOpeningHours[day] = {
+            open: dayData.open_time || "09:00",
+            close: dayData.close_time || "22:00",
+            closed: dayData.is_closed || false
+          };
+        });
+
         setSettings(prev => prev ? {
           ...prev,
           address: branchAddress,
-          tableCount: selectedBranchData.tables || 0
+          tableCount: selectedBranchData.tables || 0,
+          openingHours: formattedOpeningHours
         } : null);
+
         setOriginalAddress(branchAddress);
+        setOriginalOpeningHours(formattedOpeningHours);
         setIsAddressChanged(false);
+        setAreHoursChanged(false);
+        setHideHoursButtons(false); // Resetear estado de botones ocultos
+
         console.log('🏢 [Settings] Loaded default branch data:', {
           name: selectedBranchData.name,
           address: branchAddress,
-          tables: selectedBranchData.tables
+          tables: selectedBranchData.tables,
+          openingHours: formattedOpeningHours
         });
       }
     }
@@ -331,6 +367,7 @@ const Settings = () => {
 
   // Manejar cambio de sucursal seleccionada
   const handleBranchChange = (branchId: string) => {
+    console.log('🔄 [Settings] Branch change requested to:', branchId);
     setSelectedBranch(branchId);
 
     if (!settings || !branchId) return;
@@ -339,25 +376,62 @@ const Settings = () => {
     const selectedBranchData = branches.find(branch => branch.id === branchId);
 
     if (selectedBranchData && settings) {
-      console.log('🏢 [Settings] Selected branch:', selectedBranchData);
+      console.log('🏢 [Settings] Selected branch data found:', {
+        id: selectedBranchData.id,
+        name: selectedBranchData.name,
+        opening_hours: selectedBranchData.opening_hours
+      });
 
       const branchAddress = selectedBranchData.address || '';
 
-      // Actualizar dirección y número de mesas con datos de la sucursal
+      // Cargar horarios de la sucursal o usar horarios predeterminados
+      const branchOpeningHours = selectedBranchData.opening_hours || {
+        monday: { open_time: "09:00", close_time: "22:00", is_closed: false },
+        tuesday: { open_time: "09:00", close_time: "22:00", is_closed: false },
+        wednesday: { open_time: "09:00", close_time: "22:00", is_closed: false },
+        thursday: { open_time: "09:00", close_time: "22:00", is_closed: false },
+        friday: { open_time: "09:00", close_time: "23:00", is_closed: false },
+        saturday: { open_time: "10:00", close_time: "23:00", is_closed: false },
+        sunday: { open_time: "10:00", close_time: "20:00", is_closed: false }
+      };
+
+      console.log('⏰ [Settings] Raw opening hours from branch:', branchOpeningHours);
+
+      // Convertir formato de base de datos a formato del frontend
+      const formattedOpeningHours = {};
+      Object.keys(branchOpeningHours).forEach(day => {
+        const dayData = branchOpeningHours[day];
+        formattedOpeningHours[day] = {
+          open: dayData.open_time || "09:00",
+          close: dayData.close_time || "22:00",
+          closed: dayData.is_closed || false
+        };
+      });
+
+      console.log('✨ [Settings] Formatted opening hours for UI:', formattedOpeningHours);
+
+      // Actualizar dirección, horarios y número de mesas con datos de la sucursal
       setSettings(prev => prev ? {
         ...prev,
         address: branchAddress,
-        tableCount: selectedBranchData.tables || 0
+        tableCount: selectedBranchData.tables || 0,
+        openingHours: formattedOpeningHours
       } : null);
 
-      // Actualizar dirección original y resetear estado de cambio
+      // Actualizar estados originales y resetear estados de cambio
       setOriginalAddress(branchAddress);
+      setOriginalOpeningHours(formattedOpeningHours);
       setIsAddressChanged(false);
+      setAreHoursChanged(false);
+      setHideHoursButtons(false); // Resetear estado de botones ocultos
 
-      console.log('🏢 [Settings] Updated settings with branch data:', {
+      console.log('✅ [Settings] Settings state updated for branch:', branchId, {
         address: branchAddress,
-        tableCount: selectedBranchData.tables || 0
+        tableCount: selectedBranchData.tables || 0,
+        openingHours: formattedOpeningHours
       });
+    } else {
+      console.warn('⚠️ [Settings] Branch not found or settings not available:', branchId);
     }
   };
 
@@ -376,16 +450,31 @@ const Settings = () => {
     setValidationErrors(newErrors);
 
     // Actualizar settings
+    const newOpeningHours = {
+      ...settings.openingHours,
+      [day]: {
+        ...settings.openingHours[day],
+        [field]: field === 'closed' ? !settings.openingHours[day].closed : value
+      }
+    };
+
     setSettings({
       ...settings,
-      openingHours: {
-        ...settings.openingHours,
-        [day]: {
-          ...settings.openingHours[day],
-          [field]: field === 'closed' ? !settings.openingHours[day].closed : value
-        }
-      }
+      openingHours: newOpeningHours
     });
+
+    // Detectar si han cambiado los horarios respecto al original
+    if (originalOpeningHours) {
+      const hasChanged = JSON.stringify(newOpeningHours) !== JSON.stringify(originalOpeningHours);
+      console.log('🕐 [Settings] Hours change detection:', {
+        newOpeningHours,
+        originalOpeningHours,
+        hasChanged,
+        newHoursStr: JSON.stringify(newOpeningHours),
+        originalHoursStr: JSON.stringify(originalOpeningHours)
+      });
+      setAreHoursChanged(hasChanged);
+    }
   };
 
   const handleLogoUpload = async () => {
@@ -549,6 +638,97 @@ const Settings = () => {
   const handleDiscardAddressChanges = () => {
     setSettings(prev => prev ? { ...prev, address: originalAddress } : null);
     setIsAddressChanged(false);
+  };
+
+  // Guardar cambios de horarios por sucursal
+  const handleSaveBranchHours = async () => {
+    if (!selectedBranch || !settings?.openingHours) return;
+
+    try {
+      setIsUpdatingHours(true);
+
+      // Convertir formato del frontend al formato de base de datos
+      const dbFormatHours = {};
+      Object.keys(settings.openingHours).forEach(day => {
+        const dayData = settings.openingHours[day];
+        dbFormatHours[day] = {
+          open_time: dayData.open,
+          close_time: dayData.close,
+          is_closed: dayData.closed
+        };
+      });
+
+      console.log('💾 [Settings] Saving opening hours for branch:', selectedBranch, dbFormatHours);
+
+      const response = await adminPortalApi.updateBranchOpeningHours(selectedBranch, dbFormatHours);
+
+      console.log('📡 [Settings] API Response:', response);
+
+      // Manejar diferentes formatos de respuesta del API
+      const isSuccessfulResponse = response.success === true ||
+        (response.id && response.name && response.opening_hours); // Si es un objeto branch directamente
+
+      if (isSuccessfulResponse) {
+        console.log('✅ Opening hours saved successfully, updating local state...');
+        console.log('🔍 [Settings] Response detected as successful (format:', response.success ? 'standard' : 'branch object', ')');
+        console.log('🔍 [Settings] Current settings.openingHours before update:', settings.openingHours);
+        console.log('🔍 [Settings] Current originalOpeningHours before update:', originalOpeningHours);
+        console.log('🔍 [Settings] Current areHoursChanged before update:', areHoursChanged);
+
+        // Actualizar la branch en el estado local con los nuevos horarios
+        setBranches(prev => {
+          const updatedBranches = prev.map(branch =>
+            branch.id === selectedBranch
+              ? { ...branch, opening_hours: dbFormatHours }
+              : branch
+          );
+          console.log('🔄 [Settings] Updated branches state with new opening hours for branch:', selectedBranch);
+          console.log('🔍 [Settings] Updated branch data:', updatedBranches.find(b => b.id === selectedBranch));
+          return updatedBranches;
+        });
+
+        // Actualizar horarios originales y resetear estado de cambio
+        console.log('🔄 [Settings] Setting originalOpeningHours to:', settings.openingHours);
+        setOriginalOpeningHours(settings.openingHours);
+
+        console.log('🔄 [Settings] Setting areHoursChanged to false...');
+        setAreHoursChanged(false);
+
+        // Recargar branches desde el servidor para obtener los datos más recientes
+        console.log('🔄 [Settings] Reloading branches from server to get fresh data...');
+        try {
+          const freshBranchesResponse = await adminPortalApi.getBranches();
+          if (freshBranchesResponse.success && freshBranchesResponse.data?.branches) {
+            console.log('✅ [Settings] Fresh branches loaded from server');
+            setBranches(freshBranchesResponse.data.branches);
+          }
+        } catch (error) {
+          console.error('❌ [Settings] Error reloading branches:', error);
+        }
+
+        console.log('✅ Horarios de apertura actualizados correctamente en estado local');
+      } else {
+        console.error('❌ API returned error:', response);
+      }
+    } catch (error) {
+      console.error('❌ Error actualizando horarios de apertura:', error);
+    } finally {
+      setIsUpdatingHours(false);
+    }
+  };
+
+  // Descartar cambios de horarios
+  const handleDiscardHoursChanges = () => {
+    if (originalOpeningHours) {
+      setSettings(prev => prev ? { ...prev, openingHours: originalOpeningHours } : null);
+      setAreHoursChanged(false);
+
+      // Ocultar botones temporalmente
+      setHideHoursButtons(true);
+      setTimeout(() => {
+        setHideHoursButtons(false);
+      }, 1500); // Ocultar por 1.5 segundos para "Descartar"
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -945,6 +1125,58 @@ const Settings = () => {
                   )}
                 </div>)}
             </div>
+            {/* Botón para guardar horarios por sucursal */}
+            {(() => {
+              const shouldShowButtons = selectedBranch && areHoursChanged;
+              console.log('🔍 [Settings] Button render check:', {
+                selectedBranch,
+                areHoursChanged,
+                shouldShowButtons,
+                hideHoursButtons
+              });
+              return shouldShowButtons;
+            })() && (
+              <div className="flex gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={handleSaveBranchHours}
+                  disabled={isUpdatingHours}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isUpdatingHours ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <SaveIcon className="w-4 h-4" />
+                  )}
+                  {isUpdatingHours ? 'Guardando...' : 'Guardar horarios'}
+                </button>
+                {!hideHoursButtons && (
+                  <button
+                    type="button"
+                    onClick={handleDiscardHoursChanges}
+                    disabled={isUpdatingHours}
+                    className="px-4 py-2 bg-gray-500 text-white text-sm rounded-md hover:bg-gray-600 disabled:opacity-50"
+                  >
+                    Descartar
+                  </button>
+                )}
+              </div>
+            )}
+            {selectedBranch && areHoursChanged && !hideHoursButtons && (
+              <p className="mt-2 text-xs text-gray-700">
+                ⚠️ Has modificado los horarios de esta sucursal. Guarda los cambios para aplicarlos.
+              </p>
+            )}
+            {selectedBranch && areHoursChanged && hideHoursButtons && (
+              <p className="mt-2 text-xs text-green-600">
+                ✅ Acción procesada correctamente.
+              </p>
+            )}
+            {selectedBranch && !areHoursChanged && (
+              <p className="mt-2 text-xs text-gray-700">
+                📅 Estos horarios corresponden a la sucursal seleccionada.
+              </p>
+            )}
           </div>
         </div>
       </div>

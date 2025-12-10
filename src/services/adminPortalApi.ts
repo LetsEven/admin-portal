@@ -120,6 +120,13 @@ export interface Branch {
   address?: string;
   tables: number;
   active: boolean;
+  opening_hours?: {
+    [key: string]: {
+      open_time: string;
+      close_time: string;
+      is_closed: boolean;
+    };
+  };
   created_at: string;
   updated_at: string;
 }
@@ -130,6 +137,12 @@ export interface ClientBranches {
 }
 
 export interface UpdateBranchAddressResponse {
+  success: boolean;
+  data: Branch;
+  message: string;
+}
+
+export interface UpdateBranchOpeningHoursResponse {
   success: boolean;
   data: Branch;
   message: string;
@@ -315,6 +328,13 @@ class AdminPortalApiService {
       body: JSON.stringify({ address }),
     }, token);
   }
+
+  async updateBranchOpeningHours(branchId: string, openingHours: any, token: string): Promise<UpdateBranchOpeningHoursResponse> {
+    return this.makeRequest<UpdateBranchOpeningHoursResponse>(`/branches/${branchId}/opening-hours`, {
+      method: 'PUT',
+      body: JSON.stringify({ opening_hours: openingHours }),
+    }, token);
+  }
 }
 
 // ===============================================
@@ -389,6 +409,9 @@ export function useAdminPortalApi() {
     ),
     updateBranchAddress: (branchId: string, address: string) => makeAuthenticatedRequest(
       (token) => adminPortalApiService.updateBranchAddress(branchId, address, token)
+    ),
+    updateBranchOpeningHours: (branchId: string, openingHours: any) => makeAuthenticatedRequest(
+      (token) => adminPortalApiService.updateBranchOpeningHours(branchId, openingHours, token)
     ),
 
     // Sincronización inicial (puede no requerir auth)
