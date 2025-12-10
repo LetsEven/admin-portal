@@ -53,7 +53,7 @@ const Settings = () => {
 
   // Estados para sucursales
   const [branches, setBranches] = useState<BranchData[]>([]);
-  const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [selectedBranch, setSelectedBranch] = useState<string>('');
   const [branchesLoading, setBranchesLoading] = useState<boolean>(true);
 
   // Estados para edición de direcciones
@@ -248,7 +248,15 @@ const Settings = () => {
         if (!isMounted) return;
 
         console.log('✅ [Settings] Branches loaded:', response);
-        setBranches(response.branches || []);
+        const loadedBranches = response.branches || [];
+        setBranches(loadedBranches);
+
+        // Establecer primera sucursal activa como predeterminada si no hay ninguna seleccionada
+        if (loadedBranches.length > 0 && !selectedBranch) {
+          const defaultBranch = loadedBranches.find(b => b.active) || loadedBranches[0];
+          setSelectedBranch(defaultBranch.id);
+          console.log('🏢 [Settings] Default branch set:', defaultBranch.name, '(ID:', defaultBranch.id, ')');
+        }
 
       } catch (error) {
         if (!isMounted) return;
@@ -273,6 +281,28 @@ const Settings = () => {
       isMounted = false;
     };
   }, [user?.id, isSignedIn]);
+
+  // Efecto para cargar datos de sucursal predeterminada cuando las sucursales estén cargadas
+  useEffect(() => {
+    if (branches.length > 0 && selectedBranch && settings) {
+      const selectedBranchData = branches.find(branch => branch.id === selectedBranch);
+      if (selectedBranchData) {
+        const branchAddress = selectedBranchData.address || '';
+        setSettings(prev => prev ? {
+          ...prev,
+          address: branchAddress,
+          tableCount: selectedBranchData.tables || 0
+        } : null);
+        setOriginalAddress(branchAddress);
+        setIsAddressChanged(false);
+        console.log('🏢 [Settings] Loaded default branch data:', {
+          name: selectedBranchData.name,
+          address: branchAddress,
+          tables: selectedBranchData.tables
+        });
+      }
+    }
+  }, [branches, selectedBranch, settings?.name]); // Dependencia en settings.name para evitar loops
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const {
@@ -303,35 +333,31 @@ const Settings = () => {
   const handleBranchChange = (branchId: string) => {
     setSelectedBranch(branchId);
 
-    if (!settings) return;
+    if (!settings || !branchId) return;
 
-    if (branchId === 'all') {
-      // Si selecciona "Todas las sucursales", limpiar los campos o mantener valores por defecto
+    // Buscar la sucursal seleccionada
+    const selectedBranchData = branches.find(branch => branch.id === branchId);
+
+    if (selectedBranchData && settings) {
+      console.log('🏢 [Settings] Selected branch:', selectedBranchData);
+
+      const branchAddress = selectedBranchData.address || '';
+
+      // Actualizar dirección y número de mesas con datos de la sucursal
       setSettings(prev => prev ? {
         ...prev,
-        address: restaurant?.address || '',
-        tableCount: restaurant?.tableCount || 0
+        address: branchAddress,
+        tableCount: selectedBranchData.tables || 0
       } : null);
-    } else {
-      // Buscar la sucursal seleccionada
-      const selectedBranchData = branches.find(branch => branch.id === branchId);
 
-      if (selectedBranchData && settings) {
-        console.log('🏢 [Settings] Selected branch:', selectedBranchData);
+      // Actualizar dirección original y resetear estado de cambio
+      setOriginalAddress(branchAddress);
+      setIsAddressChanged(false);
 
-        const branchAddress = selectedBranchData.address || settings.address;
-
-        // Actualizar dirección y número de mesas con datos de la sucursal
-        setSettings(prev => prev ? {
-          ...prev,
-          address: branchAddress,
-          tableCount: selectedBranchData.tables || 0
-        } : null);
-
-        // Actualizar dirección original y resetear estado de cambio
-        setOriginalAddress(branchAddress);
-        setIsAddressChanged(false);
-      }
+      console.log('🏢 [Settings] Updated settings with branch data:', {
+        address: branchAddress,
+        tableCount: selectedBranchData.tables || 0
+      });
     }
   };
 
@@ -491,7 +517,7 @@ const Settings = () => {
 
   // Guardar cambios de dirección
   const handleSaveBranchAddress = async () => {
-    if (selectedBranch === 'all' || !settings?.address) return;
+    if (!selectedBranch || !settings?.address) return;
 
     try {
       setIsUpdatingAddress(true);
@@ -636,7 +662,7 @@ const Settings = () => {
         {/* Selector de Sucursal */}
         <div className="flex items-center space-x-2 mr-8">
           <label className="text-sm font-medium text-gray-700">
-            Sucursal:
+            Editando sucursal:
           </label>
           <select
             value={selectedBranch}
@@ -644,7 +670,9 @@ const Settings = () => {
             className="text-sm border border-gray-300 rounded-md px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:border-transparent"
             disabled={branchesLoading}
           >
-            <option value="all">Todas las sucursales</option>
+            {branches.length === 0 && !branchesLoading && (
+              <option value="">Sin sucursales disponibles</option>
+            )}
             {branches.map(branch => (
               <option key={branch.id} value={branch.id}>
                 {branch.name}
@@ -695,15 +723,11 @@ const Settings = () => {
                     name="address"
                     id="address"
                     value={settings.address}
-                    onChange={selectedBranch !== 'all' ? handleAddressChange : handleChange}
-                    className={`mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm rounded-md ${
-                      selectedBranch !== 'all'
-                        ? 'border-blue-300 bg-blue-50'
-                        : 'border-gray-300'
-                    }`}
-                    placeholder={selectedBranch !== 'all' ? 'Dirección de la sucursal seleccionada' : 'Dirección del restaurante'}
+                    onChange={handleAddressChange}
+                    className="mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm rounded-md border-blue-300 bg-blue-50"
+                    placeholder="Dirección de la sucursal seleccionada"
                   />
-                  {selectedBranch !== 'all' && isAddressChanged && (
+                  {selectedBranch && isAddressChanged && (
                     <div className="flex gap-2 mt-1">
                       <button
                         type="button"
