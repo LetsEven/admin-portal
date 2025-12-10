@@ -75,7 +75,9 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     setValues({
       ...values,
       [name]:
-        name === "price" || name === "discount" ? parseFloat(value) : value,
+        name === "price" || name === "discount"
+          ? parseFloat(value) || 0
+          : value,
     });
   };
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -593,7 +595,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                   required
                   min="0"
                   step="0.01"
-                  value={values.price}
+                  value={values.price ? Number(values.price).toFixed(2) : ''}
                   onChange={handleChange}
                   className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
                 />
