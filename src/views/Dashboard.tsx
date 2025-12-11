@@ -5,6 +5,7 @@ import { useAnalytics, type AnalyticsFilters } from '../hooks/useAnalytics';
 import { useRestaurant } from '../hooks/useRestaurant';
 import { useAdminPortalApi } from '../services/adminPortalApi';
 import { useUser, useAuth } from '@clerk/nextjs';
+import toast from 'react-hot-toast';
 
 // Estilos CSS en línea para los sliders
 const sliderStyles = `
@@ -167,6 +168,9 @@ const Dashboard = () => {
   const [granularidadSeleccionada, setGranularidadSeleccionada] = useState(opcionesGranularidad[1]); // Día por defecto
   const [dropdownGranularidadAbierto, setDropdownGranularidadAbierto] = useState(false);
 
+  // Estado para controlar toasts
+  const [previousLoadingState, setPreviousLoadingState] = useState(false);
+
   const fechaActual = new Date();
   const diaActual = fechaActual.getDate().toString().padStart(2, '0');
   const mesActualStr = (fechaActual.getMonth() + 1).toString().padStart(2, '0');
@@ -277,6 +281,12 @@ const Dashboard = () => {
     console.log('🔍 [cargarDatosDashboard] customSucursal:', customSucursal);
     console.log('🔍 [cargarDatosDashboard] sucursalAUtilizar:', sucursalAUtilizar);
     console.log('🔍 [cargarDatosDashboard] filtros enviados:', filtros);
+
+    // Mostrar toast de carga
+    toast.loading('Cargando datos del dashboard...', {
+      id: 'dashboard-loading',
+      duration: 3000,
+    });
 
     getCompleteDashboardData(filtros);
 
@@ -628,9 +638,25 @@ const Dashboard = () => {
   useEffect(() => {
     if (error) {
       console.error('Error en analytics:', error);
-      // Aquí podrías mostrar una notificación de error al usuario
+      // Mostrar toast de error y cerrar el de carga
+      toast.dismiss('dashboard-loading');
+      toast.error(`Error al cargar datos: ${error}`);
     }
   }, [error]);
+
+  // Mostrar toast de éxito cuando los datos se cargen correctamente
+
+  useEffect(() => {
+    if (previousLoadingState && !isLoading && dashboardData) {
+      // Solo mostrar toast si acabamos de terminar de cargar
+      toast.dismiss('dashboard-loading');
+      toast.success('Datos actualizados correctamente', {
+        duration: 2000,
+        icon: '✅',
+      });
+    }
+    setPreviousLoadingState(isLoading);
+  }, [isLoading, dashboardData]);
 
   // Recargar datos cuando cambia el mes/año seleccionado para granularidad "día" o "mes"
   useEffect(() => {
