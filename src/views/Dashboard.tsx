@@ -43,7 +43,6 @@ const opcionesGenero = [
   { id: 'todos', label: 'Todos' },
   { id: 'hombre', label: 'Hombre' },     // ✅ Corregido: envía 'hombre'
   { id: 'mujer', label: 'Mujer' },       // ✅ Corregido: envía 'mujer'
-  { id: 'otro', label: 'No binario' },   // ✅ Corregido: envía 'otro'
 ];
 
 const opcionesEdad = [
@@ -217,7 +216,7 @@ const Dashboard = () => {
   };
 
   // Función para cargar datos del dashboard
-  const cargarDatosDashboard = (restaurantId = null, customFilters = {}, customRangoHoras = null, customDiaSeleccionado = null, customSucursal = null) => {
+  const cargarDatosDashboard = (restaurantId: number | null = null, customFilters = {}, customRangoHoras: number[] | null = null, customDiaSeleccionado: string | null = null, customSucursal: any = null) => {
     const currentGranularity = customFilters.granularity || granularidadSeleccionada.id;
     let startDate = null;
     let endDate = null;
@@ -274,7 +273,6 @@ const Dashboard = () => {
       granularity: currentGranularity as any
     };
 
-    // 🔍 DEBUG: Ver qué valores se están enviando
     console.log('🔍 [cargarDatosDashboard] sucursalSeleccionada:', sucursalSeleccionada);
     console.log('🔍 [cargarDatosDashboard] customSucursal:', customSucursal);
     console.log('🔍 [cargarDatosDashboard] sucursalAUtilizar:', sucursalAUtilizar);
@@ -381,13 +379,14 @@ const Dashboard = () => {
     setDiaSeleccionado(fechaFormateada);
     setCalendarioAbierto(false);
 
-    if (granularidadSeleccionada.id === 'hora') {
+    if (granularidadSeleccionada.id === 'hora' && userRestaurants.length > 0) {
       const customFilters = {
         ...(generoSeleccionado.id !== 'todos' && { gender: generoSeleccionado.id }),
         ...(edadSeleccionada.id !== 'todos' && { age_range: edadSeleccionada.id })
       };
 
-      cargarDatosDashboard(sucursalSeleccionada?.id, customFilters, null, fechaFormateada);
+      const restaurantId = userRestaurants[0]?.id;
+      cargarDatosDashboard(restaurantId, customFilters, null, fechaFormateada);
     }
   };
 
@@ -396,8 +395,9 @@ const Dashboard = () => {
       const nuevoRango = [nuevaHora, rangoHoras[1]];
       setRangoHoras(nuevoRango);
 
-      if (granularidadSeleccionada.id === 'hora') {
-        cargarDatosDashboard(sucursalSeleccionada?.id, {}, nuevoRango);
+      if (granularidadSeleccionada.id === 'hora' && userRestaurants.length > 0) {
+        const restaurantId = userRestaurants[0]?.id;
+        cargarDatosDashboard(restaurantId, {}, nuevoRango);
       }
     }
   };
@@ -407,8 +407,9 @@ const Dashboard = () => {
       const nuevoRango = [rangoHoras[0], nuevaHora];
       setRangoHoras(nuevoRango);
 
-      if (granularidadSeleccionada.id === 'hora') {
-        cargarDatosDashboard(sucursalSeleccionada?.id, {}, nuevoRango);
+      if (granularidadSeleccionada.id === 'hora' && userRestaurants.length > 0) {
+        const restaurantId = userRestaurants[0]?.id;
+        cargarDatosDashboard(restaurantId, {}, nuevoRango);
       }
     }
   };
@@ -633,10 +634,11 @@ const Dashboard = () => {
 
   // Recargar datos cuando cambia el mes/año seleccionado para granularidad "día" o "mes"
   useEffect(() => {
-    if ((granularidadSeleccionada.id === 'dia' || granularidadSeleccionada.id === 'mes') && sucursalSeleccionada?.id) {
-      cargarDatosDashboard(sucursalSeleccionada.id);
+    if ((granularidadSeleccionada.id === 'dia' || granularidadSeleccionada.id === 'mes') && sucursalSeleccionada?.id && userRestaurants.length > 0) {
+      const restaurantId = userRestaurants[0]?.id;
+      cargarDatosDashboard(restaurantId);
     }
-  }, [mesSeleccionadoParaGrafico, granularidadSeleccionada.id]);
+  }, [mesSeleccionadoParaGrafico, anoSeleccionado, granularidadSeleccionada.id]);
 
   // Verificar si FlexBill está habilitado
   useEffect(() => {
@@ -1403,14 +1405,6 @@ const Dashboard = () => {
               </span>
             </div>
           </div>
-          {/* <div className="text-sm">
-            <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-              Ver todo
-              <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </a>
-          </div> */}
         </div>
         )}
       </div>
@@ -1424,7 +1418,10 @@ const Dashboard = () => {
             </span>
           </h2>
           <button
-            onClick={() => cargarDatosDashboard(sucursalSeleccionada?.id)}
+            onClick={() => {
+              const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+              cargarDatosDashboard(restaurantId);
+            }}
             disabled={isLoading}
             className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
           >
