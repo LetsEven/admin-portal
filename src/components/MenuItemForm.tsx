@@ -22,6 +22,7 @@ interface MenuItemFormProps {
     name: string;
     description: string;
     price: number;
+    base_price?: number;
     discount?: number;
     category: string;
     image: string;
@@ -46,8 +47,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   preselectedCategory,
 }) => {
   const { user } = useUser();
-  // Si estamos editando (tiene id), mostrar el precio sin IVA (dividir entre 1.16)
-  const displayPrice = initialValues.id ? initialValues.price / 1.16 : initialValues.price;
+  // Si estamos editando (tiene id y base_price), usar base_price directamente
+  // Si no tiene base_price (datos antiguos), calcular dividiendo entre 1.16
+  // Si es nuevo, usar el precio tal cual
+  const displayPrice = initialValues.id
+    ? (initialValues.base_price ?? initialValues.price / 1.16)
+    : initialValues.price;
 
   const [values, setValues] = useState({
     ...initialValues,
@@ -281,7 +286,8 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
 
     // Siempre aplicar el 16% de IVA al precio antes de guardar en BD
     const priceWithTax = values.price * 1.16;
-    onSubmit({ ...values, price: priceWithTax, customFields });
+    const basePrice = values.price; // Precio sin IVA
+    onSubmit({ ...values, price: priceWithTax, base_price: basePrice, customFields });
   };
   return (
     <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center py-8">
