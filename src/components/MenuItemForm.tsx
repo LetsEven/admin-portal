@@ -9,6 +9,7 @@ interface CustomField {
   name: string;
   type: "dropdown" | "checkboxes" | "dropdown-quantity";
   required: boolean;
+  maxSelections?: number; // Para checkboxes: cantidad máxima seleccionable (1-4)
   options: Array<{
     id: string;
     name: string;
@@ -180,6 +181,8 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
           ? {
               ...field,
               type,
+              // Set default maxSelections for checkboxes
+              maxSelections: type === "checkboxes" ? 1 : undefined,
               options: [
                 {
                   id: Date.now().toString(),
@@ -189,6 +192,20 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
               ],
             }
           : field
+      )
+    );
+  };
+
+  const handleMaxSelectionsChange = (id: string, maxSelections: number) => {
+    // Validar que el valor esté entre 1 y 4
+    if (maxSelections < 1 || maxSelections > 4) {
+      console.warn(`maxSelections debe estar entre 1 y 4, recibido: ${maxSelections}`);
+      return;
+    }
+
+    setCustomFields(
+      customFields.map((field) =>
+        field.id === id ? { ...field, maxSelections } : field
       )
     );
   };
@@ -482,6 +499,33 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                             </option>
                           </select>
                         </div>
+
+                        {/* Max selections for checkboxes */}
+                        {field.type === "checkboxes" && (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Cantidad máxima seleccionable
+                            </label>
+                            <select
+                              value={field.maxSelections || 1}
+                              onChange={(e) =>
+                                handleMaxSelectionsChange(
+                                  field.id,
+                                  parseInt(e.target.value)
+                                )
+                              }
+                              className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                            >
+                              <option value={1}>1 opción</option>
+                              <option value={2}>2 opciones</option>
+                              <option value={3}>3 opciones</option>
+                              <option value={4}>4 opciones</option>
+                            </select>
+                            <p className="text-xs text-gray-500 mt-1">
+                              El cliente podrá seleccionar hasta {field.maxSelections || 1} opción{(field.maxSelections || 1) > 1 ? 'es' : ''}
+                            </p>
+                          </div>
+                        )}
 
                         {/* Options for dropdown and checkboxes */}
                         {(field.type === "dropdown" ||

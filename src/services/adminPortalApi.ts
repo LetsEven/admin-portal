@@ -74,6 +74,7 @@ export interface CustomField {
   type: 'dropdown' | 'checkboxes' | 'dropdown-quantity';
   name: string;
   required: boolean;
+  maxSelections?: number; // Para checkboxes: cantidad máxima seleccionable (1-4)
   options: Array<{
     id: string;
     name: string;
@@ -433,3 +434,38 @@ export function useAdminPortalApi() {
 
 export const adminPortalApiService = new AdminPortalApiService();
 export default adminPortalApiService;
+
+// ===============================================
+// FUNCIÓN DE AYUDA PARA OBTENER TOKEN
+// ===============================================
+
+let authHook: (() => { getToken: () => Promise<string | null> }) | null = null;
+let authHookInitialized = false;
+
+export function setAuthHook(hook: () => { getToken: () => Promise<string | null> }) {
+  if (authHookInitialized) {
+    console.log('Auth hook already initialized, skipping...');
+    return;
+  }
+
+  console.log('Initializing auth hook...');
+  authHook = hook;
+  authHookInitialized = true;
+}
+
+export async function getAuthToken(): Promise<string | null> {
+  if (!authHook) {
+    throw new Error('Auth hook not initialized. Call setAuthHook first.');
+  }
+
+  const { getToken } = authHook();
+  const token = await getToken();
+
+  if (token) {
+    console.log('Auth token obtained successfully');
+  } else {
+    console.warn('No auth token available');
+  }
+
+  return token;
+}

@@ -54,12 +54,13 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
           </button>
         </div>
         <p className="text-gray-600 mb-6">
-          Selecciona segmento y template, y nombra tu campaña.
+          Selecciona segmento, template y nombra tu campaña.
         </p>
         {/* Create Segment and Design Template Options */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Create Segment */}
-          <div className={`border border-gray-200 rounded-lg p-6 flex flex-col items-center cursor-pointer transition-colors relative ${selectedSegment ? 'bg-[#F0F9F9] border-custom-green-200' : 'hover:bg-gray-50'}`} onClick={onCreateSegment}>
+          <div className={`border border-gray-200 rounded-lg p-6 flex flex-col items-center cursor-pointer transition-colors relative ${selectedSegment ? 'bg-[#F0F9F9] border-custom-green-200' : 'hover:bg-gray-50'}`} 
+            onClick={onCreateSegment}>
             {selectedSegment && <div className="absolute top-3 right-3 bg-custom-green-600 rounded-full p-1">
                 <CheckIcon className="h-4 w-4 text-white" />
               </div>}

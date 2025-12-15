@@ -1,28 +1,68 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { XIcon, FilterIcon, UsersIcon, TagIcon, CalendarIcon, DollarSignIcon, ShoppingCartIcon, HeartIcon, MapPinIcon, ClockIcon, TrendingUpIcon, CheckCircleIcon, RefreshCwIcon } from 'lucide-react';
-const SegmentModal = ({
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { XIcon, FilterIcon, UsersIcon, TagIcon, CalendarIcon, DollarSignIcon, ShoppingCartIcon, HeartIcon, MapPinIcon, ClockIcon, TrendingUpIcon, CheckCircleIcon, RefreshCwIcon, LoaderIcon } from 'lucide-react';
+import { segmentsApi, SegmentFilters, CreateSegmentData } from '../services/segmentsApi';
+interface SegmentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onApplySegment: (segment: any) => void;
+  restaurantId?: number;
+  editingSegment?: any | null;
+}
+
+const SegmentModal: React.FC<SegmentModalProps> = ({
   isOpen,
   onClose,
-  onApplySegment
+  onApplySegment,
+  restaurantId = 1, // Default restaurant ID for now
+  editingSegment = null
 }) => {
   const [segmentName, setSegmentName] = useState('');
-  const [filters, setFilters] = useState({
-    tags: 'all',
+  const [filters, setFilters] = useState<SegmentFilters>({
     gender: 'all',
     age_range: 'all',
-    location: 'all',
     number_of_visits: 'all',
     last_visit: 'all',
     single_purchase_total: 'all',
-    total_spent: 'all',
-    favorite_category: 'all',
-    registration_date: 'all'
   });
   const [nameError, setNameError] = useState('');
+  const [previewCount, setPreviewCount] = useState<number | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
   const modalRef = useRef(null);
   const nameInputRef = useRef(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Contar filtros activos
   const activeFiltersCount = Object.values(filters).filter(value => value !== 'all').length;
+
+  // Initialize form with editing data
+  useEffect(() => {
+    if (editingSegment) {
+      setSegmentName(editingSegment.segment_name || '');
+      setFilters(editingSegment.filters || {
+        gender: 'all',
+        age_range: 'all',
+        number_of_visits: 'all',
+        last_visit: 'all',
+        single_purchase_total: 'all',
+      });
+    } else {
+      // Reset form for new segment
+      setSegmentName('');
+      setFilters({
+        gender: 'all',
+        age_range: 'all',
+        number_of_visits: 'all',
+        last_visit: 'all',
+        single_purchase_total: 'all',
+      });
+    }
+    setPreviewCount(null);
+    setPreviewError('');
+    setSaveError('');
+  }, [editingSegment, isOpen]);
   // Manejar cierre con tecla ESC
   useEffect(() => {
     const handleEscKey = event => {
@@ -56,39 +96,119 @@ const SegmentModal = ({
     setSegmentName(value);
     validateName(value);
   };
+  // Preview debounced function
+  const debouncedPreview = useCallback(async (currentFilters: SegmentFilters) => {
+    // Clear previous timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Set new timeout for debounced preview
+    debounceTimeoutRef.current = setTimeout(async () => {
+      const hasActiveFilters = Object.values(currentFilters).some(value => value !== 'all');
+
+      if (hasActiveFilters) {
+        // Prevent multiple simultaneous preview calls
+        if (previewLoading) {
+          console.log('Preview already loading, skipping...');
+          return;
+        }
+
+        console.log('Fetching preview for filters:', currentFilters);
+        setPreviewLoading(true);
+        setPreviewError('');
+
+        try {
+          const previewData = await segmentsApi.previewSegment({
+            restaurant_id: restaurantId,
+            filters: currentFilters
+          });
+          setPreviewCount(previewData.customer_count);
+          console.log('Preview result:', previewData.customer_count, 'customers');
+        } catch (error: any) {
+          console.error('Preview error:', error);
+          setPreviewError(error.message || 'Error al obtener preview');
+          setPreviewCount(null);
+        } finally {
+          setPreviewLoading(false);
+        }
+      } else {
+        setPreviewCount(null);
+        setPreviewError('');
+      }
+    }, 800); // Increased to 800ms for better debouncing
+  }, [restaurantId, previewLoading]);
+
   // Manejar cambios en filtros
-  const handleFilterChange = (filterKey, value) => {
-    setFilters(prev => ({
-      ...prev,
+  const handleFilterChange = (filterKey: keyof SegmentFilters, value: string) => {
+    console.log('Filter changed:', filterKey, '=', value);
+
+    const newFilters = {
+      ...filters,
       [filterKey]: value
-    }));
+    };
+    setFilters(newFilters);
+
+    // Only trigger preview if modal is open and filters actually changed
+    if (isOpen && filters[filterKey] !== value) {
+      debouncedPreview(newFilters);
+    }
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
   // Aplicar segmento
-  const handleApplySegment = () => {
+  const handleApplySegment = async () => {
     if (!validateName(segmentName)) {
       nameInputRef.current?.focus();
       return;
     }
-    onApplySegment({
-      segment_name: segmentName,
-      filters: filters,
-      activeFiltersCount: activeFiltersCount
-    });
+
+    setSaving(true);
+    setSaveError('');
+
+    try {
+      const segmentData: CreateSegmentData = {
+        restaurant_id: restaurantId,
+        segment_name: segmentName,
+        filters: filters,
+        active_filters_count: activeFiltersCount
+      };
+
+      let savedSegment;
+      if (editingSegment) {
+        // Update existing segment
+        savedSegment = await segmentsApi.updateSegment(editingSegment.id, segmentData);
+      } else {
+        // Create new segment
+        savedSegment = await segmentsApi.createSegment(segmentData);
+      }
+
+      onApplySegment(savedSegment);
+    } catch (error: any) {
+      setSaveError(error.message || 'Error al guardar el segmento');
+    } finally {
+      setSaving(false);
+    }
   };
   // Limpiar filtros
   const handleClearFilters = () => {
-    setFilters({
-      tags: 'all',
+    const clearedFilters: SegmentFilters = {
       gender: 'all',
       age_range: 'all',
-      location: 'all',
       number_of_visits: 'all',
       last_visit: 'all',
       single_purchase_total: 'all',
-      total_spent: 'all',
-      favorite_category: 'all',
-      registration_date: 'all'
-    });
+    };
+    setFilters(clearedFilters);
+    setPreviewCount(null);
+    setPreviewError('');
   };
   if (!isOpen) return null;
   return <div className="fixed inset-0 z-[60] flex items-center justify-center">
@@ -104,7 +224,7 @@ const SegmentModal = ({
             </div>
             <div>
               <h2 id="segment-modal-title" className="text-2xl font-semibold text-gray-900">
-                Crear segmento
+                {editingSegment ? 'Editar segmento' : 'Crear segmento'}
               </h2>
               <p className="text-sm text-gray-500">
                 Define los criterios para segmentar a tus clientes
@@ -125,8 +245,8 @@ const SegmentModal = ({
         </div>
         {/* Filters Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Tags */}
-          <div>
+          {/* Tags - TODO: Implementar en futuro */}
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <TagIcon className="h-4 w-4 inline mr-1" />
               Etiquetas
@@ -138,7 +258,7 @@ const SegmentModal = ({
               <option value="new">Nuevo cliente</option>
               <option value="inactive">Inactivo</option>
             </select>
-          </div>
+          </div> */}
           {/* Gender */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -167,8 +287,8 @@ const SegmentModal = ({
               <option value="56+">56+ años</option>
             </select>
           </div>
-          {/* Location */}
-          <div>
+          {/* Location - TODO: Implementar en futuro */}
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <MapPinIcon className="h-4 w-4 inline mr-1" />
               Ubicación
@@ -181,7 +301,7 @@ const SegmentModal = ({
               <option value="puebla">Puebla</option>
               <option value="other">Otras ciudades</option>
             </select>
-          </div>
+          </div> */}
           {/* Number of visits */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -224,8 +344,8 @@ const SegmentModal = ({
               <option value="greater_than_1000">Más de $1,000</option>
             </select>
           </div>
-          {/* Total spent */}
-          <div>
+          {/* Total spent - TODO: Implementar en futuro */}
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <DollarSignIcon className="h-4 w-4 inline mr-1" />
               Total gastado
@@ -237,9 +357,9 @@ const SegmentModal = ({
               <option value="greater_than_5000">Más de $5,000</option>
               <option value="greater_than_10000">Más de $10,000</option>
             </select>
-          </div>
-          {/* Favorite category */}
-          <div>
+          </div> */}
+          {/* Favorite category - TODO: Implementar en futuro */}
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <HeartIcon className="h-4 w-4 inline mr-1" />
               Categoría favorita
@@ -251,9 +371,9 @@ const SegmentModal = ({
               <option value="desserts">Postres</option>
               <option value="snacks">Snacks</option>
             </select>
-          </div>
-          {/* Registration date */}
-          <div>
+          </div> */}
+          {/* Registration date - TODO: Implementar en futuro */}
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <CalendarIcon className="h-4 w-4 inline mr-1" />
               Fecha de registro
@@ -265,11 +385,11 @@ const SegmentModal = ({
               <option value="last_year">Último año</option>
               <option value="more_than_year">Más de un año</option>
             </select>
-          </div>
+          </div> */}
         </div>
-        {/* Active filters summary */}
+        {/* Active filters summary with preview */}
         {activeFiltersCount > 0 && <div className="mb-6 p-4 bg-custom-green-50 rounded-lg border border-custom-green-200">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center">
                 <CheckCircleIcon className="h-5 w-5 text-custom-green-600 mr-2" />
                 <span className="text-sm font-medium text-custom-green-800">
@@ -283,14 +403,55 @@ const SegmentModal = ({
                 Limpiar filtros
               </button>
             </div>
+
+            {/* Preview Results */}
+            <div className="mt-3 pt-3 border-t border-custom-green-200">
+              {previewLoading ? (
+                <div className="flex items-center text-sm text-custom-green-700">
+                  <LoaderIcon className="h-4 w-4 mr-2 animate-spin" />
+                  Calculando clientes que coinciden...
+                </div>
+              ) : previewError ? (
+                <div className="flex items-center text-sm text-red-600">
+                  <span className="text-red-500 mr-2">⚠️</span>
+                  {previewError}
+                </div>
+              ) : previewCount !== null ? (
+                <div className="flex items-center text-sm text-custom-green-700">
+                  <UsersIcon className="h-4 w-4 mr-2" />
+                  <span className="font-semibold">
+                    {previewCount} cliente{previewCount !== 1 ? 's' : ''} coincide{previewCount !== 1 ? 'n' : ''}
+                  </span>
+                  <span className="ml-1">con estos filtros</span>
+                </div>
+              ) : null}
+            </div>
           </div>}
+        {/* Error Message */}
+        {saveError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-700">{saveError}</p>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0EA5E9]">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0EA5E9] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Cancelar
           </button>
-          <button type="button" onClick={handleApplySegment} disabled={!segmentName.trim()} className={`px-4 py-2 rounded-lg text-white ${!segmentName.trim() ? 'bg-gray-300 cursor-not-allowed' : 'bg-custom-green-600 hover:bg-custom-green-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500`}>
-            Aplicar segmento
+          <button
+            type="button"
+            onClick={handleApplySegment}
+            disabled={!segmentName.trim() || saving}
+            className={`px-4 py-2 rounded-lg text-white flex items-center ${!segmentName.trim() || saving ? 'bg-gray-300 cursor-not-allowed' : 'bg-custom-green-600 hover:bg-custom-green-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500`}
+          >
+            {saving && <LoaderIcon className="h-4 w-4 mr-2 animate-spin" />}
+            {saving ? 'Guardando...' : (editingSegment ? 'Actualizar segmento' : 'Crear segmento')}
           </button>
         </div>
       </div>

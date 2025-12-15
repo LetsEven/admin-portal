@@ -4,7 +4,10 @@ import NewCampaignModal from '../components/NewCampaignModal';
 import TemplateDesignerModal from '../components/TemplateDesignerModal';
 import CampaignDetailsModal from '../components/CampaignDetailsModal';
 import CampaignDashboardModal from '../components/CampaignDashboardModal';
-import { PlusIcon, AwardIcon, CoffeeIcon, ShoppingBagIcon, XIcon, ClockIcon, CheckCircleIcon, AlertCircleIcon, EyeIcon, TrashIcon, TargetIcon, LayoutIcon, ChevronDownIcon, FilterIcon, ImageIcon, TypeIcon, SeparatorHorizontalIcon, MousePointerIcon, GripIcon, UploadIcon, MaximizeIcon, MinimizeIcon, BookmarkIcon, ZoomInIcon, BellIcon, CalendarIcon, MailIcon } from 'lucide-react';
+import { segmentsApi, CustomerSegment } from '../services/segmentsApi';
+import { setAuthHook } from '../services/adminPortalApi';
+import { useAuth } from '@clerk/nextjs';
+import { PlusIcon, AwardIcon, CoffeeIcon, ShoppingBagIcon, XIcon, ClockIcon, CheckCircleIcon, AlertCircleIcon, EyeIcon, TrashIcon, TargetIcon, LayoutIcon, ChevronDownIcon, FilterIcon, ImageIcon, TypeIcon, SeparatorHorizontalIcon, MousePointerIcon, GripIcon, UploadIcon, MaximizeIcon, MinimizeIcon, BookmarkIcon, ZoomInIcon, BellIcon, CalendarIcon, MailIcon, LoaderIcon } from 'lucide-react';
 // Initial campaigns data
 const initialCampaigns = [{
   id: 1,
@@ -79,26 +82,8 @@ const initialCampaigns = [{
   templateName: 'Papas Gratis - Template',
   sent: true
 }];
-// Saved segments and templates
-const savedSegments = [{
-  id: 1,
-  segment_name: 'Clientes frecuentes',
-  filters: {
-    tags: 'frequent',
-    number_of_visits: 'more_than_5',
-    gender: 'all'
-  },
-  activeFiltersCount: 2
-}, {
-  id: 2,
-  segment_name: 'Clientes VIP',
-  filters: {
-    tags: 'vip',
-    single_purchase_total: 'greater_than_500',
-    gender: 'all'
-  },
-  activeFiltersCount: 2
-}];
+// Saved segments fallback (will be replaced by API data)
+const fallbackSegments: CustomerSegment[] = [];
 const savedTemplates = [{
   id: 1,
   name: 'Promoción Estándar',
@@ -741,6 +726,8 @@ const RewardsPricingModal = ({
 };
 // Main Component
 const RewardsManagement = () => {
+  const auth = useAuth();
+
   const [campaigns, setCampaigns] = useState(initialCampaigns);
   const [activeFilter, setActiveFilter] = useState('all');
   const [previewCampaign, setPreviewCampaign] = useState(null);
@@ -752,13 +739,53 @@ const RewardsManagement = () => {
   const [showSegmentModal, setShowSegmentModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showCampaignDetailsModal, setShowCampaignDetailsModal] = useState(false);
-  const [currentSegments, setCurrentSegments] = useState(savedSegments);
+  const [currentSegments, setCurrentSegments] = useState<CustomerSegment[]>([]);
+  const [segmentsLoading, setSegmentsLoading] = useState(true);
+  const [segmentsError, setSegmentsError] = useState('');
+  const restaurantId = 1; // TODO: Get from user context/auth
   const [currentTemplates, setCurrentTemplates] = useState(savedTemplates);
   const [newCampaignData, setNewCampaignData] = useState({
     name: '',
-    selectedSegment: null,
+    selectedSegment: null as CustomerSegment | null,
     selectedTemplate: null
   });
+
+  // Initialize auth hook once when component mounts
+  useEffect(() => {
+    // Initialize auth hook for segments API
+    setAuthHook(() => auth);
+  }, []);
+
+  // Load segments when component mounts and auth is ready
+  useEffect(() => {
+    if (auth.isLoaded && auth.userId) {
+      loadSegments();
+    }
+  }, [auth.isLoaded, auth.userId]);
+
+  const loadSegments = async () => {
+    // Prevent multiple simultaneous calls
+    if (segmentsLoading) {
+      console.log('Segments already loading, skipping...');
+      return;
+    }
+
+    try {
+      console.log('Loading segments for restaurant:', restaurantId);
+      setSegmentsLoading(true);
+      setSegmentsError('');
+      const segments = await segmentsApi.getSegments(restaurantId);
+      setCurrentSegments(segments);
+      console.log('Segments loaded successfully:', segments.length);
+    } catch (error: any) {
+      console.error('Error loading segments:', error);
+      setSegmentsError(error.message || 'Error al cargar segmentos');
+      // Use fallback segments in case of error
+      setCurrentSegments(fallbackSegments);
+    } finally {
+      setSegmentsLoading(false);
+    }
+  };
   // Filter campaigns based on active filter
   const filteredCampaigns = campaigns.filter(campaign => {
     if (activeFilter === 'all') return true;
@@ -810,14 +837,20 @@ const RewardsManagement = () => {
     setShowTemplateModal(false);
     setShowNewCampaignModal(true);
   };
-  const handleApplySegment = segment => {
-    // Add the new segment to the list if it doesn't exist
-    if (!currentSegments.find(s => s.segment_name === segment.segment_name)) {
-      setCurrentSegments([...currentSegments, {
-        ...segment,
-        id: Date.now()
-      }]);
-    }
+  const handleApplySegment = (segment: CustomerSegment) => {
+    // Add or update the segment in the list
+    setCurrentSegments(prev => {
+      const existingIndex = prev.findIndex(s => s.id === segment.id);
+      if (existingIndex >= 0) {
+        // Update existing segment
+        const updated = [...prev];
+        updated[existingIndex] = segment;
+        return updated;
+      } else {
+        // Add new segment
+        return [...prev, segment];
+      }
+    });
     setShowSegmentModal(false);
     setShowNewCampaignModal(true);
   };
@@ -827,7 +860,7 @@ const RewardsManagement = () => {
     setShowTemplateModal(false);
     setShowNewCampaignModal(true);
   };
-  const handleCreateCampaign = (campaignName, selectedSegment, selectedTemplate) => {
+  const handleCreateCampaign = (campaignName: string, selectedSegment: CustomerSegment | null, selectedTemplate: any) => {
     // Store campaign data and proceed to details screen
     setNewCampaignData({
       name: campaignName,
@@ -914,7 +947,8 @@ const RewardsManagement = () => {
         </div>
 
         {/* Empty State */}
-        {filteredCampaigns.length === 0 && <div className="text-center py-12">
+        {filteredCampaigns.length === 0 && 
+          <div className="text-center py-12">
             <AwardIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">
               No hay campañas
@@ -922,7 +956,9 @@ const RewardsManagement = () => {
             <p className="mt-1 text-sm text-gray-500">
               No se encontraron campañas para el filtro seleccionado.
             </p>
-          </div>}
+          </div>
+        }
+        
       </div>
 
       {/* Email Preview Modal */}
@@ -932,19 +968,67 @@ const RewardsManagement = () => {
       <CampaignDashboardModal isOpen={showCampaignDashboard} onClose={() => setShowCampaignDashboard(false)} campaign={selectedCampaign} />
 
       {/* Pricing Modal */}
-      <RewardsPricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} currentPlan="Básico" />
+      <RewardsPricingModal 
+        isOpen={showPricingModal} 
+        onClose={() => setShowPricingModal(false)} 
+        currentPlan="Básico" 
+      />
 
       {/* New Campaign Modal */}
-      <NewCampaignModal isOpen={showNewCampaignModal} onClose={handleCloseNewCampaign} onCreateSegment={handleCreateSegment} onDesignTemplate={handleDesignTemplate} onNext={handleCreateCampaign} savedSegments={currentSegments} savedTemplates={currentTemplates} />
+      <NewCampaignModal
+        isOpen={showNewCampaignModal}
+        onClose={handleCloseNewCampaign}
+        onCreateSegment={handleCreateSegment}
+        onDesignTemplate={handleDesignTemplate}
+        onNext={handleCreateCampaign}
+        savedSegments={currentSegments}
+        savedTemplates={currentTemplates}
+      />
+
+      {/* Segments Error Toast */}
+      {segmentsError && (
+        <div className="fixed top-4 right-4 z-50 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg max-w-md">
+          <div className="flex items-center">
+            <AlertCircleIcon className="h-5 w-5 mr-2 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium">Error al cargar segmentos</p>
+              <p className="text-xs mt-1">{segmentsError}</p>
+              <button
+                onClick={loadSegments}
+                className="text-xs underline mt-1 hover:no-underline"
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Segment Modal */}
-      <SegmentModal isOpen={showSegmentModal} onClose={handleCloseSegmentModal} onApplySegment={handleApplySegment} />
+      <SegmentModal
+        isOpen={showSegmentModal}
+        onClose={handleCloseSegmentModal}
+        onApplySegment={handleApplySegment}
+        restaurantId={restaurantId}
+      />
 
       {/* Template Designer Modal */}
-      <TemplateDesignerModal isOpen={showTemplateModal} onClose={handleCloseTemplateModal} onSave={handleSaveTemplate} />
+      <TemplateDesignerModal 
+        isOpen={showTemplateModal} 
+        onClose={handleCloseTemplateModal} 
+        onSave={handleSaveTemplate} 
+      />
 
       {/* Campaign Details Modal */}
-      <CampaignDetailsModal isOpen={showCampaignDetailsModal} onClose={handleCloseCampaignDetails} onCreateCampaign={handleFinalizeCampaign} campaignName={newCampaignData.name} selectedSegment={newCampaignData.selectedSegment} selectedTemplate={newCampaignData.selectedTemplate} />
+      <CampaignDetailsModal 
+        isOpen={showCampaignDetailsModal} 
+        onClose={handleCloseCampaignDetails} 
+        onCreateCampaign={handleFinalizeCampaign} 
+        campaignName={newCampaignData.name} 
+        selectedSegment={newCampaignData.selectedSegment} 
+        selectedTemplate={newCampaignData.selectedTemplate} 
+      />
+
     </div>;
 };
 export default RewardsManagement;

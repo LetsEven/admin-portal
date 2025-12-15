@@ -21,6 +21,8 @@ export interface CustomField {
   id: string;
   name: string;
   type: 'dropdown' | 'checkboxes' | 'dropdown-quantity';
+  required?: boolean;
+  maxSelections?: number; // Para checkboxes: cantidad máxima seleccionable (1-4)
   options?: string[];
 }
 
