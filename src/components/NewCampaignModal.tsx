@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { XIcon, TargetIcon, LayoutIcon, CheckIcon } from 'lucide-react';
+import { CustomerSegment } from '../services/segmentsApi';
+
 interface NewCampaignModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateSegment: () => void;
   onDesignTemplate: () => void;
-  onNext: (campaignName: string, selectedSegment?: any, selectedTemplate?: any) => void;
-  savedSegments: any[];
+  onNext: (campaignName: string, selectedSegment?: CustomerSegment | null, selectedTemplate?: any) => void;
+  savedSegments: CustomerSegment[];
   savedTemplates: any[];
 }
 const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
@@ -19,7 +21,7 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
   savedTemplates
 }) => {
   const [campaignName, setCampaignName] = useState('');
-  const [selectedSegment, setSelectedSegment] = useState<any>(null);
+  const [selectedSegment, setSelectedSegment] = useState<CustomerSegment | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   if (!isOpen) return null;
   const handleNext = () => {
@@ -27,7 +29,7 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
       onNext(campaignName, selectedSegment, selectedTemplate);
     }
   };
-  const handleSegmentSelection = (segment: any) => {
+  const handleSegmentSelection = (segment: CustomerSegment) => {
     if (selectedSegment && selectedSegment.id === segment.id) {
       setSelectedSegment(null);
     } else {
@@ -108,24 +110,47 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
             Segmentos guardados
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {savedSegments.map(segment => <div key={segment.id} onClick={() => handleSegmentSelection(segment)} className={`border rounded-lg p-4 cursor-pointer transition-colors flex justify-between items-center ${selectedSegment?.id === segment.id ? 'border-custom-green-600 bg-custom-green-50' : 'border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center">
-                  <div className="p-2 bg-gray-100 rounded-full mr-3">
-                    <TargetIcon className="h-5 w-5 text-gray-600" />
+            {savedSegments.length > 0 ? (
+              savedSegments.map(segment => (
+                <div
+                  key={segment.id}
+                  onClick={() => handleSegmentSelection(segment)}
+                  className={`border rounded-lg p-4 cursor-pointer transition-colors flex justify-between items-center ${
+                    selectedSegment?.id === segment.id
+                      ? 'border-custom-green-600 bg-custom-green-50'
+                      : 'border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <div className="p-2 bg-gray-100 rounded-full mr-3">
+                      <TargetIcon className="h-5 w-5 text-gray-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">
+                        {segment.segment_name}
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        {segment.active_filters_count} filtro{segment.active_filters_count !== 1 ? 's' : ''}
+                        {segment.estimated_customers !== undefined && (
+                          <span className="ml-2">• {segment.estimated_customers} cliente{segment.estimated_customers !== 1 ? 's' : ''}</span>
+                        )}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-medium text-gray-900">
-                      {segment.segment_name}
-                    </h4>
-                    <p className="text-xs text-gray-500">
-                      {segment.activeFiltersCount} filtros
-                    </p>
-                  </div>
+                  {selectedSegment?.id === segment.id && (
+                    <span className="text-xs bg-custom-green-100 text-custom-green-800 px-2 py-1 rounded-full">
+                      Seleccionado
+                    </span>
+                  )}
                 </div>
-                {selectedSegment?.id === segment.id && <span className="text-xs bg-custom-green-100 text-custom-green-800 px-2 py-1 rounded-full">
-                    Seleccionado
-                  </span>}
-              </div>)}
+              ))
+            ) : (
+              <div className="col-span-2 text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                <TargetIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">No hay segmentos creados</p>
+                <p className="text-gray-400 text-xs mt-1">Crea tu primer segmento para comenzar</p>
+              </div>
+            )}
           </div>
           {/* Saved Templates */}
           <h3 className="text-md font-medium text-gray-900 mb-3">

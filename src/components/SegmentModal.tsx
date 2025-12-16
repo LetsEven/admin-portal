@@ -5,7 +5,7 @@ interface SegmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onApplySegment: (segment: any) => void;
-  restaurantId?: number;
+  restaurantId: number;
   editingSegment?: any | null;
 }
 
@@ -13,7 +13,7 @@ const SegmentModal: React.FC<SegmentModalProps> = ({
   isOpen,
   onClose,
   onApplySegment,
-  restaurantId = 1, // Default restaurant ID for now
+  restaurantId,
   editingSegment = null
 }) => {
   const [segmentName, setSegmentName] = useState('');
@@ -32,7 +32,7 @@ const SegmentModal: React.FC<SegmentModalProps> = ({
   const [saveError, setSaveError] = useState('');
 
   const modalRef = useRef(null);
-  const nameInputRef = useRef(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Contar filtros activos
   const activeFiltersCount = Object.values(filters).filter(value => value !== 'all').length;
@@ -65,7 +65,7 @@ const SegmentModal: React.FC<SegmentModalProps> = ({
   }, [editingSegment, isOpen]);
   // Manejar cierre con tecla ESC
   useEffect(() => {
-    const handleEscKey = event => {
+    const handleEscKey = (event: KeyboardEvent) => {
       if (isOpen && event.key === 'Escape') {
         onClose();
       }
@@ -77,13 +77,13 @@ const SegmentModal: React.FC<SegmentModalProps> = ({
   useEffect(() => {
     if (isOpen && nameInputRef.current) {
       setTimeout(() => {
-        nameInputRef.current.focus();
-        nameInputRef.current.select();
+        nameInputRef.current?.focus();
+        nameInputRef.current?.select();
       }, 100);
     }
   }, [isOpen]);
   // Validar nombre del segmento
-  const validateName = value => {
+  const validateName = (value: string) => {
     if (!value.trim()) {
       setNameError('Ingresa un nombre para el segmento');
       return false;
@@ -91,7 +91,7 @@ const SegmentModal: React.FC<SegmentModalProps> = ({
     setNameError('');
     return true;
   };
-  const handleNameChange = e => {
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSegmentName(value);
     validateName(value);
