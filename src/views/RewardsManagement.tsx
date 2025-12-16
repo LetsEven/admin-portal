@@ -1,10 +1,14 @@
 import React, { useEffect, useState, useRef, Component } from 'react';
 import SegmentModal from '../components/SegmentModal';
 import NewCampaignModal from '../components/NewCampaignModal';
+import DeliveryMethodModal from '../components/DeliveryMethodModal';
 import TemplateDesignerModal from '../components/TemplateDesignerModal';
 import CampaignDetailsModal from '../components/CampaignDetailsModal';
 import CampaignDashboardModal from '../components/CampaignDashboardModal';
 import { PlusIcon, AwardIcon, CoffeeIcon, ShoppingBagIcon, XIcon, ClockIcon, CheckCircleIcon, AlertCircleIcon, EyeIcon, TrashIcon, TargetIcon, LayoutIcon, ChevronDownIcon, FilterIcon, ImageIcon, TypeIcon, SeparatorHorizontalIcon, MousePointerIcon, GripIcon, UploadIcon, MaximizeIcon, MinimizeIcon, BookmarkIcon, ZoomInIcon, BellIcon, CalendarIcon, MailIcon } from 'lucide-react';
+import { useSmsTemplateApi, SmsTemplate } from '../services/smsTemplateApi';
+import { useRestaurant } from '../contexts/RestaurantContext';
+import toast from 'react-hot-toast';
 // Initial campaigns data
 const initialCampaigns = [{
   id: 1,
@@ -99,47 +103,7 @@ const savedSegments = [{
   },
   activeFiltersCount: 2
 }];
-const savedTemplates = [{
-  id: 1,
-  name: 'Promoción Estándar',
-  blocks: [{
-    id: '1',
-    type: 'title',
-    content: 'Promoción exclusiva para ti'
-  }, {
-    id: '2',
-    type: 'image',
-    content: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
-  }, {
-    id: '3',
-    type: 'text',
-    content: 'Aprovecha esta oferta por tiempo limitado'
-  }, {
-    id: '4',
-    type: 'button',
-    content: 'Canjear ahora'
-  }]
-}, {
-  id: 2,
-  name: 'Recompensa de Cumpleaños',
-  blocks: [{
-    id: '1',
-    type: 'title',
-    content: '¡Feliz Cumpleaños!'
-  }, {
-    id: '2',
-    type: 'image',
-    content: 'https://images.unsplash.com/photo-1578922864601-79dca7a9ea35?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60'
-  }, {
-    id: '3',
-    type: 'text',
-    content: 'Te regalamos algo especial en tu día'
-  }, {
-    id: '4',
-    type: 'button',
-    content: 'Reclamar regalo'
-  }]
-}];
+
 // KPI Button Component
 const KpiButton = ({
   label,
@@ -748,17 +712,62 @@ const RewardsManagement = () => {
   const [showCampaignDashboard, setShowCampaignDashboard] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   // New campaign flow states
+  const [showDeliveryMethodModal, setShowDeliveryMethodModal] = useState(false);
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
   const [showSegmentModal, setShowSegmentModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showCampaignDetailsModal, setShowCampaignDetailsModal] = useState(false);
   const [currentSegments, setCurrentSegments] = useState(savedSegments);
-  const [currentTemplates, setCurrentTemplates] = useState(savedTemplates);
-  const [newCampaignData, setNewCampaignData] = useState({
+  const [currentTemplates, setCurrentTemplates] = useState<SmsTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<SmsTemplate | null>(null);
+
+  // API hooks
+  const { restaurant } = useRestaurant();
+  const smsTemplateApi = useSmsTemplateApi();
+  const [newCampaignData, setNewCampaignData] = useState<{
+    name: string;
+    selectedSegment: any;
+    selectedTemplate: any;
+    selectedWhatsAppTemplate?: any;
+    deliveryMethods?: { whatsapp: boolean; sms: boolean };
+    promoCode?: string;
+    discountPercentage?: string;
+  }>({
     name: '',
     selectedSegment: null,
-    selectedTemplate: null
+    selectedTemplate: null,
+    selectedWhatsAppTemplate: undefined,
+    deliveryMethods: { whatsapp: false, sms: false },
+    promoCode: '',
+    discountPercentage: ''
   });
+
+  // Load SMS templates on mount
+  useEffect(() => {
+    if (restaurant?.id) {
+      loadSmsTemplates();
+    }
+  }, [restaurant?.id]);
+
+  const loadSmsTemplates = async () => {
+    try {
+      setTemplatesLoading(true);
+      setTemplatesError(null);
+
+      // Restaurant ID is obtained from auth in backend
+      const templates = await smsTemplateApi.getByRestaurant();
+      setCurrentTemplates(templates);
+
+    } catch (error) {
+      console.error('Error loading SMS templates:', error);
+      setTemplatesError(error instanceof Error ? error.message : 'Failed to load templates');
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
   // Filter campaigns based on active filter
   const filteredCampaigns = campaigns.filter(campaign => {
     if (activeFilter === 'all') return true;
@@ -789,17 +798,59 @@ const RewardsManagement = () => {
   };
   // New campaign flow handlers
   const handleOpenNewCampaign = () => {
+    setShowDeliveryMethodModal(true);
+  };
+
+  const handleSelectDeliveryMethod = (method: "whatsapp" | "sms" | "both") => {
+    // Set delivery methods based on selection
+    setNewCampaignData(prev => ({
+      ...prev,
+      deliveryMethods: {
+        whatsapp: method === "whatsapp" || method === "both",
+        sms: method === "sms" || method === "both"
+      }
+    }));
+    // Close delivery method modal and open campaign modal
+    setShowDeliveryMethodModal(false);
     setShowNewCampaignModal(true);
   };
+
+  const handleChangeDeliveryMethod = () => {
+    // Reopen delivery method modal to change selection
+    setShowNewCampaignModal(false);
+    setShowDeliveryMethodModal(true);
+  };
+
+  const handleAddDeliveryMethod = (method: "whatsapp" | "sms") => {
+    // Add the additional delivery method
+    setNewCampaignData(prev => ({
+      ...prev,
+      deliveryMethods: {
+        whatsapp: prev.deliveryMethods?.whatsapp || method === "whatsapp",
+        sms: prev.deliveryMethods?.sms || method === "sms"
+      }
+    }));
+  };
+
   const handleCloseNewCampaign = () => {
     setShowNewCampaignModal(false);
+    setShowDeliveryMethodModal(true);
   };
   const handleCreateSegment = () => {
     setShowNewCampaignModal(false);
     setShowSegmentModal(true);
   };
-  const handleDesignTemplate = () => {
+  const handleDesignTemplate = (template?: SmsTemplate, promoCode?: string, discountPercentage?: string) => {
+    // Update newCampaignData with the promo values if provided
+    if (promoCode !== undefined || discountPercentage !== undefined) {
+      setNewCampaignData(prev => ({
+        ...prev,
+        promoCode: promoCode || prev.promoCode,
+        discountPercentage: discountPercentage || prev.discountPercentage
+      }));
+    }
     setShowNewCampaignModal(false);
+    setEditingTemplate(template || null);
     setShowTemplateModal(true);
   };
   const handleCloseSegmentModal = () => {
@@ -821,24 +872,80 @@ const RewardsManagement = () => {
     setShowSegmentModal(false);
     setShowNewCampaignModal(true);
   };
-  const handleSaveTemplate = template => {
-    // Add the new template to the list
-    setCurrentTemplates([...currentTemplates, template]);
-    setShowTemplateModal(false);
-    setShowNewCampaignModal(true);
+  const handleSaveTemplate = async (template: any) => {
+    const loadingToast = toast.loading('Guardando template...');
+
+    try {
+      // If template has ID, it's an update; otherwise create new
+      if (template.id && typeof template.id === 'string' && template.id.length > 10) {
+        // Update existing (UUID from backend)
+        await smsTemplateApi.update(template.id, {
+          name: template.name,
+          blocks: template.blocks
+        });
+        toast.success('Template actualizado', { id: loadingToast });
+      } else {
+        // Create new (restaurant_id is obtained from auth in backend)
+        await smsTemplateApi.create({
+          name: template.name,
+          blocks: template.blocks
+        });
+        toast.success('Template guardado', { id: loadingToast });
+      }
+
+      // Reload templates from backend
+      await loadSmsTemplates();
+      setShowTemplateModal(false);
+      setShowNewCampaignModal(true);
+
+    } catch (error) {
+      console.error('Error saving template:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Error al guardar template',
+        { id: loadingToast }
+      );
+    }
   };
-  const handleCreateCampaign = (campaignName, selectedSegment, selectedTemplate) => {
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    if (!window.confirm('¿Estás seguro de eliminar este template?')) {
+      return;
+    }
+
+    const loadingToast = toast.loading('Eliminando template...');
+
+    try {
+      await smsTemplateApi.delete(templateId);
+      toast.success('Template eliminado', { id: loadingToast });
+
+      // Reload templates
+      await loadSmsTemplates();
+
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Error al eliminar template',
+        { id: loadingToast }
+      );
+    }
+  };
+  const handleCreateCampaign = (campaignName, selectedSegment, selectedTemplate, selectedWhatsAppTemplate, deliveryMethods, promoCode, discountPercentage) => {
     // Store campaign data and proceed to details screen
     setNewCampaignData({
       name: campaignName,
       selectedSegment,
-      selectedTemplate
+      selectedTemplate,
+      selectedWhatsAppTemplate,
+      deliveryMethods,
+      promoCode,
+      discountPercentage
     });
     setShowNewCampaignModal(false);
     setShowCampaignDetailsModal(true);
   };
   const handleCloseCampaignDetails = () => {
     setShowCampaignDetailsModal(false);
+    setShowNewCampaignModal(true);
   };
   const handleFinalizeCampaign = campaignDetails => {
     // Create a new campaign with all the provided data
@@ -851,7 +958,9 @@ const RewardsManagement = () => {
       active: true,
       status: 'active',
       icon: 'award',
-      image: newCampaignData.selectedTemplate?.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
+      image: campaignDetails.whatsappTemplate?.variables?.image_url ||
+             newCampaignData.selectedTemplate?.image ||
+             'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
       emailSubject: newCampaignData.name,
       emailBody: 'Descripción de la campaña',
       startDate: campaignDetails.startDate,
@@ -861,6 +970,7 @@ const RewardsManagement = () => {
       templateName: newCampaignData.selectedTemplate ? newCampaignData.selectedTemplate.name : 'Template predeterminado',
       sent: false,
       deliveryMethods: campaignDetails.deliveryMethods,
+      whatsappTemplate: campaignDetails.whatsappTemplate,
       segment: newCampaignData.selectedSegment?.segment_name || 'Todos los clientes'
     };
     setCampaigns([...campaigns, newCampaign]);
@@ -934,17 +1044,46 @@ const RewardsManagement = () => {
       {/* Pricing Modal */}
       <RewardsPricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} currentPlan="Básico" />
 
+      {/* Delivery Method Selection Modal */}
+      <DeliveryMethodModal
+        isOpen={showDeliveryMethodModal}
+        onClose={() => setShowDeliveryMethodModal(false)}
+        onSelectMethod={handleSelectDeliveryMethod}
+      />
+
       {/* New Campaign Modal */}
-      <NewCampaignModal isOpen={showNewCampaignModal} onClose={handleCloseNewCampaign} onCreateSegment={handleCreateSegment} onDesignTemplate={handleDesignTemplate} onNext={handleCreateCampaign} savedSegments={currentSegments} savedTemplates={currentTemplates} />
+      <NewCampaignModal
+        isOpen={showNewCampaignModal}
+        onClose={handleCloseNewCampaign}
+        onCreateSegment={handleCreateSegment}
+        onDesignTemplate={handleDesignTemplate}
+        onNext={handleCreateCampaign}
+        savedSegments={currentSegments}
+        savedTemplates={currentTemplates}
+        onDeleteTemplate={handleDeleteTemplate}
+        initialDeliveryMethods={newCampaignData.deliveryMethods}
+        onChangeDeliveryMethod={handleChangeDeliveryMethod}
+        onAddDeliveryMethod={handleAddDeliveryMethod}
+      />
 
       {/* Segment Modal */}
       <SegmentModal isOpen={showSegmentModal} onClose={handleCloseSegmentModal} onApplySegment={handleApplySegment} />
 
       {/* Template Designer Modal */}
-      <TemplateDesignerModal isOpen={showTemplateModal} onClose={handleCloseTemplateModal} onSave={handleSaveTemplate} />
+      <TemplateDesignerModal
+        isOpen={showTemplateModal}
+        onClose={() => {
+          setShowTemplateModal(false);
+          setEditingTemplate(null);
+        }}
+        onSave={handleSaveTemplate}
+        initialTemplate={editingTemplate}
+        promoCode={newCampaignData.promoCode}
+        discountPercentage={newCampaignData.discountPercentage}
+      />
 
       {/* Campaign Details Modal */}
-      <CampaignDetailsModal isOpen={showCampaignDetailsModal} onClose={handleCloseCampaignDetails} onCreateCampaign={handleFinalizeCampaign} campaignName={newCampaignData.name} selectedSegment={newCampaignData.selectedSegment} selectedTemplate={newCampaignData.selectedTemplate} />
+      <CampaignDetailsModal isOpen={showCampaignDetailsModal} onClose={handleCloseCampaignDetails} onCreateCampaign={handleFinalizeCampaign} campaignName={newCampaignData.name} selectedSegment={newCampaignData.selectedSegment} selectedTemplate={newCampaignData.selectedTemplate} selectedWhatsAppTemplate={newCampaignData.selectedWhatsAppTemplate} initialDeliveryMethods={newCampaignData.deliveryMethods} />
     </div>;
 };
 export default RewardsManagement;

@@ -1,42 +1,93 @@
-import React, { useEffect, useState } from 'react';
-import { XIcon, TypeIcon, AlignLeftIcon, ImageIcon, SeparatorHorizontalIcon, MousePointerIcon, GripIcon, TrashIcon, LayoutIcon, TagIcon, BookmarkIcon, RefreshCcwIcon, AlertCircleIcon } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { XIcon, TypeIcon, AlignLeftIcon, ImageIcon, SeparatorHorizontalIcon, MousePointerIcon, GripIcon, TrashIcon, LayoutIcon, TagIcon, BookmarkIcon, RefreshCcwIcon, AlertCircleIcon, UploadIcon } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import PredefinedTemplatesModal from './PredefinedTemplatesModal';
+import { ImageUploadService } from '../services/imageUploadService';
 interface TemplateDesignerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (template: any) => void;
+  onSave: (template: any) => Promise<void>;
   initialTemplate?: any;
+  promoCode?: string;
+  discountPercentage?: string;
 }
 const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  initialTemplate = null
+  initialTemplate = null,
+  promoCode = "",
+  discountPercentage = ""
 }) => {
+  // Helper function to create initial blocks with promo data
+  const getInitialBlocks = () => {
+    let baseBlocks = [];
+
+    if (initialTemplate?.blocks) {
+      // Filter out old promo/discount blocks if they exist
+      baseBlocks = initialTemplate.blocks.filter(
+        (b: any) => b.type !== 'promo_code' && b.type !== 'discount'
+      );
+    } else {
+      // Default blocks
+      baseBlocks = [
+        {
+          id: '1',
+          type: 'title',
+          content: 'Título de la campaña'
+        },
+        {
+          id: '2',
+          type: 'text',
+          content: 'Descripción de la campaña que explica los beneficios para tus clientes.'
+        }
+      ];
+    }
+
+    // Always add promo code and discount blocks at the end
+    baseBlocks.push({
+      id: 'promo-code-block',
+      type: 'promo_code',
+      content: promoCode || '',
+      locked: true
+    });
+
+    baseBlocks.push({
+      id: 'discount-block',
+      type: 'discount',
+      content: discountPercentage || '',
+      locked: true
+    });
+
+    return baseBlocks;
+  };
+
   const [templateName, setTemplateName] = useState(initialTemplate?.name || 'Nuevo Template');
-  const [blocks, setBlocks] = useState(initialTemplate?.blocks || [{
-    id: '1',
-    type: 'title',
-    content: 'Título de la campaña'
-  }, {
-    id: '2',
-    type: 'text',
-    content: 'Descripción de la campaña que explica los beneficios para tus clientes.'
-  }]);
+  const [blocks, setBlocks] = useState(getInitialBlocks());
   const [showPredefinedTemplates, setShowPredefinedTemplates] = useState(false);
   const [showConfirmReset, setShowConfirmReset] = useState(false);
-  // Reset form when initialTemplate changes
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Helper function to get next sequential ID
+  const getNextId = () => {
+    const currentMax = Math.max(...blocks.map((b: any) => parseInt(b.id) || 0), 0);
+    return (currentMax + 1).toString();
+  };
+
+  // Reset form when initialTemplate, promoCode, or discountPercentage changes
   useEffect(() => {
     if (initialTemplate) {
       setTemplateName(initialTemplate.name);
-      setBlocks(initialTemplate.blocks);
     }
-  }, [initialTemplate]);
+    // Always regenerate blocks to include updated promo data
+    setBlocks(getInitialBlocks());
+  }, [initialTemplate, promoCode, discountPercentage]);
   if (!isOpen) return null;
   const handleAddBlock = (type: string) => {
     const newBlock = {
-      id: Date.now().toString(),
+      id: getNextId(),
       type,
       content: getDefaultContent(type)
     };
@@ -59,15 +110,75 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
     }
   };
   const handleRemoveBlock = (id: string) => {
-    setBlocks(blocks.filter(block => block.id !== id));
+    // Don't allow removing locked blocks
+    const block = blocks.find((b: any) => b.id === id);
+    if (block?.locked) {
+      return;
+    }
+    setBlocks(blocks.filter((block: any) => block.id !== id));
   };
-  const handleSaveTemplate = () => {
-    const template = {
-      id: Date.now(),
-      name: templateName,
-      blocks
-    };
-    onSave(template);
+
+  const handleBlockContentChange = (id: string, newContent: string) => {
+    setBlocks(blocks.map((block: any) =>
+      block.id === id ? { ...block, content: newContent } : block
+    ));
+  };
+
+  const handleImageUpload = async (blockId: string, file: File) => {
+    try {
+      setUploadingImage(blockId);
+
+      // Resize image before upload
+      const resizedFile = await ImageUploadService.resizeImage(file, 800, 600, 0.85);
+
+      // Upload to server
+      const imageUrl = await ImageUploadService.uploadImage(resizedFile, 'banner');
+
+      // Update block content with uploaded image URL
+      handleBlockContentChange(blockId, imageUrl);
+
+      setUploadingImage(null);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error al subir la imagen. Por favor intenta de nuevo.');
+      setUploadingImage(null);
+    }
+  };
+
+  const triggerImageUpload = (blockId: string) => {
+    setEditingBlockId(blockId);
+    fileInputRef.current?.click();
+  };
+  const handleSaveTemplate = async () => {
+    if (!templateName.trim()) {
+      alert('Por favor ingresa un nombre para el template');
+      return;
+    }
+
+    if (blocks.length === 0) {
+      alert('El template debe tener al menos un bloque');
+      return;
+    }
+
+    try {
+      // Filter out promo_code and discount blocks before saving
+      // These are campaign-specific and shouldn't be saved with the template
+      const blocksToSave = blocks.filter(
+        (block: any) => block.type !== 'promo_code' && block.type !== 'discount'
+      );
+
+      const template = {
+        id: initialTemplate?.id,  // Preserve ID for updates
+        name: templateName,
+        blocks: blocksToSave
+      };
+
+      await onSave(template);
+
+    } catch (error) {
+      console.error('Error saving template:', error);
+      alert('Error al guardar el template. Por favor intenta de nuevo.');
+    }
   };
   const onDragEnd = (result: any) => {
     if (!result.destination) return;
@@ -93,19 +204,82 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
     setShowConfirmReset(false);
   };
   const renderBlockContent = (block: any) => {
+    const isUploading = uploadingImage === block.id;
+
     switch (block.type) {
       case 'title':
-        return <h2 className="text-2xl font-bold text-gray-900">{block.content}</h2>;
+        return (
+          <input
+            type="text"
+            value={block.content}
+            onChange={(e) => handleBlockContentChange(block.id, e.target.value)}
+            className="w-full text-2xl font-bold text-gray-900 bg-transparent border-none outline-none focus:ring-2 focus:ring-custom-green-500 rounded px-2 py-1"
+            placeholder="Título"
+          />
+        );
       case 'text':
-        return <p className="text-base text-gray-700">{block.content}</p>;
+        return (
+          <textarea
+            value={block.content}
+            onChange={(e) => handleBlockContentChange(block.id, e.target.value)}
+            className="w-full text-base text-gray-700 bg-transparent border-none outline-none focus:ring-2 focus:ring-custom-green-500 rounded px-2 py-1 resize-none"
+            placeholder="Texto"
+            rows={3}
+          />
+        );
       case 'image':
-        return <img src={block.content} alt="Content" className="w-full h-auto rounded-lg" />;
+        return (
+          <div className="relative">
+            {block.content && block.content !== 'https://via.placeholder.com/600x300' ? (
+              <img src={block.content} alt="Content" className="w-full h-auto rounded-lg" />
+            ) : (
+              <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+                <ImageIcon className="h-12 w-12 text-gray-400" />
+              </div>
+            )}
+            <button
+              onClick={() => triggerImageUpload(block.id)}
+              disabled={isUploading}
+              className="absolute bottom-2 right-2 bg-white/90 hover:bg-white text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium shadow-md flex items-center gap-2 disabled:opacity-50"
+            >
+              {isUploading ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-custom-green-600 border-t-transparent rounded-full"></div>
+                  Subiendo...
+                </>
+              ) : (
+                <>
+                  <UploadIcon className="h-4 w-4" />
+                  Subir imagen
+                </>
+              )}
+            </button>
+          </div>
+        );
       case 'button':
-        return <button className="bg-custom-green-600 text-white px-6 py-2 rounded-lg font-medium">
-            {block.content}
-          </button>;
+        return (
+          <input
+            type="text"
+            value={block.content}
+            onChange={(e) => handleBlockContentChange(block.id, e.target.value)}
+            className="bg-custom-green-600 text-white px-6 py-2 rounded-lg font-medium text-center outline-none focus:ring-2 focus:ring-custom-green-700"
+            placeholder="Texto del botón"
+          />
+        );
       case 'separator':
         return <hr className="border-t border-gray-200 my-4" />;
+      case 'promo_code':
+        return (
+          <div className="text-base text-gray-700">
+            Código de promoción: <span className="font-semibold">{block.content}</span>
+          </div>
+        );
+      case 'discount':
+        return (
+          <div className="text-base text-gray-700">
+            {block.content}% de descuento
+          </div>
+        );
       default:
         return null;
     }
@@ -118,7 +292,7 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
           <div className="flex items-center">
             <LayoutIcon className="h-5 w-5 text-custom-green-600 mr-2" />
             <h2 className="text-xl font-semibold text-gray-900">
-              Diseñar template
+              {initialTemplate ? 'Editar template' : 'Diseñar template'}
             </h2>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-500 p-1 rounded-full hover:bg-gray-100">
@@ -145,9 +319,11 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
                                 <div {...provided.dragHandleProps} className="cursor-grab text-gray-400 hover:text-gray-600">
                                   <GripIcon className="h-4 w-4" />
                                 </div>
-                                <button onClick={() => handleRemoveBlock(block.id)} className="text-red-500 hover:text-red-700">
-                                  <TrashIcon className="h-4 w-4" />
-                                </button>
+                                {!block.locked && (
+                                  <button onClick={() => handleRemoveBlock(block.id)} className="text-red-500 hover:text-red-700">
+                                    <TrashIcon className="h-4 w-4" />
+                                  </button>
+                                )}
                               </div>
                               {renderBlockContent(block)}
                             </div>}
@@ -185,6 +361,7 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
                 <span className="text-sm">Botón</span>
               </div>
             </div>
+
             {/* Botones de acciones especiales */}
             <div className="mt-8 border-t border-gray-200 pt-6 space-y-4">
               {/* Botón: Crear desde cero - Estilo actualizado */}
@@ -228,10 +405,26 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
             Cancelar
           </button>
           <button onClick={handleSaveTemplate} className="px-4 py-2 bg-custom-green-600 text-white rounded-lg hover:bg-custom-green-700">
-            Guardar template
+            {initialTemplate ? 'Actualizar template' : 'Guardar template'}
           </button>
         </div>
       </div>
+      {/* Hidden file input for image upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && editingBlockId) {
+            handleImageUpload(editingBlockId, file);
+          }
+          // Reset input
+          e.target.value = '';
+        }}
+      />
+
       {/* Predefined Templates Modal */}
       <PredefinedTemplatesModal isOpen={showPredefinedTemplates} onClose={() => setShowPredefinedTemplates(false)} onSelectTemplate={handleSelectPredefinedTemplate} />
       {/* Confirmation Modal for Reset */}

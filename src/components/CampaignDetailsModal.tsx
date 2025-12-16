@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { XIcon, MailIcon, PhoneIcon, CalendarIcon, TagIcon, AlertCircleIcon, CheckIcon } from 'lucide-react';
+import { XIcon, CalendarIcon, TagIcon, AlertCircleIcon, CheckIcon } from 'lucide-react';
+import { WhatsAppTemplate } from './WhatsAppTemplateModal';
+
 interface CampaignDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -7,11 +9,18 @@ interface CampaignDetailsModalProps {
   campaignName: string;
   selectedSegment: any;
   selectedTemplate: any;
+  selectedWhatsAppTemplate?: WhatsAppTemplate;
+  initialDeliveryMethods?: { whatsapp: boolean; sms: boolean };
 }
 interface CampaignDetails {
   deliveryMethods: {
     email: boolean;
     sms: boolean;
+    whatsapp: boolean;
+  };
+  whatsappTemplate?: {
+    template: WhatsAppTemplate;
+    variables: Record<string, string>;
   };
   startDate: string;
   endDate: string;
@@ -24,7 +33,9 @@ const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({
   onCreateCampaign,
   campaignName,
   selectedSegment,
-  selectedTemplate
+  selectedTemplate,
+  selectedWhatsAppTemplate,
+  initialDeliveryMethods
 }) => {
   // Get today's date in YYYY-MM-DD format
   const today = new Date().toISOString().split('T')[0];
@@ -33,21 +44,20 @@ const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({
   defaultEndDate.setDate(defaultEndDate.getDate() + 30);
   const defaultEndDateStr = defaultEndDate.toISOString().split('T')[0];
   // State for form fields
-  const [deliveryMethods, setDeliveryMethods] = useState({
-    email: true,
-    sms: false
-  });
+  const deliveryMethods = {
+    email: false,
+    sms: initialDeliveryMethods?.sms || false,
+    whatsapp: initialDeliveryMethods?.whatsapp || false
+  };
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(defaultEndDateStr);
-  const [rewardCode, setRewardCode] = useState('');
-  const [discountPercentage, setDiscountPercentage] = useState('');
   // Validation states
   const [dateError, setDateError] = useState('');
   const [formValid, setFormValid] = useState(false);
   // Check if form is valid
   useEffect(() => {
     // Check if at least one delivery method is selected
-    const hasDeliveryMethod = deliveryMethods.email || deliveryMethods.sms;
+    const hasDeliveryMethod = deliveryMethods.email || deliveryMethods.sms || deliveryMethods.whatsapp;
     // Check if dates are valid
     const datesValid = !dateError && startDate && endDate;
     // Update form validity
@@ -65,30 +75,20 @@ const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({
       }
     }
   }, [startDate, endDate]);
-  // Toggle delivery method
-  const toggleDeliveryMethod = (method: 'email' | 'sms') => {
-    setDeliveryMethods(prev => ({
-      ...prev,
-      [method]: !prev[method]
-    }));
-  };
-  // Handle discount percentage change
-  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Only allow numbers and limit to 100
-    if (value === '' || /^\d+$/.test(value) && parseInt(value) <= 100) {
-      setDiscountPercentage(value);
-    }
-  };
+
   // Handle form submission
   const handleSubmit = () => {
     if (formValid) {
       onCreateCampaign({
         deliveryMethods,
+        whatsappTemplate: selectedWhatsAppTemplate ? {
+          template: selectedWhatsAppTemplate,
+          variables: {}
+        } : undefined,
         startDate,
         endDate,
-        rewardCode,
-        discountPercentage: discountPercentage ? parseInt(discountPercentage) : 0
+        rewardCode: '',
+        discountPercentage: 0
       });
     }
   };
@@ -133,54 +133,7 @@ const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({
               </span>
             </div>}
         </div>
-        {/* Delivery Methods */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Método de envío <span className="text-red-500">*</span>
-          </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className={`border rounded-lg p-4 cursor-pointer transition-all ${deliveryMethods.email ? 'border-custom-green-600 bg-custom-green-50 shadow-sm' : 'border-gray-200 hover:bg-gray-50'}`} onClick={() => toggleDeliveryMethod('email')}>
-              <div className="flex items-center">
-                <div className={`p-2 rounded-full mr-3 ${deliveryMethods.email ? 'bg-custom-green-100' : 'bg-gray-100'}`}>
-                  <MailIcon className={`h-5 w-5 ${deliveryMethods.email ? 'text-custom-green-600' : 'text-gray-500'}`} />
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">Email</h4>
-                  <p className="text-xs text-gray-500">
-                    Enviar campaña por correo electrónico
-                  </p>
-                </div>
-                <div className="ml-auto">
-                  <div className={`w-5 h-5 rounded-full border ${deliveryMethods.email ? 'border-custom-green-600 bg-custom-green-600' : 'border-gray-300'} flex items-center justify-center`}>
-                    {deliveryMethods.email && <CheckIcon className="h-3 w-3 text-white" />}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className={`border rounded-lg p-4 cursor-pointer transition-all ${deliveryMethods.sms ? 'border-custom-green-600 bg-custom-green-50 shadow-sm' : 'border-gray-200 hover:bg-gray-50'}`} onClick={() => toggleDeliveryMethod('sms')}>
-              <div className="flex items-center">
-                <div className={`p-2 rounded-full mr-3 ${deliveryMethods.sms ? 'bg-custom-green-100' : 'bg-gray-100'}`}>
-                  <PhoneIcon className={`h-5 w-5 ${deliveryMethods.sms ? 'text-custom-green-600' : 'text-gray-500'}`} />
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">SMS</h4>
-                  <p className="text-xs text-gray-500">
-                    Enviar campaña por mensaje de texto
-                  </p>
-                </div>
-                <div className="ml-auto">
-                  <div className={`w-5 h-5 rounded-full border ${deliveryMethods.sms ? 'border-custom-green-600 bg-custom-green-600' : 'border-gray-300'} flex items-center justify-center`}>
-                    {deliveryMethods.sms && <CheckIcon className="h-3 w-3 text-white" />}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          {!deliveryMethods.email && !deliveryMethods.sms && <p className="mt-2 text-sm text-red-600 flex items-center">
-              <AlertCircleIcon className="h-4 w-4 mr-1" />
-              Selecciona al menos un método de envío
-            </p>}
-        </div>
+
         {/* Campaign Dates */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -206,40 +159,6 @@ const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({
               <AlertCircleIcon className="h-4 w-4 mr-1" />
               {dateError}
             </p>}
-        </div>
-        {/* Reward Code */}
-        <div className="mb-8">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Código de recompensa{' '}
-            <span className="text-gray-400 text-xs">(opcional)</span>
-          </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="reward-code" className="block text-sm text-gray-600 mb-1">
-                <TagIcon className="h-4 w-4 inline mr-1" />
-                Código promocional
-              </label>
-              <input type="text" id="reward-code" placeholder="Ej. CUMPLE20" value={rewardCode} onChange={e => setRewardCode(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500" />
-              <p className="mt-1 text-xs text-gray-500">
-                El código que los clientes usarán para canjear la promoción
-              </p>
-            </div>
-            <div>
-              <label htmlFor="discount-percentage" className="block text-sm text-gray-600 mb-1">
-                <TagIcon className="h-4 w-4 inline mr-1" />
-                Porcentaje de descuento
-              </label>
-              <div className="relative">
-                <input type="text" id="discount-percentage" placeholder="Ej. 20" value={discountPercentage} onChange={handleDiscountChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500 pr-8" />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  %
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Porcentaje de descuento asociado al código (0-100)
-              </p>
-            </div>
-          </div>
         </div>
         {/* Footer */}
         <div className="flex justify-end space-x-3">
