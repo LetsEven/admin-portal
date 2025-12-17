@@ -1,11 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { BarChart2Icon, UsersIcon, ShoppingBagIcon, TrendingUpIcon, ChevronDownIcon, MapPinIcon, CheckIcon, XIcon, ClockIcon, DollarSignIcon, UserIcon, ShoppingCartIcon, RotateCcwIcon, CrownIcon, StarIcon } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useAnalytics, type AnalyticsFilters } from '../hooks/useAnalytics';
-import { useRestaurant } from '../hooks/useRestaurant';
-import { useAdminPortalApi } from '../services/adminPortalApi';
-import { useUser, useAuth } from '@clerk/nextjs';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import {
+  BarChart2Icon,
+  UsersIcon,
+  ShoppingBagIcon,
+  TrendingUpIcon,
+  ChevronDownIcon,
+  MapPinIcon,
+  CheckIcon,
+  XIcon,
+  ClockIcon,
+  DollarSignIcon,
+  UserIcon,
+  ShoppingCartIcon,
+  RotateCcwIcon,
+  CrownIcon,
+  StarIcon,
+} from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { useAnalytics, type AnalyticsFilters } from "../hooks/useAnalytics";
+import { useRestaurant } from "../hooks/useRestaurant";
+import { useAdminPortalApi } from "../services/adminPortalApi";
+import { useUser, useAuth } from "@clerk/nextjs";
+import toast from "react-hot-toast";
 
 // Estilos CSS en línea para los sliders
 const sliderStyles = `
@@ -41,60 +65,82 @@ const sliderStyles = `
 
 // Opciones de filtros
 const opcionesGenero = [
-  { id: 'todos', label: 'Todos' },
-  { id: 'hombre', label: 'Hombre' },     // ✅ Corregido: envía 'hombre'
-  { id: 'mujer', label: 'Mujer' },       // ✅ Corregido: envía 'mujer'
+  { id: "todos", label: "Todos" },
+  { id: "hombre", label: "Hombre" }, // ✅ Corregido: envía 'hombre'
+  { id: "mujer", label: "Mujer" }, // ✅ Corregido: envía 'mujer'
 ];
 
 const opcionesEdad = [
-  { id: 'todos', label: 'Todos' },
-  { id: '14-17', label: '14 - 17' },
-  { id: '18-25', label: '18 - 25' },
-  { id: '26-35', label: '26 - 35' },
-  { id: '36-45', label: '36 - 45' },
-  { id: '46+', label: '46 +' }
+  { id: "todos", label: "Todos" },
+  { id: "14-17", label: "14 - 17" },
+  { id: "18-25", label: "18 - 25" },
+  { id: "26-35", label: "26 - 35" },
+  { id: "36-45", label: "36 - 45" },
+  { id: "46+", label: "46 +" },
 ];
 
 const opcionesGranularidad = [
-  { id: 'hora', label: 'Hora' },
-  { id: 'dia', label: 'Día' },
-  { id: 'mes', label: 'Mes' },
-  { id: 'ano', label: 'Año' }
+  { id: "hora", label: "Hora" },
+  { id: "dia", label: "Día" },
+  { id: "mes", label: "Mes" },
+  { id: "ano", label: "Año" },
 ];
 
 // Esta será reemplazada por datos reales del hook
-const sucursalesDefault = [{
-  id: null,  // ✅ CAMBIO: null en lugar de 1 para evitar UUID inválido
-  name: 'Cargando...',
-  is_active: true
-}];
+const sucursalesDefault = [
+  {
+    id: null, // ✅ CAMBIO: null en lugar de 1 para evitar UUID inválido
+    name: "Cargando...",
+    is_active: true,
+  },
+];
 
-const CustomTooltip = ({ active, payload, label, granularidad, mesSeleccionado, diaSeleccionado }: any) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+  granularidad,
+  mesSeleccionado,
+  diaSeleccionado,
+}: any) => {
   if (active && payload && payload.length) {
     const data = payload[0];
 
     const obtenerTextoPeriodo = () => {
       switch (granularidad) {
-        case 'hora':
+        case "hora":
           if (diaSeleccionado) {
-            const [dia, mes, año] = diaSeleccionado.split('/');
-            const fechaSeleccionada = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
-            const fechaFormateada = fechaSeleccionada.toLocaleDateString('es-ES', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            });
-            return `${label.toString().padStart(2, '0')}:00 del ${fechaFormateada}`;
+            const [dia, mes, año] = diaSeleccionado.split("/");
+            const fechaSeleccionada = new Date(
+              parseInt(año),
+              parseInt(mes) - 1,
+              parseInt(dia)
+            );
+            const fechaFormateada = fechaSeleccionada.toLocaleDateString(
+              "es-ES",
+              {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              }
+            );
+            return `${label.toString().padStart(2, "0")}:00 del ${fechaFormateada}`;
           } else {
-            const mesNombre = mesSeleccionado.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-            return `${label.toString().padStart(2, '0')}:00 del ${label} de ${mesNombre}`;
+            const mesNombre = mesSeleccionado.toLocaleDateString("es-ES", {
+              month: "long",
+              year: "numeric",
+            });
+            return `${label.toString().padStart(2, "0")}:00 del ${label} de ${mesNombre}`;
           }
-        case 'dia':
-          const mesNombreDia = mesSeleccionado.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+        case "dia":
+          const mesNombreDia = mesSeleccionado.toLocaleDateString("es-ES", {
+            month: "long",
+            year: "numeric",
+          });
           return `Día ${label} de ${mesNombreDia}`;
-        case 'mes':
+        case "mes":
           return `${label} ${mesSeleccionado.getFullYear()}`;
-        case 'ano':
+        case "ano":
           return `Año ${label}`;
         default:
           return `Día ${label}`;
@@ -144,11 +190,13 @@ const Dashboard = () => {
     getTopSellingItem,
     getUserRestaurants,
     getDashboardSummary,
-    clearError
+    clearError,
   } = useAnalytics();
 
   const { restaurant } = useRestaurant();
-  const [sucursalSeleccionada, setSucursalSeleccionada] = useState(sucursalesDefault[0]);
+  const [sucursalSeleccionada, setSucursalSeleccionada] = useState(
+    sucursalesDefault[0]
+  );
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
 
   // Estados para branches/sucursales
@@ -159,33 +207,46 @@ const Dashboard = () => {
   const [mostrarModalPro, setMostrarModalPro] = useState(false);
 
   // Estados para filtros
-  const [generoSeleccionado, setGeneroSeleccionado] = useState(opcionesGenero[0]);
+  const [generoSeleccionado, setGeneroSeleccionado] = useState(
+    opcionesGenero[0]
+  );
   const [edadSeleccionada, setEdadSeleccionada] = useState(opcionesEdad[0]);
   const [dropdownGeneroAbierto, setDropdownGeneroAbierto] = useState(false);
   const [dropdownEdadAbierto, setDropdownEdadAbierto] = useState(false);
 
   // Estados para granularidad
-  const [granularidadSeleccionada, setGranularidadSeleccionada] = useState(opcionesGranularidad[1]); // Día por defecto
-  const [dropdownGranularidadAbierto, setDropdownGranularidadAbierto] = useState(false);
+  const [granularidadSeleccionada, setGranularidadSeleccionada] = useState(
+    opcionesGranularidad[1]
+  ); // Día por defecto
+  const [dropdownGranularidadAbierto, setDropdownGranularidadAbierto] =
+    useState(false);
 
   // Estado para controlar toasts
   const [previousLoadingState, setPreviousLoadingState] = useState(false);
 
   const fechaActual = new Date();
-  const diaActual = fechaActual.getDate().toString().padStart(2, '0');
-  const mesActualStr = (fechaActual.getMonth() + 1).toString().padStart(2, '0');
+  const diaActual = fechaActual.getDate().toString().padStart(2, "0");
+  const mesActualStr = (fechaActual.getMonth() + 1).toString().padStart(2, "0");
   const añoActual = fechaActual.getFullYear();
-  const [diaSeleccionado, setDiaSeleccionado] = useState(`${diaActual}/${mesActualStr}/${añoActual}`);
+  const [diaSeleccionado, setDiaSeleccionado] = useState(
+    `${diaActual}/${mesActualStr}/${añoActual}`
+  );
   const [rangoHoras, setRangoHoras] = useState([0, 23]);
 
   const [calendarioAbierto, setCalendarioAbierto] = useState(false);
   const [mesActual, setMesActual] = useState(new Date()); // Fecha actual del sistema
-  const [diaSeleccionadoCalendario, setDiaSeleccionadoCalendario] = useState(new Date().getDate());
-  const [mesSeleccionadoParaGrafico, setMesSeleccionadoParaGrafico] = useState(new Date()); // Para granularidades que no sean Hora - Usa fecha actual
+  const [diaSeleccionadoCalendario, setDiaSeleccionadoCalendario] = useState(
+    new Date().getDate()
+  );
+  const [mesSeleccionadoParaGrafico, setMesSeleccionadoParaGrafico] = useState(
+    new Date()
+  ); // Para granularidades que no sean Hora - Usa fecha actual
   const [selectorMesAbierto, setSelectorMesAbierto] = useState(false);
 
   const [selectorAnoAbierto, setSelectorAnoAbierto] = useState(false);
-  const [anoSeleccionado, setAnoSeleccionado] = useState(new Date().getFullYear());
+  const [anoSeleccionado, setAnoSeleccionado] = useState(
+    new Date().getFullYear()
+  );
   const [rangoAnosInicio, setRangoAnosInicio] = useState(2017);
 
   // Estados para verificar servicio FlexBill
@@ -197,64 +258,90 @@ const Dashboard = () => {
   const { isSignedIn } = useAuth();
   const adminPortalApi = useAdminPortalApi();
 
-  
   const cambiarSucursal = (sucursal) => {
     setSucursalSeleccionada(sucursal);
     setDropdownAbierto(false);
     // ✅ Ahora usamos el restaurant_id del usuario, no el branch UUID
-    const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+    const restaurantId =
+      userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
     // ✅ CORREGIR: Pasar la sucursal directamente para evitar problema de timing
     cargarDatosDashboard(restaurantId, {}, null, null, sucursal);
   };
 
   const formatearFechaLocal = (fecha: Date): string => {
     const año = fecha.getFullYear();
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    const horas = String(fecha.getHours()).padStart(2, '0');
-    const minutos = String(fecha.getMinutes()).padStart(2, '0');
-    const segundos = String(fecha.getSeconds()).padStart(2, '0');
-    const milisegundos = String(fecha.getMilliseconds()).padStart(3, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+    const dia = String(fecha.getDate()).padStart(2, "0");
+    const horas = String(fecha.getHours()).padStart(2, "0");
+    const minutos = String(fecha.getMinutes()).padStart(2, "0");
+    const segundos = String(fecha.getSeconds()).padStart(2, "0");
+    const milisegundos = String(fecha.getMilliseconds()).padStart(3, "0");
 
     return `${año}-${mes}-${dia}T${horas}:${minutos}:${segundos}.${milisegundos}`;
   };
 
   // Función para cargar datos del dashboard
-  const cargarDatosDashboard = (restaurantId: number | null = null, customFilters = {}, customRangoHoras: number[] | null = null, customDiaSeleccionado: string | null = null, customSucursal: any = null) => {
-    const currentGranularity = customFilters.granularity || granularidadSeleccionada.id;
+  const cargarDatosDashboard = (
+    restaurantId: number | null = null,
+    customFilters = {},
+    customRangoHoras: number[] | null = null,
+    customDiaSeleccionado: string | null = null,
+    customSucursal: any = null
+  ) => {
+    const currentGranularity =
+      customFilters.granularity || granularidadSeleccionada.id;
     let startDate = null;
     let endDate = null;
 
     // Si la granularidad es "hora", usar fecha y rango de horas específicos
-    if (currentGranularity === 'hora') {
+    if (currentGranularity === "hora") {
       const rangoActual = customRangoHoras || rangoHoras;
 
       const fechaAUsar = customDiaSeleccionado || diaSeleccionado;
 
-      const [dia, mes, año] = fechaAUsar.split('/');
-      const fechaBase = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
+      const [dia, mes, año] = fechaAUsar.split("/");
+      const fechaBase = new Date(
+        parseInt(año),
+        parseInt(mes) - 1,
+        parseInt(dia)
+      );
 
-      const fechaBaseISO = `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
-      const horaInicioStr = rangoActual[0].toString().padStart(2, '0');
+      const fechaBaseISO = `${año}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
+      const horaInicioStr = rangoActual[0].toString().padStart(2, "0");
       const startDateISO = `${fechaBaseISO}T${horaInicioStr}:00:00.000`;
       startDate = new Date(startDateISO);
 
       endDate = new Date(fechaBase);
       endDate.setHours(rangoActual[1], 59, 59, 999);
-
     }
     // Si la granularidad es "día", usar el mes seleccionado
-    else if (currentGranularity === 'dia') {
+    else if (currentGranularity === "dia") {
       const fechaMes = mesSeleccionadoParaGrafico;
 
       // Primer día del mes a las 00:00:00
-      startDate = new Date(fechaMes.getFullYear(), fechaMes.getMonth(), 1, 0, 0, 0, 0);
+      startDate = new Date(
+        fechaMes.getFullYear(),
+        fechaMes.getMonth(),
+        1,
+        0,
+        0,
+        0,
+        0
+      );
 
       // Último día del mes a las 23:59:59.999
-      endDate = new Date(fechaMes.getFullYear(), fechaMes.getMonth() + 1, 0, 23, 59, 59, 999);
+      endDate = new Date(
+        fechaMes.getFullYear(),
+        fechaMes.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999
+      );
     }
     // Si la granularidad es "mes", usar todo el año seleccionado
-    else if (currentGranularity === 'mes') {
+    else if (currentGranularity === "mes") {
       const año = mesSeleccionadoParaGrafico.getFullYear();
 
       // Primer día del año a las 00:00:00
@@ -269,24 +356,30 @@ const Dashboard = () => {
 
     const filtros: AnalyticsFilters = {
       restaurant_id: restaurantId,
-      branch_id: sucursalAUtilizar?.id,  // ✅ CORREGIDO: Usar la sucursal correcta
+      branch_id: sucursalAUtilizar?.id, // ✅ CORREGIDO: Usar la sucursal correcta
       start_date: startDate ? formatearFechaLocal(startDate) : null,
       end_date: endDate ? formatearFechaLocal(endDate) : null,
-      gender: customFilters.gender || generoSeleccionado.id as any,
-      age_range: customFilters.age_range || edadSeleccionada.id as any,
-      granularity: currentGranularity as any
+      gender: customFilters.gender || (generoSeleccionado.id as any),
+      age_range: customFilters.age_range || (edadSeleccionada.id as any),
+      granularity: currentGranularity as any,
     };
 
-    console.log('🔍 [cargarDatosDashboard] sucursalSeleccionada:', sucursalSeleccionada);
-    console.log('🔍 [cargarDatosDashboard] customSucursal:', customSucursal);
-    console.log('🔍 [cargarDatosDashboard] sucursalAUtilizar:', sucursalAUtilizar);
-    console.log('🔍 [cargarDatosDashboard] filtros enviados:', filtros);
+    console.log(
+      "🔍 [cargarDatosDashboard] sucursalSeleccionada:",
+      sucursalSeleccionada
+    );
+    console.log("🔍 [cargarDatosDashboard] customSucursal:", customSucursal);
+    console.log(
+      "🔍 [cargarDatosDashboard] sucursalAUtilizar:",
+      sucursalAUtilizar
+    );
+    console.log("🔍 [cargarDatosDashboard] filtros enviados:", filtros);
 
     // Mostrar toast de carga
-    toast.loading('Cargando datos del dashboard...', {
-      id: 'dashboard-loading',
+    /*toast.loading("Cargando datos del dashboard...", {
+      id: "dashboard-loading",
       duration: 3000,
-    });
+    });*/
 
     getCompleteDashboardData(filtros);
 
@@ -297,11 +390,11 @@ const Dashboard = () => {
   };
 
   const cambiarGenero = (genero: any) => {
-
     setGeneroSeleccionado(genero);
     setDropdownGeneroAbierto(false);
     // ✅ Usar restaurant_id correcto, no branch UUID
-    const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+    const restaurantId =
+      userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
     cargarDatosDashboard(restaurantId, { gender: genero.id });
   };
 
@@ -309,15 +402,17 @@ const Dashboard = () => {
     setEdadSeleccionada(edad);
     setDropdownEdadAbierto(false);
     // ✅ Usar restaurant_id correcto, no branch UUID
-    const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+    const restaurantId =
+      userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
     cargarDatosDashboard(restaurantId, { age_range: edad.id });
   };
 
-  const cambiarGranularidad = (granularidad:any) => {
+  const cambiarGranularidad = (granularidad: any) => {
     setGranularidadSeleccionada(granularidad);
     setDropdownGranularidadAbierto(false);
     // ✅ Usar restaurant_id correcto, no branch UUID
-    const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+    const restaurantId =
+      userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
     cargarDatosDashboard(restaurantId, { granularity: granularidad.id });
   };
 
@@ -330,14 +425,15 @@ const Dashboard = () => {
   // Funciones para el selector de años
   const obtenerAnosDelRango = () => {
     const anos = [];
-    for (let i = 0; i < 12; i++) { // Mostrar 12 años (6 filas x 2 columnas)
+    for (let i = 0; i < 12; i++) {
+      // Mostrar 12 años (6 filas x 2 columnas)
       anos.push(rangoAnosInicio + i);
     }
     return anos;
   };
 
   const cambiarRangoAnos = (direccion: any) => {
-    setRangoAnosInicio(rangoAnosInicio + (direccion * 12));
+    setRangoAnosInicio(rangoAnosInicio + direccion * 12);
   };
 
   const seleccionarAno = (ano: any) => {
@@ -348,8 +444,7 @@ const Dashboard = () => {
     setSelectorAnoAbierto(false);
   };
 
-
-  const obtenerDiasDelMes = (fecha:any) => {
+  const obtenerDiasDelMes = (fecha: any) => {
     const year = fecha.getFullYear();
     const month = fecha.getMonth();
     const primerDia = new Date(year, month, 1);
@@ -382,17 +477,21 @@ const Dashboard = () => {
     setMesActual(nuevaFecha);
   };
 
-  const seleccionarDia = (dia:any) => {
+  const seleccionarDia = (dia: any) => {
     setDiaSeleccionadoCalendario(dia);
 
-    const fechaFormateada = `${dia.toString().padStart(2, '0')}/${(mesActual.getMonth() + 1).toString().padStart(2, '0')}/${mesActual.getFullYear()}`;
+    const fechaFormateada = `${dia.toString().padStart(2, "0")}/${(mesActual.getMonth() + 1).toString().padStart(2, "0")}/${mesActual.getFullYear()}`;
     setDiaSeleccionado(fechaFormateada);
     setCalendarioAbierto(false);
 
-    if (granularidadSeleccionada.id === 'hora' && userRestaurants.length > 0) {
+    if (granularidadSeleccionada.id === "hora" && userRestaurants.length > 0) {
       const customFilters = {
-        ...(generoSeleccionado.id !== 'todos' && { gender: generoSeleccionado.id }),
-        ...(edadSeleccionada.id !== 'todos' && { age_range: edadSeleccionada.id })
+        ...(generoSeleccionado.id !== "todos" && {
+          gender: generoSeleccionado.id,
+        }),
+        ...(edadSeleccionada.id !== "todos" && {
+          age_range: edadSeleccionada.id,
+        }),
       };
 
       const restaurantId = userRestaurants[0]?.id;
@@ -405,7 +504,10 @@ const Dashboard = () => {
       const nuevoRango = [nuevaHora, rangoHoras[1]];
       setRangoHoras(nuevoRango);
 
-      if (granularidadSeleccionada.id === 'hora' && userRestaurants.length > 0) {
+      if (
+        granularidadSeleccionada.id === "hora" &&
+        userRestaurants.length > 0
+      ) {
         const restaurantId = userRestaurants[0]?.id;
         cargarDatosDashboard(restaurantId, {}, nuevoRango);
       }
@@ -417,7 +519,10 @@ const Dashboard = () => {
       const nuevoRango = [rangoHoras[0], nuevaHora];
       setRangoHoras(nuevoRango);
 
-      if (granularidadSeleccionada.id === 'hora' && userRestaurants.length > 0) {
+      if (
+        granularidadSeleccionada.id === "hora" &&
+        userRestaurants.length > 0
+      ) {
         const restaurantId = userRestaurants[0]?.id;
         cargarDatosDashboard(restaurantId, {}, nuevoRango);
       }
@@ -429,19 +534,21 @@ const Dashboard = () => {
       return [];
     }
 
-    if (granularidadSeleccionada.id === 'hora') {
+    if (granularidadSeleccionada.id === "hora") {
       const datosOriginales = dashboardData.grafico;
       const datosCompletos = [];
 
       for (let hora = rangoHoras[0]; hora <= rangoHoras[1]; hora++) {
-        const datoExistente = datosOriginales.find(item => item.hora === hora);
+        const datoExistente = datosOriginales.find(
+          (item) => item.hora === hora
+        );
 
         if (datoExistente) {
           datosCompletos.push(datoExistente);
         } else {
           datosCompletos.push({
             hora: hora,
-            ingresos: 0
+            ingresos: 0,
           });
         }
       }
@@ -449,7 +556,7 @@ const Dashboard = () => {
       return datosCompletos;
     }
 
-    if (granularidadSeleccionada.id === 'dia') {
+    if (granularidadSeleccionada.id === "dia") {
       const datosOriginales = dashboardData.grafico;
       const datosCompletos = [];
 
@@ -460,14 +567,14 @@ const Dashboard = () => {
       ).getDate();
 
       for (let dia = 1; dia <= diasEnMes; dia++) {
-        const datoExistente = datosOriginales.find(item => item.dia === dia);
+        const datoExistente = datosOriginales.find((item) => item.dia === dia);
 
         if (datoExistente) {
           datosCompletos.push(datoExistente);
         } else {
           datosCompletos.push({
             dia: dia,
-            ingresos: 0
+            ingresos: 0,
           });
         }
       }
@@ -475,28 +582,38 @@ const Dashboard = () => {
       return datosCompletos;
     }
 
-    if (granularidadSeleccionada.id === 'mes') {
+    if (granularidadSeleccionada.id === "mes") {
       const datosOriginales = dashboardData.grafico;
       const datosCompletos = [];
 
       // Array con los nombres de los meses en español
       const nombresMeses = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre",
       ];
 
       for (let mes = 1; mes <= 12; mes++) {
-        const datoExistente = datosOriginales.find(item => item.mes === mes);
+        const datoExistente = datosOriginales.find((item) => item.mes === mes);
 
         if (datoExistente) {
           datosCompletos.push({
             ...datoExistente,
-            mes: nombresMeses[mes - 1] // Usar nombre del mes en lugar del número
+            mes: nombresMeses[mes - 1], // Usar nombre del mes en lugar del número
           });
         } else {
           datosCompletos.push({
             mes: nombresMeses[mes - 1],
-            ingresos: 0
+            ingresos: 0,
           });
         }
       }
@@ -509,65 +626,74 @@ const Dashboard = () => {
 
   const obtenerTituloGrafico = () => {
     switch (granularidadSeleccionada.id) {
-      case 'hora':
-        const fechaSeleccionada = new Date(mesActual.getFullYear(), mesActual.getMonth(), diaSeleccionadoCalendario);
-        const fechaFormateada = fechaSeleccionada.toLocaleDateString('es-ES', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
+      case "hora":
+        const fechaSeleccionada = new Date(
+          mesActual.getFullYear(),
+          mesActual.getMonth(),
+          diaSeleccionadoCalendario
+        );
+        const fechaFormateada = fechaSeleccionada.toLocaleDateString("es-ES", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
         });
         return `Ingresos Totales por hora (${fechaFormateada})`;
 
-      case 'dia':
-        const mesAnio = mesSeleccionadoParaGrafico.toLocaleDateString('es-ES', {
-          month: 'long',
-          year: 'numeric'
+      case "dia":
+        const mesAnio = mesSeleccionadoParaGrafico.toLocaleDateString("es-ES", {
+          month: "long",
+          year: "numeric",
         });
         return `Ingresos Totales por día (${mesAnio})`;
 
-      case 'mes':
+      case "mes":
         return `Ingresos Totales por mes (${mesSeleccionadoParaGrafico.getFullYear()})`;
 
-      case 'ano':
+      case "ano":
         return `Ingresos Totales por año`;
 
       default:
-        return `Ingresos Totales por día (${mesSeleccionadoParaGrafico.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })})`;
+        return `Ingresos Totales por día (${mesSeleccionadoParaGrafico.toLocaleDateString("es-ES", { month: "long", year: "numeric" })})`;
     }
   };
 
   const obtenerConfiguracionEjeX = () => {
     switch (granularidadSeleccionada.id) {
-      case 'hora':
+      case "hora":
         return {
-          dataKey: 'hora',
-          tickFormatter: (value: any) => `${value.toString().padStart(2, '0')}:00`,
-          interval: 2
+          dataKey: "hora",
+          tickFormatter: (value: any) =>
+            `${value.toString().padStart(2, "0")}:00`,
+          interval: 2,
         };
-      case 'dia':
-        const diasEnMes = new Date(mesSeleccionadoParaGrafico.getFullYear(), mesSeleccionadoParaGrafico.getMonth() + 1, 0).getDate();
+      case "dia":
+        const diasEnMes = new Date(
+          mesSeleccionadoParaGrafico.getFullYear(),
+          mesSeleccionadoParaGrafico.getMonth() + 1,
+          0
+        ).getDate();
         return {
-          dataKey: 'dia',
+          dataKey: "dia",
           tickFormatter: (value: any) => value.toString(),
-          interval: diasEnMes > 31 ? 3 : diasEnMes > 29 ? 2 : 1
+          interval: diasEnMes > 31 ? 3 : diasEnMes > 29 ? 2 : 1,
         };
-      case 'mes':
+      case "mes":
         return {
-          dataKey: 'mes',
+          dataKey: "mes",
           tickFormatter: (value: any) => value,
-          interval: 0
+          interval: 0,
         };
-      case 'ano':
+      case "ano":
         return {
-          dataKey: 'ano',
+          dataKey: "ano",
           tickFormatter: (value: any) => value.toString(),
-          interval: 0
+          interval: 0,
         };
       default:
         return {
-          dataKey: 'dia',
+          dataKey: "dia",
           tickFormatter: (value: any) => value.toString(),
-          interval: 2
+          interval: 2,
         };
     }
   };
@@ -586,29 +712,39 @@ const Dashboard = () => {
   const loadBranches = async () => {
     try {
       setBranchesLoading(true);
-      console.log('🔍 [Dashboard] Loading branches...');
+      console.log("🔍 [Dashboard] Loading branches...");
 
       const response = await adminPortalApi.getBranches();
-      console.log('✅ [Dashboard] Branches loaded:', response);
+      console.log("✅ [Dashboard] Branches loaded:", response);
 
       setBranches(response.branches || []);
 
       // Si hay branches y aún está en "Cargando...", seleccionar el primero
-      if (response.branches && response.branches.length > 0 && sucursalSeleccionada.name === 'Cargando...') {
+      if (
+        response.branches &&
+        response.branches.length > 0 &&
+        sucursalSeleccionada.name === "Cargando..."
+      ) {
         const firstBranch = response.branches[0];
         setSucursalSeleccionada(firstBranch);
         // 🔄 Solo cargar datos si userRestaurants ya está disponible
         if (userRestaurants.length > 0) {
           const restaurantId = userRestaurants[0]?.id;
-          console.log('🎯 [Dashboard] Auto-loading data with branch:', firstBranch.id, 'and restaurant:', restaurantId);
+          console.log(
+            "🎯 [Dashboard] Auto-loading data with branch:",
+            firstBranch.id,
+            "and restaurant:",
+            restaurantId
+          );
           cargarDatosDashboard(restaurantId);
         } else {
-          console.log('⏳ [Dashboard] Waiting for userRestaurants to load before calling dashboard...');
+          console.log(
+            "⏳ [Dashboard] Waiting for userRestaurants to load before calling dashboard..."
+          );
         }
       }
-
     } catch (error) {
-      console.error('❌ [Dashboard] Error loading branches:', error);
+      console.error("❌ [Dashboard] Error loading branches:", error);
       setBranches([]);
     } finally {
       setBranchesLoading(false);
@@ -624,22 +760,29 @@ const Dashboard = () => {
   useEffect(() => {
     if (
       userRestaurants.length > 0 &&
-      sucursalSeleccionada.name !== 'Cargando...' &&
+      sucursalSeleccionada.name !== "Cargando..." &&
       sucursalSeleccionada.id &&
       !dashboardData // Solo si aún no hay datos cargados
     ) {
       const restaurantId = userRestaurants[0]?.id;
-      console.log('🚀 [Dashboard] Both userRestaurants and branch ready, loading dashboard data...');
-      console.log('🎯 [Dashboard] Using restaurant:', restaurantId, 'and branch:', sucursalSeleccionada.id);
+      console.log(
+        "🚀 [Dashboard] Both userRestaurants and branch ready, loading dashboard data..."
+      );
+      console.log(
+        "🎯 [Dashboard] Using restaurant:",
+        restaurantId,
+        "and branch:",
+        sucursalSeleccionada.id
+      );
       cargarDatosDashboard(restaurantId);
     }
   }, [userRestaurants, sucursalSeleccionada, dashboardData]);
 
   useEffect(() => {
     if (error) {
-      console.error('Error en analytics:', error);
+      console.error("Error en analytics:", error);
       // Mostrar toast de error y cerrar el de carga
-      toast.dismiss('dashboard-loading');
+      toast.dismiss("dashboard-loading");
       toast.error(`Error al cargar datos: ${error}`);
     }
   }, [error]);
@@ -649,22 +792,31 @@ const Dashboard = () => {
   useEffect(() => {
     if (previousLoadingState && !isLoading && dashboardData) {
       // Solo mostrar toast si acabamos de terminar de cargar
-      toast.dismiss('dashboard-loading');
-      toast.success('Datos actualizados correctamente', {
+      /*toast.dismiss("dashboard-loading");
+      toast.success("Datos actualizados correctamente", {
         duration: 2000,
-        icon: '✅',
-      });
+        icon: "✅",
+      });*/
     }
     setPreviousLoadingState(isLoading);
   }, [isLoading, dashboardData]);
 
   // Recargar datos cuando cambia el mes/año seleccionado para granularidad "día" o "mes"
   useEffect(() => {
-    if ((granularidadSeleccionada.id === 'dia' || granularidadSeleccionada.id === 'mes') && sucursalSeleccionada?.id && userRestaurants.length > 0) {
+    if (
+      (granularidadSeleccionada.id === "dia" ||
+        granularidadSeleccionada.id === "mes") &&
+      sucursalSeleccionada?.id &&
+      userRestaurants.length > 0
+    ) {
       const restaurantId = userRestaurants[0]?.id;
       cargarDatosDashboard(restaurantId);
     }
-  }, [mesSeleccionadoParaGrafico, anoSeleccionado, granularidadSeleccionada.id]);
+  }, [
+    mesSeleccionadoParaGrafico,
+    anoSeleccionado,
+    granularidadSeleccionada.id,
+  ]);
 
   // Verificar si FlexBill está habilitado
   useEffect(() => {
@@ -674,10 +826,10 @@ const Dashboard = () => {
       try {
         const response = await adminPortalApi.getEnabledServices();
         const enabledServiceIds = response.enabled_services;
-        setIsFlexBillEnabled(enabledServiceIds.includes('flex-bill'));
+        setIsFlexBillEnabled(enabledServiceIds.includes("flex-bill"));
         setServicesLoaded(true);
       } catch (error) {
-        console.error('Error al cargar servicios habilitados:', error);
+        console.error("Error al cargar servicios habilitados:", error);
         setServicesLoaded(true);
       }
     };
@@ -685,11 +837,10 @@ const Dashboard = () => {
     loadEnabledServices();
   }, [user?.id, isSignedIn]);
 
-
-  return <div className="w-full">
+  return (
+    <div className="w-full">
       {/* Estilos para los sliders */}
       <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
-
 
       {/* Filtros superiores y header del restaurante */}
       <div className="flex items-start justify-between mb-6 gap-6">
@@ -703,8 +854,12 @@ const Dashboard = () => {
             >
               <UsersIcon className="h-4 w-4 text-gray-500" />
               <span className="text-sm text-gray-600">Género:</span>
-              <span className="text-sm font-medium text-gray-800">{generoSeleccionado.label}</span>
-              <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownGeneroAbierto ? 'transform rotate-180' : ''}`} />
+              <span className="text-sm font-medium text-gray-800">
+                {generoSeleccionado.label}
+              </span>
+              <ChevronDownIcon
+                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownGeneroAbierto ? "transform rotate-180" : ""}`}
+              />
             </button>
             {dropdownGeneroAbierto && (
               <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
@@ -714,14 +869,18 @@ const Dashboard = () => {
                   </p>
                 </div>
                 <ul className="py-1">
-                  {opcionesGenero.map(genero => (
+                  {opcionesGenero.map((genero) => (
                     <li key={genero.id}>
                       <button
                         onClick={() => cambiarGenero(genero)}
                         className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
                       >
-                        <span className="text-sm text-gray-800">{genero.label}</span>
-                        {generoSeleccionado.id === genero.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
+                        <span className="text-sm text-gray-800">
+                          {genero.label}
+                        </span>
+                        {generoSeleccionado.id === genero.id && (
+                          <CheckIcon className="h-4 w-4 text-custom-green-600" />
+                        )}
                       </button>
                     </li>
                   ))}
@@ -738,8 +897,12 @@ const Dashboard = () => {
             >
               <UserIcon className="h-4 w-4 text-gray-500" />
               <span className="text-sm text-gray-600">Edad:</span>
-              <span className="text-sm font-medium text-gray-800">{edadSeleccionada.label}</span>
-              <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownEdadAbierto ? 'transform rotate-180' : ''}`} />
+              <span className="text-sm font-medium text-gray-800">
+                {edadSeleccionada.label}
+              </span>
+              <ChevronDownIcon
+                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownEdadAbierto ? "transform rotate-180" : ""}`}
+              />
             </button>
             {dropdownEdadAbierto && (
               <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
@@ -749,14 +912,18 @@ const Dashboard = () => {
                   </p>
                 </div>
                 <ul className="py-1">
-                  {opcionesEdad.map(edad => (
+                  {opcionesEdad.map((edad) => (
                     <li key={edad.id}>
                       <button
                         onClick={() => cambiarEdad(edad)}
                         className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
                       >
-                        <span className="text-sm text-gray-800">{edad.label}</span>
-                        {edadSeleccionada.id === edad.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
+                        <span className="text-sm text-gray-800">
+                          {edad.label}
+                        </span>
+                        {edadSeleccionada.id === edad.id && (
+                          <CheckIcon className="h-4 w-4 text-custom-green-600" />
+                        )}
                       </button>
                     </li>
                   ))}
@@ -773,8 +940,12 @@ const Dashboard = () => {
             >
               <MapPinIcon className="h-4 w-4 text-gray-500" />
               <span className="text-sm text-gray-600">Sucursal:</span>
-              <span className="text-sm font-medium text-gray-800">{sucursalSeleccionada.name}</span>
-              <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownAbierto ? 'transform rotate-180' : ''}`} />
+              <span className="text-sm font-medium text-gray-800">
+                {sucursalSeleccionada.name}
+              </span>
+              <ChevronDownIcon
+                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownAbierto ? "transform rotate-180" : ""}`}
+              />
             </button>
             {dropdownAbierto && (
               <div className="absolute left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
@@ -785,9 +956,11 @@ const Dashboard = () => {
                 </div>
                 <ul className="max-h-64 overflow-y-auto py-1">
                   {branchesLoading ? (
-                    <li className="px-4 py-2 text-sm text-gray-500">Cargando sucursales...</li>
+                    <li className="px-4 py-2 text-sm text-gray-500">
+                      Cargando sucursales...
+                    </li>
                   ) : branches.length > 0 ? (
-                    branches.map(branch => (
+                    branches.map((branch) => (
                       <li key={branch.id}>
                         <button
                           onClick={() => cambiarSucursal(branch)}
@@ -798,15 +971,19 @@ const Dashboard = () => {
                               {branch.name}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {branch.address || 'Sin dirección'}
+                              {branch.address || "Sin dirección"}
                             </p>
                           </div>
-                          {sucursalSeleccionada.id === branch.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
+                          {sucursalSeleccionada.id === branch.id && (
+                            <CheckIcon className="h-4 w-4 text-custom-green-600" />
+                          )}
                         </button>
                       </li>
                     ))
                   ) : (
-                    <li className="px-4 py-2 text-sm text-gray-500">No hay sucursales disponibles</li>
+                    <li className="px-4 py-2 text-sm text-gray-500">
+                      No hay sucursales disponibles
+                    </li>
                   )}
                 </ul>
               </div>
@@ -825,7 +1002,9 @@ const Dashboard = () => {
           ) : (
             <div className="w-16 h-16 rounded-full bg-custom-green-100 flex items-center justify-center mr-4">
               <span className="text-custom-green-600 text-xl font-bold">
-                {restaurant?.name?.charAt(0) || sucursalSeleccionada?.name?.charAt(0) || 'R'}
+                {restaurant?.name?.charAt(0) ||
+                  sucursalSeleccionada?.name?.charAt(0) ||
+                  "R"}
               </span>
             </div>
           )}
@@ -840,15 +1019,22 @@ const Dashboard = () => {
       {/* Selector de granularidad y controles específicos */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
+          {/* Selector de Granularidad a la izquierda */}
           <div className="relative">
             <button
-              onClick={() => setDropdownGranularidadAbierto(!dropdownGranularidadAbierto)}
+              onClick={() =>
+                setDropdownGranularidadAbierto(!dropdownGranularidadAbierto)
+              }
               className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
             >
               <ClockIcon className="h-4 w-4 text-gray-500" />
               <span className="text-sm text-gray-600">Granularidad:</span>
-              <span className="text-sm font-medium text-gray-800">{granularidadSeleccionada.label}</span>
-              <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownGranularidadAbierto ? 'transform rotate-180' : ''}`} />
+              <span className="text-sm font-medium text-gray-800">
+                {granularidadSeleccionada.label}
+              </span>
+              <ChevronDownIcon
+                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownGranularidadAbierto ? "transform rotate-180" : ""}`}
+              />
             </button>
             {dropdownGranularidadAbierto && (
               <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
@@ -858,14 +1044,18 @@ const Dashboard = () => {
                   </p>
                 </div>
                 <ul className="py-1">
-                  {opcionesGranularidad.map(granularidad => (
+                  {opcionesGranularidad.map((granularidad) => (
                     <li key={granularidad.id}>
                       <button
                         onClick={() => cambiarGranularidad(granularidad)}
                         className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
                       >
-                        <span className="text-sm text-gray-800">{granularidad.label}</span>
-                        {granularidadSeleccionada.id === granularidad.id && <CheckIcon className="h-4 w-4 text-custom-green-600" />}
+                        <span className="text-sm text-gray-800">
+                          {granularidad.label}
+                        </span>
+                        {granularidadSeleccionada.id === granularidad.id && (
+                          <CheckIcon className="h-4 w-4 text-custom-green-600" />
+                        )}
                       </button>
                     </li>
                   ))}
@@ -874,8 +1064,26 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* Selector de mes (para granularidad Día) */}
-          {granularidadSeleccionada.id === 'dia' && (
+          {/* Botón de actualizar y selector de mes/año a la derecha */}
+          <div className="flex items-center gap-4">
+            {/* Botón de actualizar */}
+            <button
+              onClick={() => {
+                const restaurantId =
+                  userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+                cargarDatosDashboard(restaurantId);
+              }}
+              disabled={isLoading}
+              className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
+            >
+              <RotateCcwIcon
+                className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+              />
+              {isLoading ? "Actualizando..." : "Actualizar"}
+            </button>
+
+            {/* Selector de mes (para granularidad Día) */}
+            {granularidadSeleccionada.id === "dia" && (
             <div className="relative">
               <button
                 onClick={() => setSelectorMesAbierto(!selectorMesAbierto)}
@@ -883,9 +1091,14 @@ const Dashboard = () => {
               >
                 <span className="text-sm text-gray-600">Mes:</span>
                 <span className="text-sm font-medium text-gray-800">
-                  {(mesSeleccionadoParaGrafico.getMonth() + 1).toString().padStart(2, '0')}/{mesSeleccionadoParaGrafico.getFullYear()}
+                  {(mesSeleccionadoParaGrafico.getMonth() + 1)
+                    .toString()
+                    .padStart(2, "0")}
+                  /{mesSeleccionadoParaGrafico.getFullYear()}
                 </span>
-                <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${selectorMesAbierto ? 'transform rotate-180' : ''}`} />
+                <ChevronDownIcon
+                  className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${selectorMesAbierto ? "transform rotate-180" : ""}`}
+                />
               </button>
 
               {/* Dropdown para seleccionar mes/año */}
@@ -900,7 +1113,10 @@ const Dashboard = () => {
                       <ChevronDownIcon className="h-4 w-4 transform rotate-90 text-gray-600" />
                     </button>
                     <h3 className="text-sm font-medium text-gray-900">
-                      {mesSeleccionadoParaGrafico.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                      {mesSeleccionadoParaGrafico.toLocaleDateString("es-ES", {
+                        month: "long",
+                        year: "numeric",
+                      })}
                     </h3>
                     <button
                       onClick={() => cambiarMesParaGrafico(1)}
@@ -925,15 +1141,19 @@ const Dashboard = () => {
           )}
 
           {/* Selector de año (para granularidad Mes) */}
-          {granularidadSeleccionada.id === 'mes' && (
+          {granularidadSeleccionada.id === "mes" && (
             <div className="relative">
               <button
                 onClick={() => setSelectorAnoAbierto(!selectorAnoAbierto)}
                 className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
               >
                 <span className="text-sm text-gray-600">Año:</span>
-                <span className="text-sm font-medium text-gray-800">{anoSeleccionado}</span>
-                <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${selectorAnoAbierto ? 'transform rotate-180' : ''}`} />
+                <span className="text-sm font-medium text-gray-800">
+                  {anoSeleccionado}
+                </span>
+                <ChevronDownIcon
+                  className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${selectorAnoAbierto ? "transform rotate-180" : ""}`}
+                />
               </button>
 
               {/* Dropdown para seleccionar año */}
@@ -960,15 +1180,16 @@ const Dashboard = () => {
 
                   {/* Grid de años */}
                   <div className="grid grid-cols-2 gap-2 mb-4">
-                    {obtenerAnosDelRango().map(ano => (
+                    {obtenerAnosDelRango().map((ano) => (
                       <button
                         key={ano}
                         onClick={() => seleccionarAno(ano)}
                         className={`
                           p-2 text-sm rounded transition-colors text-center
-                          ${ano === anoSeleccionado
-                            ? 'bg-blue-500 text-white hover:bg-blue-600'
-                            : 'text-gray-700 hover:bg-gray-100'
+                          ${
+                            ano === anoSeleccionado
+                              ? "bg-blue-500 text-white hover:bg-blue-600"
+                              : "text-gray-700 hover:bg-gray-100"
                           }
                         `}
                       >
@@ -980,11 +1201,11 @@ const Dashboard = () => {
               )}
             </div>
           )}
-
+          </div>
         </div>
 
         {/* Controles específicos para granularidad Hora */}
-        {granularidadSeleccionada.id === 'hora' && (
+        {granularidadSeleccionada.id === "hora" && (
           <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4 border border-gray-200">
             {/* Selector de día con calendario */}
             <div className="relative">
@@ -993,8 +1214,12 @@ const Dashboard = () => {
                 className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
               >
                 <span className="text-sm text-gray-600">Día:</span>
-                <span className="text-sm font-medium text-gray-800">{diaSeleccionado}</span>
-                <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${calendarioAbierto ? 'transform rotate-180' : ''}`} />
+                <span className="text-sm font-medium text-gray-800">
+                  {diaSeleccionado}
+                </span>
+                <ChevronDownIcon
+                  className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${calendarioAbierto ? "transform rotate-180" : ""}`}
+                />
               </button>
 
               {/* Calendario desplegable */}
@@ -1009,7 +1234,10 @@ const Dashboard = () => {
                       <ChevronDownIcon className="h-4 w-4 transform rotate-90 text-gray-600" />
                     </button>
                     <h3 className="text-sm font-medium text-gray-900">
-                      {mesActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                      {mesActual.toLocaleDateString("es-ES", {
+                        month: "long",
+                        year: "numeric",
+                      })}
                     </h3>
                     <button
                       onClick={() => cambiarMes(1)}
@@ -1021,8 +1249,11 @@ const Dashboard = () => {
 
                   {/* Días de la semana */}
                   <div className="grid grid-cols-7 gap-1 mb-2">
-                    {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(dia => (
-                      <div key={dia} className="text-xs font-medium text-gray-500 text-center p-2">
+                    {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((dia) => (
+                      <div
+                        key={dia}
+                        className="text-xs font-medium text-gray-500 text-center p-2"
+                      >
                         {dia}
                       </div>
                     ))}
@@ -1033,17 +1264,22 @@ const Dashboard = () => {
                     {obtenerDiasDelMes(mesActual).map((diaInfo, index) => (
                       <button
                         key={index}
-                        onClick={() => !diaInfo.esOtroMes && seleccionarDia(diaInfo.dia)}
+                        onClick={() =>
+                          !diaInfo.esOtroMes && seleccionarDia(diaInfo.dia)
+                        }
                         disabled={diaInfo.esOtroMes}
                         className={`
                           p-2 text-sm rounded transition-colors
-                          ${diaInfo.esOtroMes
-                            ? 'text-gray-300 cursor-not-allowed'
-                            : 'text-gray-700 hover:bg-gray-100 cursor-pointer'
+                          ${
+                            diaInfo.esOtroMes
+                              ? "text-gray-300 cursor-not-allowed"
+                              : "text-gray-700 hover:bg-gray-100 cursor-pointer"
                           }
-                          ${diaInfo.dia === diaSeleccionadoCalendario && !diaInfo.esOtroMes
-                            ? 'bg-custom-green-500 text-white hover:bg-custom-green-600'
-                            : ''
+                          ${
+                            diaInfo.dia === diaSeleccionadoCalendario &&
+                            !diaInfo.esOtroMes
+                              ? "bg-custom-green-500 text-white hover:bg-custom-green-600"
+                              : ""
                           }
                         `}
                       >
@@ -1059,7 +1295,8 @@ const Dashboard = () => {
             <div className="flex-1 mx-6">
               <div className="text-center mb-2">
                 <span className="text-sm font-medium text-gray-700">
-                  Rango de horas: {rangoHoras[0].toString().padStart(2, '0')}:00 - {rangoHoras[1].toString().padStart(2, '0')}:00
+                  Rango de horas: {rangoHoras[0].toString().padStart(2, "0")}:00
+                  - {rangoHoras[1].toString().padStart(2, "0")}:00
                 </span>
               </div>
 
@@ -1068,7 +1305,7 @@ const Dashboard = () => {
                 {/* Slider de hora inicio */}
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Hora Inicio: {rangoHoras[0].toString().padStart(2, '0')}:00
+                    Hora Inicio: {rangoHoras[0].toString().padStart(2, "0")}:00
                   </label>
                   <div className="relative">
                     <input
@@ -1082,7 +1319,7 @@ const Dashboard = () => {
                       }}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-inicio"
                       style={{
-                        background: `linear-gradient(to right, #10b981 0%, #10b981 ${(rangoHoras[0] / 23) * 100}%, #e5e7eb ${(rangoHoras[0] / 23) * 100}%, #e5e7eb 100%)`
+                        background: `linear-gradient(to right, #10b981 0%, #10b981 ${(rangoHoras[0] / 23) * 100}%, #e5e7eb ${(rangoHoras[0] / 23) * 100}%, #e5e7eb 100%)`,
                       }}
                     />
                   </div>
@@ -1091,7 +1328,7 @@ const Dashboard = () => {
                 {/* Slider de hora final */}
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Hora Final: {rangoHoras[1].toString().padStart(2, '0')}:00
+                    Hora Final: {rangoHoras[1].toString().padStart(2, "0")}:00
                   </label>
                   <div className="relative">
                     <input
@@ -1105,7 +1342,7 @@ const Dashboard = () => {
                       }}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-final"
                       style={{
-                        background: `linear-gradient(to right, #e5e7eb 0%, #e5e7eb ${(rangoHoras[1] / 23) * 100}%, #10b981 ${(rangoHoras[1] / 23) * 100}%, #10b981 100%)`
+                        background: `linear-gradient(to right, #e5e7eb 0%, #e5e7eb ${(rangoHoras[1] / 23) * 100}%, #10b981 ${(rangoHoras[1] / 23) * 100}%, #10b981 100%)`,
                       }}
                     />
                   </div>
@@ -1113,13 +1350,15 @@ const Dashboard = () => {
 
                 {/* Visualización del rango completo */}
                 <div className="mt-4">
-                  <div className="text-xs text-gray-500 mb-1">Rango seleccionado:</div>
+                  <div className="text-xs text-gray-500 mb-1">
+                    Rango seleccionado:
+                  </div>
                   <div className="w-full h-3 bg-gray-200 rounded-full relative">
                     <div
                       className="h-3 bg-custom-green-500 rounded-full absolute"
                       style={{
                         left: `${(rangoHoras[0] / 23) * 100}%`,
-                        width: `${((rangoHoras[1] - rangoHoras[0]) / 23) * 100}%`
+                        width: `${((rangoHoras[1] - rangoHoras[0]) / 23) * 100}%`,
                       }}
                     ></div>
                   </div>
@@ -1161,14 +1400,14 @@ const Dashboard = () => {
                 dataKey={obtenerConfiguracionEjeX().dataKey}
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 12, fill: '#6b7280' }}
+                tick={{ fontSize: 12, fill: "#6b7280" }}
                 tickFormatter={obtenerConfiguracionEjeX().tickFormatter}
                 interval={obtenerConfiguracionEjeX().interval}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 12, fill: '#6b7280' }}
+                tick={{ fontSize: 12, fill: "#6b7280" }}
                 tickFormatter={(value) => {
                   if (value >= 1000) {
                     return `$${(value / 1000).toFixed(1)}k`;
@@ -1181,8 +1420,16 @@ const Dashboard = () => {
                   <CustomTooltip
                     {...props}
                     granularidad={granularidadSeleccionada.id}
-                    mesSeleccionado={granularidadSeleccionada.id === 'hora' ? mesActual : mesSeleccionadoParaGrafico}
-                    diaSeleccionado={granularidadSeleccionada.id === 'hora' ? diaSeleccionado : null}
+                    mesSeleccionado={
+                      granularidadSeleccionada.id === "hora"
+                        ? mesActual
+                        : mesSeleccionadoParaGrafico
+                    }
+                    diaSeleccionado={
+                      granularidadSeleccionada.id === "hora"
+                        ? diaSeleccionado
+                        : null
+                    }
                   />
                 )}
               />
@@ -1191,14 +1438,13 @@ const Dashboard = () => {
                 dataKey="ingresos"
                 stroke="#10b981"
                 strokeWidth={3}
-                dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, fill: '#10b981' }}
+                dot={{ fill: "#10b981", strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, fill: "#10b981" }}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
-
 
       {/* Tarjetas de métricas */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6">
@@ -1216,7 +1462,9 @@ const Dashboard = () => {
                   </dt>
                   <dd>
                     <div className="text-lg font-medium text-gray-900">
-                      {isLoading ? 'Cargando...' : `$${dashboardData?.metricas?.ventasTotales?.toLocaleString() || '0'}`}
+                      {isLoading
+                        ? "Cargando..."
+                        : `$${dashboardData?.metricas?.ventasTotales?.toLocaleString() || "0"}`}
                     </div>
                   </dd>
                 </dl>
@@ -1249,7 +1497,9 @@ const Dashboard = () => {
                   </dt>
                   <dd>
                     <div className="text-lg font-medium text-gray-900">
-                      {isLoading ? 'Cargando...' : (dashboardData?.metricas?.ordenesActivas || '0')}
+                      {isLoading
+                        ? "Cargando..."
+                        : dashboardData?.metricas?.ordenesActivas || "0"}
                     </div>
                   </dd>
                 </dl>
@@ -1282,7 +1532,9 @@ const Dashboard = () => {
                   </dt>
                   <dd>
                     <div className="text-lg font-medium text-gray-900">
-                      {isLoading ? 'Cargando...' : (dashboardData?.metricas?.pedidos || '0')}
+                      {isLoading
+                        ? "Cargando..."
+                        : dashboardData?.metricas?.pedidos || "0"}
                     </div>
                   </dd>
                 </dl>
@@ -1315,7 +1567,9 @@ const Dashboard = () => {
                   </dt>
                   <dd>
                     <div className="text-lg font-medium text-gray-900">
-                      {isLoading ? 'Cargando...' : `$${dashboardData?.metricas?.ticketPromedio?.toLocaleString() || '0'}`}
+                      {isLoading
+                        ? "Cargando..."
+                        : `$${dashboardData?.metricas?.ticketPromedio?.toLocaleString() || "0"}`}
                     </div>
                   </dd>
                 </dl>
@@ -1336,9 +1590,15 @@ const Dashboard = () => {
       </div>
 
       {/* Secciones adicionales */}
-      <div className={`grid grid-cols-1 gap-6 mb-6 ${
-        servicesLoaded ? ( isFlexBillEnabled ? 'lg:grid-cols-3' : 'lg:grid-cols-2') :'lg:grid-cols-3'
-      }`}>
+      <div
+        className={`grid grid-cols-1 gap-6 mb-6 ${
+          servicesLoaded
+            ? isFlexBillEnabled
+              ? "lg:grid-cols-3"
+              : "lg:grid-cols-2"
+            : "lg:grid-cols-3"
+        }`}
+      >
         {/* Órdenes Totales */}
         <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
           <div className="p-8">
@@ -1353,7 +1613,9 @@ const Dashboard = () => {
                   </dt>
                   <dd>
                     <div className="text-base font-medium text-gray-900">
-                      {isLoading ? 'Cargando...' : (dashboardData?.metricas?.pedidos || '0')}
+                      {isLoading
+                        ? "Cargando..."
+                        : dashboardData?.metricas?.pedidos || "0"}
                     </div>
                   </dd>
                 </dl>
@@ -1384,10 +1646,16 @@ const Dashboard = () => {
                   </dt>
                   <dd>
                     <div className="text-base font-medium text-gray-900">
-                      {isLoadingTopItem ? 'Cargando...' : (dashboardData?.articulo_mas_vendido?.nombre || topSellingItem?.nombre || 'Sin datos')}
+                      {isLoadingTopItem
+                        ? "Cargando..."
+                        : dashboardData?.articulo_mas_vendido?.nombre ||
+                          topSellingItem?.nombre ||
+                          "Sin datos"}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {isLoadingTopItem ? '' : `${dashboardData?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
+                      {isLoadingTopItem
+                        ? ""
+                        : `${dashboardData?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
                     </div>
                   </dd>
                 </dl>
@@ -1405,56 +1673,46 @@ const Dashboard = () => {
         </div>
 
         {/* Tiempo Promedio x cuenta - Solo mostrar si FlexBill está habilitado */}
-        {(servicesLoaded && isFlexBillEnabled) && (
+        {servicesLoaded && isFlexBillEnabled && (
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center flex-1">
-                <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
-                  <ClockIcon className="h-5 w-5 text-red-600" />
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center flex-1">
+                  <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
+                    <ClockIcon className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div className="ml-4 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">
+                        Tiempo Promedio x cuenta
+                      </dt>
+                      <dd>
+                        <div className="text-base font-medium text-gray-900">
+                          {isLoading
+                            ? "Cargando..."
+                            : dashboardData?.tiempo_promedio_mesa
+                                ?.tiempo_promedio_formateado || "Sin datos"}
+                        </div>
+                      </dd>
+                    </dl>
+                  </div>
                 </div>
-                <div className="ml-4 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Tiempo Promedio x cuenta
-                    </dt>
-                    <dd>
-                      <div className="text-base font-medium text-gray-900">
-                        {isLoading ? 'Cargando...' : (dashboardData?.tiempo_promedio_mesa?.tiempo_promedio_formateado || 'Sin datos')}
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
+                <span className="bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded ml-3">
+                  Flex Bill
+                </span>
               </div>
-              <span className="bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded ml-3">
-                Flex Bill
-              </span>
             </div>
           </div>
-        </div>
         )}
       </div>
       {/* Recent Activity */}
       <div className="mt-7">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium text-gray-900 flex items-center">
-            Actividad reciente
-            <span className="ml-2 bg-custom-green-100 text-custom-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-              Hoy
-            </span>
-          </h2>
-          <button
-            onClick={() => {
-              const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
-              cargarDatosDashboard(restaurantId);
-            }}
-            disabled={isLoading}
-            className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
-          >
-            <RotateCcwIcon className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            {isLoading ? 'Actualizando...' : 'Actualizar'}
-          </button>
-        </div>
+        <h2 className="text-lg font-medium text-gray-900 flex items-center mb-4">
+          Actividad reciente
+          <span className="ml-2 bg-custom-green-100 text-custom-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+            Hoy
+          </span>
+        </h2>
         <div className="mt-4 bg-white shadow-md overflow-hidden sm:rounded-lg border border-gray-100">
           <ul className="divide-y divide-gray-200">
             {isLoadingOrders ? (
@@ -1462,46 +1720,73 @@ const Dashboard = () => {
                 Cargando órdenes activas...
               </li>
             ) : activeOrders.length > 0 ? (
-              activeOrders.map(order => <li key={order.id} className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer" onClick={() => abrirDetallesPedido(order)}>
-                <div className="px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-custom-green-600 truncate">
-                      Mesa #{order.table_number}
-                    </p>
-                    <div className="ml-2 flex-shrink-0 flex">
-                      <p className={`px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        order.status === 'paid'
-                          ? 'bg-green-100 text-green-800'
-                          : order.status === 'not_paid'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : order.status === 'partial'
-                              ? 'bg-orange-100 text-orange-800'
-                              : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {order.status === 'not_paid' ? 'Pendiente' : order.status === 'partial' ? 'Parcial' : order.status === 'paid' ? 'Pagado' : order.status}
+              activeOrders.map((order) => (
+                <li
+                  key={order.id}
+                  className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                  onClick={() => abrirDetallesPedido(order)}
+                >
+                  <div className="px-4 py-4 sm:px-6">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-custom-green-600 truncate">
+                        Mesa #{order.table_number}
                       </p>
+                      <div className="ml-2 flex-shrink-0 flex">
+                        <p
+                          className={`px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            order.status === "paid"
+                              ? "bg-green-100 text-green-800"
+                              : order.status === "not_paid"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : order.status === "partial"
+                                  ? "bg-orange-100 text-orange-800"
+                                  : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {order.status === "not_paid"
+                            ? "Pendiente"
+                            : order.status === "partial"
+                              ? "Parcial"
+                              : order.status === "paid"
+                                ? "Pagado"
+                                : order.status}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 sm:flex sm:justify-between">
+                      <div className="sm:flex sm:flex-col sm:space-y-1">
+                        <p className="flex items-center text-sm text-gray-500">
+                          <DollarSignIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                          Total: ${order.total_amount} | Pagado: $
+                          {order.paid_amount}
+                        </p>
+                        <p className="flex items-center text-xs text-custom-green-600 font-medium">
+                          <ShoppingCartIcon className="flex-shrink-0 mr-1.5 h-3 w-3 text-custom-green-500" />
+                          {order.items_count} items
+                        </p>
+                      </div>
+                      <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                        <svg
+                          className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <p>
+                          {new Date(order.created_at).toLocaleString("es-ES")}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-2 sm:flex sm:justify-between">
-                    <div className="sm:flex sm:flex-col sm:space-y-1">
-                      <p className="flex items-center text-sm text-gray-500">
-                        <DollarSignIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                        Total: ${order.total_amount} | Pagado: ${order.paid_amount}
-                      </p>
-                      <p className="flex items-center text-xs text-custom-green-600 font-medium">
-                        <ShoppingCartIcon className="flex-shrink-0 mr-1.5 h-3 w-3 text-custom-green-500" />
-                        {order.items_count} items
-                      </p>
-                    </div>
-                    <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                      <svg className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p>{new Date(order.created_at).toLocaleString('es-ES')}</p>
-                    </div>
-                  </div>
-                </div>
-              </li>)
+                </li>
+              ))
             ) : (
               <li className="px-4 py-4 sm:px-6 text-center text-gray-500">
                 No hay órdenes activas
@@ -1525,7 +1810,9 @@ const Dashboard = () => {
                 ) : (
                   <>
                     <ChevronDownIcon className="h-4 w-4 mr-1" />
-                    Ver más ({ordersPagination.totalCount - activeOrders.length} restantes)
+                    Ver más ({ordersPagination.totalCount -
+                      activeOrders.length}{" "}
+                    restantes)
                   </>
                 )}
               </button>
@@ -1536,7 +1823,8 @@ const Dashboard = () => {
         {/* Información de paginación */}
         {ordersPagination.totalCount > 0 && (
           <div className="mt-2 text-center text-xs text-gray-500">
-            Mostrando {activeOrders.length} de {ordersPagination.totalCount} órdenes
+            Mostrando {activeOrders.length} de {ordersPagination.totalCount}{" "}
+            órdenes
           </div>
         )}
       </div>
@@ -1544,7 +1832,10 @@ const Dashboard = () => {
       {/* Modal de Detalles del Pedido */}
       {mostrarModal && pedidoSeleccionado && (
         <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]" onClick={cerrarModal}></div>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]"
+            onClick={cerrarModal}
+          ></div>
           <div className="relative bg-white rounded-2xl max-w-md w-full mx-4 shadow-2xl">
             {/* Header del Modal */}
             <div className="px-6 py-4 border-b border-gray-200">
@@ -1552,7 +1843,10 @@ const Dashboard = () => {
                 <h3 className="text-lg font-semibold text-gray-900">
                   Detalles del Pedido
                 </h3>
-                <button onClick={cerrarModal} className="text-gray-400 hover:text-gray-500 transition-colors p-2 rounded-full hover:bg-gray-100">
+                <button
+                  onClick={cerrarModal}
+                  className="text-gray-400 hover:text-gray-500 transition-colors p-2 rounded-full hover:bg-gray-100"
+                >
                   <XIcon className="h-5 w-5" />
                 </button>
               </div>
@@ -1566,50 +1860,63 @@ const Dashboard = () => {
                   <div className="flex items-center">
                     <ShoppingCartIcon className="h-5 w-5 text-custom-green-600 mr-2" />
                     <span className="text-lg font-semibold text-custom-green-600">
-                      Mesa #{pedidoSeleccionado.table_number || 'N/A'}
+                      Mesa #{pedidoSeleccionado.table_number || "N/A"}
                     </span>
                   </div>
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                    pedidoSeleccionado.status === 'paid'
-                      ? 'bg-green-100 text-green-800'
-                      : pedidoSeleccionado.status === 'not_paid'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : pedidoSeleccionado.status === 'partial'
-                          ? 'bg-orange-100 text-orange-800'
-                          : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {pedidoSeleccionado.status === 'not_paid' ? 'No Pagado' :
-                     pedidoSeleccionado.status === 'paid' ? 'Pagado' :
-                     pedidoSeleccionado.status === 'partial' ? 'Parcial' :
-                     pedidoSeleccionado.status || 'Sin estado'}
+                  <span
+                    className={`px-3 py-1 text-xs font-medium rounded-full ${
+                      pedidoSeleccionado.status === "paid"
+                        ? "bg-green-100 text-green-800"
+                        : pedidoSeleccionado.status === "not_paid"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : pedidoSeleccionado.status === "partial"
+                            ? "bg-orange-100 text-orange-800"
+                            : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {pedidoSeleccionado.status === "not_paid"
+                      ? "No Pagado"
+                      : pedidoSeleccionado.status === "paid"
+                        ? "Pagado"
+                        : pedidoSeleccionado.status === "partial"
+                          ? "Parcial"
+                          : pedidoSeleccionado.status || "Sin estado"}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center mb-2">
                   <ShoppingBagIcon className="h-4 w-4 text-gray-400 mr-2" />
                   <span className="text-sm font-medium text-gray-700">
-                    {pedidoSeleccionado.restaurant_name || 'Restaurante no especificado'}
+                    {pedidoSeleccionado.restaurant_name ||
+                      "Restaurante no especificado"}
                   </span>
                 </div>
 
                 <div className="flex items-center mb-2">
                   <ClockIcon className="h-4 w-4 text-gray-400 mr-2" />
                   <span className="text-sm text-gray-500">
-                    {pedidoSeleccionado.created_at ?
-                      new Date(pedidoSeleccionado.created_at).toLocaleString('es-ES', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : 'Tiempo no disponible'}
+                    {pedidoSeleccionado.created_at
+                      ? new Date(pedidoSeleccionado.created_at).toLocaleString(
+                          "es-ES",
+                          {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )
+                      : "Tiempo no disponible"}
                   </span>
                 </div>
 
                 <div className="flex items-center">
                   <UserIcon className="h-4 w-4 text-custom-green-500 mr-2" />
                   <span className="text-sm font-medium text-custom-green-600">
-                    ID: {pedidoSeleccionado.id ? pedidoSeleccionado.id.slice(0, 8) + '...' : 'No disponible'}
+                    ID:{" "}
+                    {pedidoSeleccionado.id
+                      ? pedidoSeleccionado.id.slice(0, 8) + "..."
+                      : "No disponible"}
                   </span>
                 </div>
               </div>
@@ -1621,22 +1928,24 @@ const Dashboard = () => {
                   Items del Pedido
                 </h4>
                 <div className="space-y-3">
-                  {pedidoSeleccionado.items && pedidoSeleccionado.items.length > 0 ? (
+                  {pedidoSeleccionado.items &&
+                  pedidoSeleccionado.items.length > 0 ? (
                     pedidoSeleccionado.items.map((item, index) => (
-                    <div key={index} className="bg-gray-50 rounded-lg p-3">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900 text-sm">
-                            {item.nombre || 'Producto sin nombre'}
-                          </p>
-                          <div className="flex items-center mt-1 space-x-3">
-                            <p className="text-xs text-gray-500">
-                              Cantidad: {item.cantidad || 0}
+                      <div key={index} className="bg-gray-50 rounded-lg p-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900 text-sm">
+                              {item.nombre || "Producto sin nombre"}
                             </p>
-                            <p className="text-xs text-gray-500">
-                              Precio unitario: ${item.precio ? item.precio.toFixed(2) : '0.00'}
-                            </p>
-                            {/* {item.estado_pago && (
+                            <div className="flex items-center mt-1 space-x-3">
+                              <p className="text-xs text-gray-500">
+                                Cantidad: {item.cantidad || 0}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Precio unitario: $
+                                {item.precio ? item.precio.toFixed(2) : "0.00"}
+                              </p>
+                              {/* {item.estado_pago && (
                               <span className={`px-2 py-1 text-xs rounded-full ${
                                 item.estado_pago === 'paid'
                                   ? 'bg-green-100 text-green-800'
@@ -1645,21 +1954,25 @@ const Dashboard = () => {
                                 {item.estado_pago === 'paid' ? 'Pagado' : 'Pendiente'}
                               </span>
                             )} */}
+                            </div>
+                          </div>
+                          <div className="text-right ml-4">
+                            <p className="font-medium text-gray-900 text-sm">
+                              $
+                              {item.precio_total
+                                ? item.precio_total.toFixed(2)
+                                : (item.precio * item.cantidad).toFixed(2)}
+                            </p>
+                            <p className="text-xs text-gray-500">Total</p>
                           </div>
                         </div>
-                        <div className="text-right ml-4">
-                          <p className="font-medium text-gray-900 text-sm">
-                            ${item.precio_total ? item.precio_total.toFixed(2) : (item.precio * item.cantidad).toFixed(2)}
-                          </p>
-                          <p className="text-xs text-gray-500">Total</p>
-                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))
                   ) : (
                     <div className="text-center py-4">
                       <p className="text-gray-500 text-sm">
-                        Este pedido tiene {pedidoSeleccionado.items_count || 0} item(s)
+                        Este pedido tiene {pedidoSeleccionado.items_count || 0}{" "}
+                        item(s)
                       </p>
                       <p className="text-gray-400 text-xs mt-1">
                         No se encontraron detalles de items para esta orden
@@ -1675,23 +1988,35 @@ const Dashboard = () => {
                   <DollarSignIcon className="h-4 w-4 mr-2 text-gray-500" />
                   Resumen de Pago
                 </h4>
-                
+
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600">Cantidad de items:</span>
-                    <span className="font-medium">{pedidoSeleccionado.items_count || 0}</span>
+                    <span className="font-medium">
+                      {pedidoSeleccionado.items_count || 0}
+                    </span>
                   </div>
 
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600">Monto pagado:</span>
-                    <span className="font-medium text-custom-green-600">${pedidoSeleccionado.paid_amount ? pedidoSeleccionado.paid_amount.toFixed(2) : '0.00'}</span>
+                    <span className="font-medium text-custom-green-600">
+                      $
+                      {pedidoSeleccionado.paid_amount
+                        ? pedidoSeleccionado.paid_amount.toFixed(2)
+                        : "0.00"}
+                    </span>
                   </div>
-                  
+
                   <div className="border-t border-gray-200 pt-2 mt-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-base font-semibold text-gray-900">Total:</span>
+                      <span className="text-base font-semibold text-gray-900">
+                        Total:
+                      </span>
                       <span className="text-lg font-bold text-custom-green-600">
-                        ${pedidoSeleccionado.total_amount ? pedidoSeleccionado.total_amount.toFixed(2) : '0.00'}
+                        $
+                        {pedidoSeleccionado.total_amount
+                          ? pedidoSeleccionado.total_amount.toFixed(2)
+                          : "0.00"}
                       </span>
                     </div>
                   </div>
@@ -1715,7 +2040,10 @@ const Dashboard = () => {
       {/* Modal de Planes Pro */}
       {mostrarModalPro && (
         <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]" onClick={() => setMostrarModalPro(false)}></div>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]"
+            onClick={() => setMostrarModalPro(false)}
+          ></div>
           <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl max-w-4xl w-full mx-4 shadow-2xl border border-white/20">
             {/* Header del Modal */}
             <div className="px-8 py-6 border-b border-white/20">
@@ -1747,7 +2075,9 @@ const Dashboard = () => {
                       Básico
                     </h4>
                     <div className="flex items-center justify-center">
-                      <span className="text-3xl font-bold text-gray-900">Gratis</span>
+                      <span className="text-3xl font-bold text-gray-900">
+                        Gratis
+                      </span>
                     </div>
                     <p className="text-gray-600 mt-2">Plan actual</p>
                   </div>
@@ -1771,7 +2101,9 @@ const Dashboard = () => {
                     </li>
                     <li className="flex items-center opacity-50">
                       <XIcon className="h-5 w-5 text-gray-400 mr-3" />
-                      <span className="text-gray-500">Métricas de ventas avanzadas</span>
+                      <span className="text-gray-500">
+                        Métricas de ventas avanzadas
+                      </span>
                     </li>
                     <li className="flex items-center opacity-50">
                       <XIcon className="h-5 w-5 text-gray-400 mr-3" />
@@ -1779,7 +2111,9 @@ const Dashboard = () => {
                     </li>
                     <li className="flex items-center opacity-50">
                       <XIcon className="h-5 w-5 text-gray-400 mr-3" />
-                      <span className="text-gray-500">Reportes personalizados</span>
+                      <span className="text-gray-500">
+                        Reportes personalizados
+                      </span>
                     </li>
                   </ul>
 
@@ -1804,7 +2138,9 @@ const Dashboard = () => {
                       Pro
                     </h4>
                     <div className="flex items-center justify-center">
-                      <span className="text-3xl font-bold text-gray-900">$299</span>
+                      <span className="text-3xl font-bold text-gray-900">
+                        $299
+                      </span>
                       <span className="text-gray-600 ml-1">/mes</span>
                     </div>
                     <p className="text-gray-600 mt-2">Facturación mensual</p>
@@ -1813,31 +2149,45 @@ const Dashboard = () => {
                   <ul className="space-y-3 mb-6">
                     <li className="flex items-center">
                       <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
-                      <span className="text-gray-700">Todo del plan Básico</span>
+                      <span className="text-gray-700">
+                        Todo del plan Básico
+                      </span>
                     </li>
                     <li className="flex items-center">
                       <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                      <span className="text-gray-700 font-medium">Métricas de ventas detalladas</span>
+                      <span className="text-gray-700 font-medium">
+                        Métricas de ventas detalladas
+                      </span>
                     </li>
                     <li className="flex items-center">
                       <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                      <span className="text-gray-700 font-medium">Análisis predictivo con IA</span>
+                      <span className="text-gray-700 font-medium">
+                        Análisis predictivo con IA
+                      </span>
                     </li>
                     <li className="flex items-center">
                       <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                      <span className="text-gray-700 font-medium">Reportes personalizados</span>
+                      <span className="text-gray-700 font-medium">
+                        Reportes personalizados
+                      </span>
                     </li>
                     <li className="flex items-center">
                       <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                      <span className="text-gray-700 font-medium">Sucursales ilimitadas</span>
+                      <span className="text-gray-700 font-medium">
+                        Sucursales ilimitadas
+                      </span>
                     </li>
                     <li className="flex items-center">
                       <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                      <span className="text-gray-700 font-medium">Pepper AI avanzado</span>
+                      <span className="text-gray-700 font-medium">
+                        Pepper AI avanzado
+                      </span>
                     </li>
                     <li className="flex items-center">
                       <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                      <span className="text-gray-700 font-medium">Soporte prioritario 24/7</span>
+                      <span className="text-gray-700 font-medium">
+                        Soporte prioritario 24/7
+                      </span>
                     </li>
                   </ul>
 
@@ -1851,8 +2201,10 @@ const Dashboard = () => {
               <div className="mt-8 text-center">
                 <div className="bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-lg p-4">
                   <p className="text-blue-800 text-sm">
-                    <strong>💡 Nota:</strong> Las métricas de ventas totales están disponibles exclusivamente en Xquisito Pro.
-                    Actualiza tu plan para acceder a análisis detallados de ingresos, tendencias de ventas y proyecciones de crecimiento.
+                    <strong>💡 Nota:</strong> Las métricas de ventas totales
+                    están disponibles exclusivamente en Xquisito Pro. Actualiza
+                    tu plan para acceder a análisis detallados de ingresos,
+                    tendencias de ventas y proyecciones de crecimiento.
                   </p>
                 </div>
               </div>
@@ -1860,6 +2212,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-    </div>;
+    </div>
+  );
 };
 export default Dashboard;

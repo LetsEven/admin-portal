@@ -489,6 +489,33 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                           </select>
                         </div>
 
+                        {/* Checkbox Obligatorio - solo para dropdown */}
+                        {field.type === "dropdown" && (
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id={`required-${field.id}`}
+                              checked={field.required}
+                              onChange={(e) => {
+                                setCustomFields(
+                                  customFields.map((f) =>
+                                    f.id === field.id
+                                      ? { ...f, required: e.target.checked }
+                                      : f
+                                  )
+                                );
+                              }}
+                              className="h-4 w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
+                            />
+                            <label
+                              htmlFor={`required-${field.id}`}
+                              className="ml-2 block text-xs font-medium text-gray-700"
+                            >
+                              Obligatorio
+                            </label>
+                          </div>
+                        )}
+
                         {/* Options for dropdown and checkboxes */}
                         {(field.type === "dropdown" ||
                           field.type === "checkboxes" ||
@@ -585,40 +612,6 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
 
             <div>
               <label
-                htmlFor="price"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Precio
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <input
-                  type="number"
-                  name="price"
-                  id="price"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={values.price ? Number(values.price).toFixed(2) : ''}
-                  onChange={handleChange}
-                  className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
-                />
-              </div>
-              {values.price > 0 && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-medium">Precio mas IVA (16%):</span>
-                    <span className="ml-2 font-semibol">
-                      ${(values.price * 1.16).toFixed(2)}
-                    </span>
-                  </p>
-                </div>
-              )}
-            </div>
-            <div>
-              <label
                 htmlFor="discount"
                 className="block text-sm font-medium text-gray-700"
               >
@@ -643,6 +636,47 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
               <p className="mt-1 text-xs text-gray-500">
                 Porcentaje de descuento aplicado al precio original (0-100%)
               </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="price"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Precio
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">$</span>
+                </div>
+                <input
+                  type="number"
+                  name="price"
+                  id="price"
+                  required
+                  min="0"
+                  step="0.01"
+                  value={values.price ? Number(values.price).toFixed(2) : ''}
+                  onChange={handleChange}
+                  className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
+                />
+              </div>
+              {values.price > 0 && (
+                <div className="mt-2 flex justify-between items-center">
+                  <p className="text-sm text-gray-700">
+                    <span className="font-medium">Precio mas IVA (16%):</span>
+                    <span className="ml-2 font-semibold">
+                      ${(values.price * 1.16).toFixed(2)}
+                    </span>
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    <span className="font-medium">Precio con descuento:</span>
+                    <span className="ml-2 font-semibold text-custom-green-600">
+                      ${((values.price * 1.16) * (1 - (values.discount || 0) / 100)).toFixed(2)}
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
           <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
