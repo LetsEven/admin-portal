@@ -14,7 +14,6 @@ import CampaignDashboardModal from "../components/CampaignDashboardModal";
 import { segmentsApi, CustomerSegment } from "../services/segmentsApi";
 import { setAuthHook, useAdminPortalApi } from "../services/adminPortalApi";
 import { useAuth } from "@clerk/nextjs";
-import { useRestaurant } from "../contexts/RestaurantContext";
 import {
   PlusIcon,
   AwardIcon,
@@ -999,7 +998,6 @@ const RewardsManagement = () => {
   );
 
   // API hooks
-  const { restaurant } = useRestaurant();
   const smsTemplateApi = useSmsTemplateApi();
   const [newCampaignData, setNewCampaignData] = useState<{
     name: string;
