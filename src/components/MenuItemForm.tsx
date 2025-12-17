@@ -23,6 +23,7 @@ interface MenuItemFormProps {
     name: string;
     description: string;
     price: number;
+    base_price?: number;
     discount?: number;
     category: string;
     image: string;
@@ -47,8 +48,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   preselectedCategory,
 }) => {
   const { user } = useUser();
-  // Si estamos editando (tiene id), mostrar el precio sin IVA (dividir entre 1.16)
-  const displayPrice = initialValues.id ? initialValues.price / 1.16 : initialValues.price;
+  // Si estamos editando (tiene id y base_price), usar base_price directamente
+  // Si no tiene base_price (datos antiguos), calcular dividiendo entre 1.16
+  // Si es nuevo, usar el precio tal cual
+  const displayPrice = initialValues.id
+    ? (initialValues.base_price ?? initialValues.price / 1.16)
+    : initialValues.price;
 
   const [values, setValues] = useState({
     ...initialValues,
@@ -85,7 +90,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     if (!user) {
       toast.error("Debes estar autenticado para subir imágenes", {
         duration: 3000,
-        icon: '🔐'
+        icon: "🔐",
       });
       return;
     }
@@ -106,7 +111,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
           file,
           1920, // Ancho máximo mayor para mejor calidad
           1280, // Alto máximo mayor
-          0.92  // Mayor calidad para imágenes de comida
+          0.92 // Mayor calidad para imágenes de comida
         );
 
         // Upload to storage
@@ -128,13 +133,13 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
         console.log("✅ Item image uploaded successfully:", publicUrl);
         toast.success("Imagen subida correctamente", {
           duration: 2000,
-          icon: '📷'
+          icon: "📷",
         });
       } catch (error) {
         console.error("❌ Error uploading item image:", error);
         toast.error("Error al subir la imagen. Por favor intenta de nuevo.", {
           duration: 4000,
-          icon: '⚠️'
+          icon: "⚠️",
         });
 
         // Reset on error
@@ -199,7 +204,9 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   const handleMaxSelectionsChange = (id: string, maxSelections: number) => {
     // Validar que el valor esté entre 1 y 4
     if (maxSelections < 1 || maxSelections > 4) {
-      console.warn(`maxSelections debe estar entre 1 y 4, recibido: ${maxSelections}`);
+      console.warn(
+        `maxSelections debe estar entre 1 y 4, recibido: ${maxSelections}`
+      );
       return;
     }
 
@@ -287,18 +294,24 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     if (initialValues.id) {
       toast.success(`Actualizando "${values.name}"`, {
         duration: 2000,
-        icon: '✏️'
+        icon: "✏️",
       });
     } else {
       toast.success(`Guardando platillo "${values.name}"`, {
         duration: 2000,
-        icon: '💾'
+        icon: "💾",
       });
     }
 
     // Siempre aplicar el 16% de IVA al precio antes de guardar en BD
     const priceWithTax = values.price * 1.16;
-    onSubmit({ ...values, price: priceWithTax, customFields });
+    const basePrice = values.price; // Precio sin IVA
+    onSubmit({
+      ...values,
+      price: priceWithTax,
+      base_price: basePrice,
+      customFields,
+    });
   };
   return (
     <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center py-8">
@@ -500,30 +513,30 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                           </select>
                         </div>
 
-                        {/* Max selections for checkboxes */}
-                        {field.type === "checkboxes" && (
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Cantidad máxima seleccionable
-                            </label>
-                            <select
-                              value={field.maxSelections || 1}
-                              onChange={(e) =>
-                                handleMaxSelectionsChange(
-                                  field.id,
-                                  parseInt(e.target.value)
-                                )
-                              }
-                              className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                        {/* Checkbox Obligatorio - solo para dropdown */}
+                        {field.type === "dropdown" && (
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id={`required-${field.id}`}
+                              checked={field.required}
+                              onChange={(e) => {
+                                setCustomFields(
+                                  customFields.map((f) =>
+                                    f.id === field.id
+                                      ? { ...f, required: e.target.checked }
+                                      : f
+                                  )
+                                );
+                              }}
+                              className="h-4 w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
+                            />
+                            <label
+                              htmlFor={`required-${field.id}`}
+                              className="ml-2 block text-xs font-medium text-gray-700"
                             >
-                              <option value={1}>1 opción</option>
-                              <option value={2}>2 opciones</option>
-                              <option value={3}>3 opciones</option>
-                              <option value={4}>4 opciones</option>
-                            </select>
-                            <p className="text-xs text-gray-500 mt-1">
-                              El cliente podrá seleccionar hasta {field.maxSelections || 1} opción{(field.maxSelections || 1) > 1 ? 'es' : ''}
-                            </p>
+                              Obligatorio
+                            </label>
                           </div>
                         )}
 
@@ -623,40 +636,6 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
 
             <div>
               <label
-                htmlFor="price"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Precio
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <input
-                  type="number"
-                  name="price"
-                  id="price"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={values.price ? Number(values.price).toFixed(2) : ''}
-                  onChange={handleChange}
-                  className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
-                />
-              </div>
-              {values.price > 0 && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-medium">Precio mas IVA (16%):</span>
-                    <span className="ml-2 font-semibol">
-                      ${(values.price * 1.16).toFixed(2)}
-                    </span>
-                  </p>
-                </div>
-              )}
-            </div>
-            <div>
-              <label
                 htmlFor="discount"
                 className="block text-sm font-medium text-gray-700"
               >
@@ -681,6 +660,52 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
               <p className="mt-1 text-xs text-gray-500">
                 Porcentaje de descuento aplicado al precio original (0-100%)
               </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="price"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Precio
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">$</span>
+                </div>
+                <input
+                  type="number"
+                  name="price"
+                  id="price"
+                  required
+                  min="0"
+                  step="0.01"
+                  value={values.price ? Number(values.price).toFixed(2) : ""}
+                  onChange={handleChange}
+                  className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
+                />
+              </div>
+              {values.price > 0 && (
+                <div className="mt-2 flex justify-between items-center">
+                  <p className="text-sm text-gray-700">
+                    <span className="font-medium">Precio mas IVA (16%):</span>
+                    <span className="ml-2 font-semibold">
+                      ${(values.price * 1.16).toFixed(2)}
+                    </span>
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    <span className="font-medium">Precio con descuento:</span>
+                    <span className="ml-2 font-semibold text-custom-green-600">
+                      $
+                      {(
+                        values.price *
+                        1.16 *
+                        (1 - (values.discount || 0) / 100)
+                      ).toFixed(2)}
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
           <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">

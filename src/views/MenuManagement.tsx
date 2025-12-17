@@ -221,6 +221,7 @@ const MenuManagement = () => {
         description: values.description,
         image_url: values.image,
         price: values.price,
+        base_price: values.base_price,
         discount: values.discount || 0,
         custom_fields: customFields,
         display_order: 0
