@@ -339,23 +339,91 @@ class AdminPortalApiService {
 }
 
 // ===============================================
+// CACHE SIMPLE PARA EVITAR LLAMADAS REPETITIVAS
+// ===============================================
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  userId: string; // Para invalidar cache cuando cambie el usuario
+}
+
+const cache = new Map<string, CacheEntry<any>>();
+const CACHE_DURATION = 30000; // 30 segundos
+
+function getCacheKey(endpoint: string, userId: string): string {
+  return `${endpoint}:${userId}`;
+}
+
+function getCachedData<T>(key: string, userId: string): T | null {
+  const entry = cache.get(key);
+  if (!entry || entry.userId !== userId) {
+    return null;
+  }
+
+  const now = Date.now();
+  if (now - entry.timestamp > CACHE_DURATION) {
+    cache.delete(key);
+    return null;
+  }
+
+  return entry.data;
+}
+
+function setCachedData<T>(key: string, data: T, userId: string): void {
+  cache.set(key, {
+    data,
+    timestamp: Date.now(),
+    userId
+  });
+}
+
+function clearCache(): void {
+  cache.clear();
+}
+
+function clearUserCache(userId: string): void {
+  Array.from(cache.entries()).forEach(([key, entry]) => {
+    if (entry.userId === userId) {
+      cache.delete(key);
+    }
+  });
+}
+
+// ===============================================
 // HOOK PERSONALIZADO PARA USAR LA API
 // ===============================================
 
 export function useAdminPortalApi() {
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
 
   const makeAuthenticatedRequest = async <T>(
-    requestFn: (token: string) => Promise<T>
+    requestFn: (token: string) => Promise<T>,
+    cacheKey?: string
   ): Promise<T> => {
     try {
       const token = await getToken();
 
-      if (!token) {
-        throw new Error('User not authenticated');
+      if (!token || !userId) {
+        throw new Error(`User not authenticated - token: ${!!token}, userId: ${userId}`);
       }
 
-      return await requestFn(token);
+      // Verificar cache si se proporciona una clave
+      if (cacheKey) {
+        const cachedResult = getCachedData<T>(cacheKey, userId);
+        if (cachedResult) {
+          return cachedResult;
+        }
+      }
+
+      const result = await requestFn(token);
+
+      // Guardar en cache si se proporciona una clave
+      if (cacheKey && result) {
+        setCachedData(cacheKey, result, userId);
+      }
+
+      return result;
     } catch (error) {
       console.error('Authenticated request failed:', error);
       throw error;
@@ -365,7 +433,8 @@ export function useAdminPortalApi() {
   return {
     // Métodos de usuario
     getCurrentUser: () => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.getCurrentUser(token)
+      (token) => adminPortalApiService.getCurrentUser(token),
+      'getCurrentUser' // Cache key
     ),
     updateUserProfile: (data: Partial<AdminPortalUser>) => makeAuthenticatedRequest(
       (token) => adminPortalApiService.updateUserProfile(data, token)
@@ -424,7 +493,11 @@ export function useAdminPortalApi() {
         console.error('Sync user from Clerk failed:', error);
         throw error;
       }
-    }
+    },
+
+    // Métodos de cache
+    clearCache: () => clearCache(),
+    clearUserCache: (targetUserId?: string) => clearUserCache(targetUserId || userId || '')
   };
 }
 

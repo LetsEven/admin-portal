@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useRef, Component } from "react";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  Component,
+  useCallback,
+} from "react";
 import SegmentModal from "../components/SegmentModal";
 import NewCampaignModal from "../components/NewCampaignModal";
 import DeliveryMethodModal from "../components/DeliveryMethodModal";
@@ -6,8 +12,9 @@ import TemplateDesignerModal from "../components/TemplateDesignerModal";
 import CampaignDetailsModal from "../components/CampaignDetailsModal";
 import CampaignDashboardModal from "../components/CampaignDashboardModal";
 import { segmentsApi, CustomerSegment } from "../services/segmentsApi";
-import { setAuthHook } from "../services/adminPortalApi";
+import { setAuthHook, useAdminPortalApi } from "../services/adminPortalApi";
 import { useAuth } from "@clerk/nextjs";
+import { useRestaurant } from "../contexts/RestaurantContext";
 import {
   PlusIcon,
   AwardIcon,
@@ -965,6 +972,8 @@ const RewardsPricingModal = ({ isOpen, onClose, currentPlan = "Básico" }) => {
 // Main Component
 const RewardsManagement = () => {
   const auth = useAuth();
+  const adminApi = useAdminPortalApi();
+  const { restaurant, loading: restaurantLoading } = useRestaurant();
 
   const [campaigns, setCampaigns] = useState(initialCampaigns);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -980,9 +989,8 @@ const RewardsManagement = () => {
   const [showCampaignDetailsModal, setShowCampaignDetailsModal] =
     useState(false);
   const [currentSegments, setCurrentSegments] = useState<CustomerSegment[]>([]);
-  const [segmentsLoading, setSegmentsLoading] = useState(true);
+  const [segmentsLoading, setSegmentsLoading] = useState(false);
   const [segmentsError, setSegmentsError] = useState("");
-  const restaurantId = 1; // TODO: Get from user context/auth
   const [currentTemplates, setCurrentTemplates] = useState<SmsTemplate[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [templatesError, setTemplatesError] = useState<string | null>(null);
@@ -1036,20 +1044,30 @@ const RewardsManagement = () => {
     }
   };
 
+  // Get restaurant ID from context
+  const restaurantId = restaurant?.id || null;
+
   // Initialize auth hook once when component mounts
   useEffect(() => {
     // Initialize auth hook for segments API
     setAuthHook(() => auth);
   }, []);
 
-  // Load segments when component mounts and auth is ready
+  // Load segments when restaurant is available
   useEffect(() => {
-    if (auth.isLoaded && auth.userId) {
+    if (restaurantId && !restaurantLoading) {
       loadSegments();
     }
-  }, [auth.isLoaded, auth.userId]);
+  }, [restaurantId, restaurantLoading]);
 
   const loadSegments = async () => {
+    // Validate restaurant ID before loading
+    if (!restaurantId) {
+      console.log("No restaurant ID available, skipping segment loading...");
+      setSegmentsLoading(false);
+      return;
+    }
+
     // Prevent multiple simultaneous calls
     if (segmentsLoading) {
       console.log("Segments already loading, skipping...");
@@ -1060,7 +1078,10 @@ const RewardsManagement = () => {
       console.log("Loading segments for restaurant:", restaurantId);
       setSegmentsLoading(true);
       setSegmentsError("");
+
+      // Add more detailed logging
       const segments = await segmentsApi.getSegments(restaurantId);
+
       setCurrentSegments(segments);
       console.log("Segments loaded successfully:", segments.length);
     } catch (error: any) {
@@ -1069,6 +1090,7 @@ const RewardsManagement = () => {
       // Use fallback segments in case of error
       setCurrentSegments(fallbackSegments);
     } finally {
+      console.log("🏁 Segments loading finished");
       setSegmentsLoading(false);
     }
   };
@@ -1147,6 +1169,21 @@ const RewardsManagement = () => {
     setShowDeliveryMethodModal(true);
   };
   const handleCreateSegment = () => {
+    console.log(
+      "handleCreateSegment called - restaurant:",
+      restaurant,
+      "restaurantId:",
+      restaurantId,
+      "restaurantLoading:",
+      restaurantLoading
+    );
+    if (!restaurantId || !restaurant) {
+      console.error("No restaurant ID available for creating segment");
+      setSegmentsError(
+        "Error: No se puede crear segmento sin restaurant ID válido"
+      );
+      return;
+    }
     setShowNewCampaignModal(false);
     setShowSegmentModal(true);
   };
@@ -1483,7 +1520,7 @@ const RewardsManagement = () => {
         isOpen={showSegmentModal}
         onClose={handleCloseSegmentModal}
         onApplySegment={handleApplySegment}
-        restaurantId={restaurantId}
+        restaurantId={restaurantId!}
       />
 
       {/* Template Designer Modal */}
