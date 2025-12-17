@@ -23,6 +23,7 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
   const [campaignName, setCampaignName] = useState('');
   const [selectedSegment, setSelectedSegment] = useState<CustomerSegment | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+
   if (!isOpen) return null;
   const handleNext = () => {
     if (campaignName.trim()) {
@@ -110,7 +111,7 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
             Segmentos guardados
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {savedSegments.length > 0 ? (
+            {savedSegments && savedSegments.length > 0 ? (
               savedSegments.map(segment => (
                 <div
                   key={segment.id}

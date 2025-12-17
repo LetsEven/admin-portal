@@ -743,7 +743,7 @@ const RewardsManagement = () => {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showCampaignDetailsModal, setShowCampaignDetailsModal] = useState(false);
   const [currentSegments, setCurrentSegments] = useState<CustomerSegment[]>([]);
-  const [segmentsLoading, setSegmentsLoading] = useState(true);
+  const [segmentsLoading, setSegmentsLoading] = useState(false);
   const [segmentsError, setSegmentsError] = useState('');
   const [currentTemplates, setCurrentTemplates] = useState(savedTemplates);
   const [newCampaignData, setNewCampaignData] = useState({
@@ -783,18 +783,23 @@ const RewardsManagement = () => {
     }
 
     try {
-      console.log('Loading segments for restaurant:', restaurantId);
+      console.log('🔄 Loading segments for restaurant:', restaurantId);
       setSegmentsLoading(true);
       setSegmentsError('');
+
+      // Add more detailed logging
       const segments = await segmentsApi.getSegments(restaurantId);
+
       setCurrentSegments(segments);
-      console.log('Segments loaded successfully:', segments.length);
+
     } catch (error: any) {
-      console.error('Error loading segments:', error);
+      console.error('❌ Error loading segments:', error);
+      
       setSegmentsError(error.message || 'Error al cargar segmentos');
       // Use fallback segments in case of error
       setCurrentSegments(fallbackSegments);
     } finally {
+      console.log('🏁 Segments loading finished');
       setSegmentsLoading(false);
     }
   };
@@ -1027,7 +1032,7 @@ const RewardsManagement = () => {
         isOpen={showSegmentModal}
         onClose={handleCloseSegmentModal}
         onApplySegment={handleApplySegment}
-        restaurantId={restaurantId!} // Non-null assertion since we validate before opening
+        restaurantId={restaurantId!}
       />
 
       {/* Template Designer Modal */}
