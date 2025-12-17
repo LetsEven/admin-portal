@@ -238,8 +238,12 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
       return false;
     }
 
-    // Check all body variables are filled
+    // Check all body variables are filled (except codigo and discount if they weren't provided)
     for (const varName of selectedTemplate.body.variables) {
+      // Skip validation for codigo/discount if they weren't provided initially
+      if (varName === "codigo" && !promoCode) continue;
+      if (varName === "discount" && !discountPercentage) continue;
+
       if (!variables[varName] || variables[varName].trim() === "") {
         return false;
       }
@@ -542,6 +546,11 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
                     {selectedTemplate.body.variables.map((varName) => {
                       const isDiscountField = varName === "discount";
                       const isCodigoField = varName === "codigo";
+
+                      // Skip rendering codigo/discount fields if they weren't provided
+                      if (isCodigoField && !promoCode) return null;
+                      if (isDiscountField && !discountPercentage) return null;
+
                       const isDisabled =
                         (isDiscountField && discountPercentage) ||
                         (isCodigoField && promoCode);

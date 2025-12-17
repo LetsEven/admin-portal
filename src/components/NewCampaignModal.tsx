@@ -11,13 +11,16 @@ import {
 import WhatsAppTemplateModal, {
   WhatsAppTemplate,
 } from "./WhatsAppTemplateModal";
-import { PRE_APPROVED_TEMPLATES } from "./WhatsAppTemplateModal";
 import SmsTemplateSelectionModal from "./SmsTemplateSelectionModal";
 interface NewCampaignModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateSegment: () => void;
-  onDesignTemplate: (template?: any, promoCode?: string, discountPercentage?: string) => void;
+  onDesignTemplate: (
+    template?: any,
+    promoCode?: string,
+    discountPercentage?: string
+  ) => void;
   onNext: (
     campaignName: string,
     selectedSegment?: any,
@@ -59,11 +62,6 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
   const deliveryMethods = initialDeliveryMethods;
 
   if (!isOpen) return null;
-
-  // Check if promo fields are filled
-  const arePromoFieldsFilled = () => {
-    return promoCode.trim() !== "" && discountPercentage.trim() !== "";
-  };
 
   const handleNext = () => {
     if (campaignName.trim()) {
@@ -116,9 +114,6 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
   // Check if all required conditions are met for the Next button
   const isNextButtonEnabled = () => {
-    // Must have promo fields filled
-    if (!arePromoFieldsFilled()) return false;
-
     // Must have a segment selected
     if (!selectedSegment) return false;
 
@@ -184,24 +179,28 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
             </div>
             <div className="flex items-center space-x-3">
               {/* Add other delivery method button */}
-              {deliveryMethods.whatsapp && !deliveryMethods.sms && onAddDeliveryMethod && (
-                <button
-                  onClick={() => onAddDeliveryMethod("sms")}
-                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-custom-green-700 bg-white border border-custom-green-300 rounded-lg hover:bg-custom-green-50 transition-colors"
-                >
-                  <PlusCircleIcon className="h-4 w-4 mr-1.5" />
-                  Agregar SMS
-                </button>
-              )}
-              {deliveryMethods.sms && !deliveryMethods.whatsapp && onAddDeliveryMethod && (
-                <button
-                  onClick={() => onAddDeliveryMethod("whatsapp")}
-                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-custom-green-700 bg-white border border-custom-green-300 rounded-lg hover:bg-custom-green-50 transition-colors"
-                >
-                  <PlusCircleIcon className="h-4 w-4 mr-1.5" />
-                  Agregar WhatsApp
-                </button>
-              )}
+              {deliveryMethods.whatsapp &&
+                !deliveryMethods.sms &&
+                onAddDeliveryMethod && (
+                  <button
+                    onClick={() => onAddDeliveryMethod("sms")}
+                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-custom-green-700 bg-white border border-custom-green-300 rounded-lg hover:bg-custom-green-50 transition-colors"
+                  >
+                    <PlusCircleIcon className="h-4 w-4 mr-1.5" />
+                    Agregar SMS
+                  </button>
+                )}
+              {deliveryMethods.sms &&
+                !deliveryMethods.whatsapp &&
+                onAddDeliveryMethod && (
+                  <button
+                    onClick={() => onAddDeliveryMethod("whatsapp")}
+                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-custom-green-700 bg-white border border-custom-green-300 rounded-lg hover:bg-custom-green-50 transition-colors"
+                  >
+                    <PlusCircleIcon className="h-4 w-4 mr-1.5" />
+                    Agregar WhatsApp
+                  </button>
+                )}
               {/* Change delivery method link */}
               {onChangeDeliveryMethod && (
                 <button
@@ -223,7 +222,10 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="promo-code" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="promo-code"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Código de promoción
               </label>
               <input
@@ -236,7 +238,10 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
               />
             </div>
             <div>
-              <label htmlFor="discount-percentage" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="discount-percentage"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Porcentaje de descuento
               </label>
               <div className="relative">
@@ -256,26 +261,20 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
               </div>
             </div>
           </div>
-          {!arePromoFieldsFilled() && (
-            <p className="mt-3 text-xs text-amber-600 flex items-center">
-              <span className="mr-1">⚠️</span>
-              Completa estos campos para poder seleccionar o crear templates
-            </p>
-          )}
         </div>
 
         {/* Create Segment and Design Template Options */}
-        <div className={`grid grid-cols-1 ${deliveryMethods.whatsapp && deliveryMethods.sms ? 'md:grid-cols-3' : (deliveryMethods.sms || deliveryMethods.whatsapp) ? 'md:grid-cols-2' : ''} gap-6 mb-8`}>
+        <div
+          className={`grid grid-cols-1 ${deliveryMethods.whatsapp && deliveryMethods.sms ? "md:grid-cols-3" : deliveryMethods.sms || deliveryMethods.whatsapp ? "md:grid-cols-2" : ""} gap-6 mb-8`}
+        >
           {/* Create Segment */}
           <div
             className={`border border-gray-200 rounded-lg p-6 flex flex-col items-center cursor-pointer transition-colors relative ${
-              !arePromoFieldsFilled()
-                ? "opacity-50 cursor-not-allowed"
-                : selectedSegment
+              selectedSegment
                 ? "bg-[#F0F9F9] border-custom-green-200"
                 : "hover:bg-gray-50"
             }`}
-            onClick={arePromoFieldsFilled() ? onCreateSegment : undefined}
+            onClick={onCreateSegment}
           >
             {selectedSegment && (
               <div className="absolute top-3 right-3 bg-custom-green-600 rounded-full p-1">
@@ -304,13 +303,11 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
           {deliveryMethods.whatsapp && (
             <div
               className={`border border-gray-200 rounded-lg p-6 flex flex-col items-center cursor-pointer transition-colors relative ${
-                !arePromoFieldsFilled()
-                  ? "opacity-50 cursor-not-allowed"
-                  : selectedWhatsAppTemplate
+                selectedWhatsAppTemplate
                   ? "bg-[#F0F9F9] border-custom-green-200"
                   : "hover:bg-gray-50"
               }`}
-              onClick={arePromoFieldsFilled() ? () => setShowWhatsAppModal(true) : undefined}
+              onClick={() => setShowWhatsAppModal(true)}
             >
               {selectedWhatsAppTemplate && (
                 <div className="absolute top-3 right-3 bg-custom-green-600 rounded-full p-1">
@@ -340,13 +337,11 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
           {deliveryMethods.sms && (
             <div
               className={`border border-gray-200 rounded-lg p-6 flex flex-col items-center cursor-pointer transition-colors relative ${
-                !arePromoFieldsFilled()
-                  ? "opacity-50 cursor-not-allowed"
-                  : selectedTemplate
+                selectedTemplate
                   ? "bg-[#F0F9F9] border-custom-green-200"
                   : "hover:bg-gray-50"
               }`}
-              onClick={arePromoFieldsFilled() ? () => setShowSmsTemplateModal(true) : undefined}
+              onClick={() => setShowSmsTemplateModal(true)}
             >
               {selectedTemplate && (
                 <div className="absolute top-3 right-3 bg-custom-green-600 rounded-full p-1">
