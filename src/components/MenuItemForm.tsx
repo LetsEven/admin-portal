@@ -540,6 +540,37 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                           </div>
                         )}
 
+                        {/* Max Selections - solo para checkboxes */}
+                        {field.type === "checkboxes" && (
+                          <div>
+                            <label
+                              htmlFor={`max-selections-${field.id}`}
+                              className="block text-xs font-medium text-gray-700 mb-1"
+                            >
+                              Máximo de opciones seleccionables
+                            </label>
+                            <input
+                              type="number"
+                              id={`max-selections-${field.id}`}
+                              min="1"
+                              max="4"
+                              value={field.maxSelections || 1}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (value >= 1 && value <= 4) {
+                                  handleMaxSelectionsChange(field.id, value);
+                                }
+                              }}
+                              className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">
+                              Los clientes podrán seleccionar hasta{" "}
+                              {field.maxSelections || 1}{" "}
+                              {field.maxSelections === 1 ? "opción" : "opciones"}
+                            </p>
+                          </div>
+                        )}
+
                         {/* Options for dropdown and checkboxes */}
                         {(field.type === "dropdown" ||
                           field.type === "checkboxes" ||

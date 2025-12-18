@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useState,
-  useRef,
-  Component,
-  useCallback,
-} from "react";
+import React, { useEffect, useState, useRef } from "react";
 import SegmentModal from "../components/SegmentModal";
 import NewCampaignModal from "../components/NewCampaignModal";
 import DeliveryMethodModal from "../components/DeliveryMethodModal";
@@ -13,6 +7,7 @@ import CampaignDetailsModal from "../components/CampaignDetailsModal";
 import CampaignDashboardModal from "../components/CampaignDashboardModal";
 import { segmentsApi, CustomerSegment } from "../services/segmentsApi";
 import { setAuthHook, useAdminPortalApi } from "../services/adminPortalApi";
+import { useCampaignsApi } from "../services/campaignsApi";
 import { useAuth } from "@clerk/nextjs";
 import {
   PlusIcon,
@@ -25,177 +20,33 @@ import {
   AlertCircleIcon,
   EyeIcon,
   TrashIcon,
-  TargetIcon,
-  LayoutIcon,
-  ChevronDownIcon,
-  FilterIcon,
-  ImageIcon,
-  TypeIcon,
-  SeparatorHorizontalIcon,
-  MousePointerIcon,
-  GripIcon,
-  UploadIcon,
-  MaximizeIcon,
-  MinimizeIcon,
-  BookmarkIcon,
-  ZoomInIcon,
   BellIcon,
   CalendarIcon,
   MailIcon,
-  LoaderIcon,
 } from "lucide-react";
 import { useSmsTemplateApi, SmsTemplate } from "../services/smsTemplateApi";
 import { useRestaurant } from "../contexts/RestaurantContext";
 import toast from "react-hot-toast";
-// Initial campaigns data
-const initialCampaigns = [
-  {
-    id: 1,
-    name: "Café gratis",
-    description: "Un café americano o espresso gratis",
-    pointsRequired: 100,
-    expirationDays: 30,
-    active: true,
-    status: "active",
-    icon: "coffee",
-    image:
-      "https://images.unsplash.com/photo-1541167760496-1628856ab772?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
-    emailSubject: "¡Tu café gratis te espera!",
-    emailBody:
-      "Disfruta de un café americano o espresso completamente gratis en tu próxima visita.",
-    startDate: "2023-10-01",
-    endDate: "2023-12-31",
-    conditions:
-      "Válido de lunes a viernes. No acumulable con otras promociones.",
-    cta: "Canjear ahora",
-    templateName: "Café Gratis - Template",
-    sent: true,
-  },
-  {
-    id: 2,
-    name: "Postre gratis",
-    description: "Un postre a elección (valor máximo $8)",
-    pointsRequired: 250,
-    expirationDays: 30,
-    active: true,
-    status: "active",
-    icon: "award",
-    image:
-      "https://images.unsplash.com/photo-1551024601-bec78aea704b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
-    emailSubject: "¡Te has ganado un postre!",
-    emailBody:
-      "Celebra con un delicioso postre gratis a tu elección en tu próxima visita.",
-    startDate: "2023-10-15",
-    endDate: "2023-12-15",
-    conditions: "Valor máximo $8. No acumulable con otras promociones.",
-    cta: "Ver postres",
-    templateName: "Postre Gratis - Template",
-    sent: true,
-  },
-  {
-    id: 3,
-    name: "Descuento de $15",
-    description: "Descuento de $15 en tu próxima compra (mínimo $30)",
-    pointsRequired: 400,
-    expirationDays: 60,
-    active: true,
-    status: "paused",
-    icon: "shopping-bag",
-    image:
-      "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
-    emailSubject: "¡$15 de descuento en tu próxima compra!",
-    emailBody:
-      "Te regalamos $15 de descuento en tu próxima compra de $30 o más.",
-    startDate: "2023-11-01",
-    endDate: "2024-01-31",
-    conditions: "Compra mínima de $30. No acumulable con otras promociones.",
-    cta: "Usar descuento",
-    templateName: "Descuento $15 - Template",
-    sent: false,
-  },
-  {
-    id: 4,
-    name: "Papas gratis",
-    description: "Una orden de papas fritas gratis con tu hamburguesa",
-    pointsRequired: 150,
-    expirationDays: 30,
-    active: false,
-    status: "expired",
-    icon: "shopping-bag",
-    image:
-      "https://images.unsplash.com/photo-1576107232684-1279f390859f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
-    emailSubject: "¡PAPAS GRATIS con tu hamburguesa!",
-    emailBody:
-      "Celebramos contigo con una orden de papas gratis al comprar cualquier hamburguesa.",
-    startDate: "2023-08-01",
-    endDate: "2023-09-30",
-    conditions:
-      "Válido solo al comprar una hamburguesa. No acumulable con otras promociones.",
-    cta: "Ordenar ahora",
-    templateName: "Papas Gratis - Template",
-    sent: true,
-  },
-];
+
 // Saved segments fallback (will be replaced by API data)
 const fallbackSegments: CustomerSegment[] = [];
-const savedTemplates = [
-  {
-    id: 1,
-    name: "Promoción Estándar",
-    blocks: [
-      {
-        id: "1",
-        type: "title",
-        content: "Promoción exclusiva para ti",
-      },
-      {
-        id: "2",
-        type: "image",
-        content:
-          "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
-      },
-      {
-        id: "3",
-        type: "text",
-        content: "Aprovecha esta oferta por tiempo limitado",
-      },
-      {
-        id: "4",
-        type: "button",
-        content: "Canjear ahora",
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "Recompensa de Cumpleaños",
-    blocks: [
-      {
-        id: "1",
-        type: "title",
-        content: "¡Feliz Cumpleaños!",
-      },
-      {
-        id: "2",
-        type: "image",
-        content:
-          "https://images.unsplash.com/photo-1578922864601-79dca7a9ea35?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
-      },
-      {
-        id: "3",
-        type: "text",
-        content: "Te regalamos algo especial en tu día",
-      },
-      {
-        id: "4",
-        type: "button",
-        content: "Reclamar regalo",
-      },
-    ],
-  },
-];
+
 // KPI Button Component
-const KpiButton = ({ label, count, active, onClick, icon }) => {
+interface KpiButtonProps {
+  label: string;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+}
+
+const KpiButton: React.FC<KpiButtonProps> = ({
+  label,
+  count,
+  active,
+  onClick,
+  icon,
+}) => {
   return (
     <button
       onClick={onClick}
@@ -216,12 +67,24 @@ const KpiButton = ({ label, count, active, onClick, icon }) => {
   );
 };
 // Campaign Card Component
-const CampaignCard = ({ campaign, onPreview, onToggleActive, onDelete }) => {
+interface CampaignCardProps {
+  campaign: any;
+  onPreview: (campaign: any) => void;
+  onToggleActive: (id: string, status: string) => void;
+  onDelete: (id: string) => void;
+}
+
+const CampaignCard: React.FC<CampaignCardProps> = ({
+  campaign,
+  onPreview,
+  onToggleActive,
+  onDelete,
+}) => {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
-  const statusMenuRef = useRef(null);
-  const powerButtonRef = useRef(null);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
+  const powerButtonRef = useRef<HTMLButtonElement>(null);
   // Format date to dd/mm/yy
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -230,17 +93,18 @@ const CampaignCard = ({ campaign, onPreview, onToggleActive, onDelete }) => {
   };
   // Close menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
       if (
         statusMenuRef.current &&
-        !statusMenuRef.current.contains(event.target) &&
+        !statusMenuRef.current.contains(target) &&
         powerButtonRef.current &&
-        !powerButtonRef.current.contains(event.target)
+        !powerButtonRef.current.contains(target)
       ) {
         setShowStatusMenu(false);
       }
     };
-    const handleEscKey = (event) => {
+    const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setShowStatusMenu(false);
       }
@@ -252,7 +116,7 @@ const CampaignCard = ({ campaign, onPreview, onToggleActive, onDelete }) => {
       document.removeEventListener("keydown", handleEscKey);
     };
   }, []);
-  const handleStatusChange = (status) => {
+  const handleStatusChange = (status: string) => {
     onToggleActive(campaign.id, status);
     setShowStatusMenu(false);
   };
@@ -263,7 +127,7 @@ const CampaignCard = ({ campaign, onPreview, onToggleActive, onDelete }) => {
     IconComponent = ShoppingBagIcon;
   }
   // Determinar el color del botón de power según el estado
-  const getPowerButtonStyles = (status) => {
+  const getPowerButtonStyles = (status: string): string => {
     switch (status) {
       case "active":
         return "bg-[#DCFCE7] border border-[#22C55E] text-[#15803D] hover:bg-[#BBF7D0]";
@@ -276,7 +140,7 @@ const CampaignCard = ({ campaign, onPreview, onToggleActive, onDelete }) => {
     }
   };
   // Status indicator
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: string): JSX.Element | null => {
     switch (status) {
       case "active":
         return (
@@ -328,18 +192,29 @@ const CampaignCard = ({ campaign, onPreview, onToggleActive, onDelete }) => {
             <h3 className="text-lg font-medium text-gray-900">
               {campaign.name}
             </h3>
-            <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+            {/*<p className="mt-1 text-sm text-gray-500 line-clamp-2">
               {campaign.description}
-            </p>
-            {campaign.templateName && (
-              <p className="mt-1 text-xs text-gray-400">
-                Template: {campaign.templateName}
-              </p>
-            )}
+            </p>*/}
+            {campaign.deliveryMethods &&
+              campaign.deliveryMethods.length > 0 && (
+                <p className="mt-1 text-xs text-gray-400">
+                  {campaign.deliveryMethods
+                    .map((method: string) => {
+                      const methodLabels: Record<string, string> = {
+                        sms: "SMS",
+                        whatsapp: "WhatsApp",
+                        email: "Email",
+                        push: "Push",
+                      };
+                      return methodLabels[method] || method;
+                    })
+                    .join(" + ")}
+                </p>
+              )}
             <div className="mt-2 flex items-center text-xs text-gray-500">
-              <span className="bg-custom-green-100 text-custom-green-800 px-2 py-0.5 rounded-full font-medium">
+              {/*<span className="bg-custom-green-100 text-custom-green-800 px-2 py-0.5 rounded-full font-medium">
                 {campaign.pointsRequired} puntos
-              </span>
+              </span>*/}
               <span className="ml-2">{campaign.expirationDays} días</span>
             </div>
           </div>
@@ -352,7 +227,7 @@ const CampaignCard = ({ campaign, onPreview, onToggleActive, onDelete }) => {
         <div className="flex items-center space-x-2">
           {/* Botón Ver */}
           <button
-            onClick={(e) => onPreview(e)}
+            onClick={() => onPreview(campaign)}
             className="p-1.5 bg-blue-100 rounded-full text-blue-600 hover:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0EA5E9]"
             aria-label="Ver vista previa"
           >
@@ -449,7 +324,12 @@ const CampaignCard = ({ campaign, onPreview, onToggleActive, onDelete }) => {
   );
 };
 // Email Preview Component
-const EmailPreview = ({ campaign, onClose }) => {
+interface EmailPreviewProps {
+  campaign: any;
+  onClose: () => void;
+}
+
+const EmailPreview: React.FC<EmailPreviewProps> = ({ campaign, onClose }) => {
   if (!campaign) return null;
   // Current time for the email preview
   const now = new Date();
@@ -812,7 +692,17 @@ const EmailPreview = ({ campaign, onClose }) => {
   );
 };
 // Componente para mostrar planes de precios
-const RewardsPricingModal = ({ isOpen, onClose, currentPlan = "Básico" }) => {
+interface RewardsPricingModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentPlan?: string;
+}
+
+const RewardsPricingModal: React.FC<RewardsPricingModalProps> = ({
+  isOpen,
+  onClose,
+  currentPlan = "Básico",
+}) => {
   if (!isOpen) return null;
   const plans = [
     {
@@ -972,9 +862,12 @@ const RewardsPricingModal = ({ isOpen, onClose, currentPlan = "Básico" }) => {
 const RewardsManagement = () => {
   const auth = useAuth();
   const adminApi = useAdminPortalApi();
+  const campaignsApi = useCampaignsApi();
   const { restaurant, loading: restaurantLoading } = useRestaurant();
 
-  const [campaigns, setCampaigns] = useState(initialCampaigns);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(false);
+  const [campaignsError, setCampaignsError] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [previewCampaign, setPreviewCampaign] = useState(null);
   const [showPricingModal, setShowPricingModal] = useState(false);
@@ -1051,12 +944,101 @@ const RewardsManagement = () => {
     setAuthHook(() => auth);
   }, []);
 
-  // Load segments when restaurant is available
+  // Load segments and campaigns when restaurant is available
   useEffect(() => {
     if (restaurantId && !restaurantLoading) {
       loadSegments();
+      loadCampaigns();
     }
   }, [restaurantId, restaurantLoading]);
+
+  const loadCampaigns = async () => {
+    if (!restaurantId) {
+      console.log("No restaurant ID available, skipping campaigns loading...");
+      setCampaignsLoading(false);
+      return;
+    }
+
+    if (campaignsLoading) {
+      console.log("Campaigns already loading, skipping...");
+      return;
+    }
+
+    try {
+      console.log("Loading campaigns for restaurant:", restaurantId);
+      setCampaignsLoading(true);
+      setCampaignsError("");
+
+      const campaignsData = await campaignsApi.getCampaigns(restaurantId);
+
+      // Transform API data to match component structure
+      const transformedCampaigns = campaignsData.map((campaign: any): any => {
+        // Calculate duration in days from start_date to end_date
+        const startDate = new Date(campaign.start_date);
+        const endDate = new Date(campaign.end_date);
+        const durationInMs = endDate.getTime() - startDate.getTime();
+        const durationInDays = Math.ceil(durationInMs / (1000 * 60 * 60 * 24));
+
+        return {
+          id: campaign.id,
+          name: campaign.name,
+          description: campaign.description || "",
+          pointsRequired: campaign.points_required || 0,
+          expirationDays: durationInDays,
+          active: campaign.status === "running",
+          status: mapCampaignStatus(campaign.status),
+          icon: "award",
+          image:
+            "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
+          emailSubject: campaign.name,
+          emailBody: campaign.reward_description || campaign.description || "",
+          startDate: campaign.start_date,
+          endDate: campaign.end_date,
+          conditions: campaign.reward_code
+            ? `Usa el código ${campaign.reward_code} para obtener ${campaign.reward_value}% de descuento`
+            : "Términos y condiciones aplican",
+          cta: "Ver más",
+          templateName:
+            campaign.templates?.[0]?.template_data?.name ||
+            "Template predeterminado",
+          sent: campaign.total_sent > 0,
+          deliveryMethods: campaign.delivery_methods,
+          segment:
+            campaign.customer_segments?.segment_name || "Todos los clientes",
+          templates: campaign.templates || [], // Include templates array
+          rewardValue: campaign.reward_value,
+          rewardType: campaign.reward_type,
+          restaurantId: campaign.restaurant_id,
+          apiData: campaign, // Keep original data for updates
+        };
+      });
+
+      setCampaigns(transformedCampaigns);
+      console.log(
+        "Campaigns loaded successfully:",
+        transformedCampaigns.length
+      );
+    } catch (error: any) {
+      console.error("Error loading campaigns:", error);
+      setCampaignsError(error.message || "Error al cargar campañas");
+      toast.error("Error al cargar campañas");
+    } finally {
+      console.log("🏁 Campaigns loading finished");
+      setCampaignsLoading(false);
+    }
+  };
+
+  const mapCampaignStatus = (status: string) => {
+    const statusMap: Record<string, string> = {
+      draft: "paused",
+      scheduled: "paused",
+      running: "active",
+      paused: "paused",
+      completed: "expired",
+      cancelled: "expired",
+    };
+    return statusMap[status] || "paused";
+  };
 
   const loadSegments = async () => {
     // Validate restaurant ID before loading
@@ -1093,36 +1075,86 @@ const RewardsManagement = () => {
     }
   };
   // Filter campaigns based on active filter
-  const filteredCampaigns = campaigns.filter((campaign) => {
+  const filteredCampaigns = campaigns.filter((campaign: any) => {
     if (activeFilter === "all") return true;
     return campaign.status === activeFilter;
   });
   // Get counts for KPI buttons
   const allCount = campaigns.length;
-  const activeCount = campaigns.filter((c) => c.status === "active").length;
-  const pausedCount = campaigns.filter((c) => c.status === "paused").length;
-  const expiredCount = campaigns.filter((c) => c.status === "expired").length;
-  const handleToggleActive = (id, status) => {
-    setCampaigns((prev) =>
-      prev.map((campaign) =>
-        campaign.id === id
-          ? {
-              ...campaign,
-              status,
-            }
-          : campaign
-      )
-    );
-  };
-  const handleDeleteCampaign = (id) => {
-    if (window.confirm("¿Estás seguro de que quieres eliminar esta campaña?")) {
-      setCampaigns((prev) => prev.filter((campaign) => campaign.id !== id));
+  const activeCount = campaigns.filter(
+    (c: any) => c.status === "active"
+  ).length;
+  const pausedCount = campaigns.filter(
+    (c: any) => c.status === "paused"
+  ).length;
+  const expiredCount = campaigns.filter(
+    (c: any) => c.status === "expired"
+  ).length;
+  const handleToggleActive = async (id: string, status: string) => {
+    if (!restaurantId) {
+      toast.error("Error: No se encontró el ID del restaurante");
+      return;
+    }
+
+    const loadingToast = toast.loading("Actualizando estado...");
+
+    try {
+      // Map UI status to API status
+      const apiStatusMap: Record<string, string> = {
+        active: "running",
+        paused: "paused",
+        expired: "cancelled",
+      };
+
+      const apiStatus = apiStatusMap[status] || "paused";
+
+      // Update campaign status via API
+      await campaignsApi.updateCampaignStatus(id, apiStatus, restaurantId);
+
+      toast.success("Estado actualizado exitosamente", { id: loadingToast });
+
+      // Reload campaigns to reflect changes
+      await loadCampaigns();
+    } catch (error: any) {
+      console.error("Error updating campaign status:", error);
+      toast.error(error.message || "Error al actualizar estado", {
+        id: loadingToast,
+      });
     }
   };
-  const handlePreview = (campaign) => {
+
+  const handleDeleteCampaign = async (id: string) => {
+    if (!restaurantId) {
+      toast.error("Error: No se encontró el ID del restaurante");
+      return;
+    }
+
+    if (
+      !window.confirm("¿Estás seguro de que quieres eliminar esta campaña?")
+    ) {
+      return;
+    }
+
+    const loadingToast = toast.loading("Eliminando campaña...");
+
+    try {
+      await campaignsApi.deleteCampaign(id, restaurantId);
+
+      toast.success("Campaña eliminada exitosamente", { id: loadingToast });
+
+      // Reload campaigns to reflect changes
+      await loadCampaigns();
+    } catch (error: any) {
+      console.error("Error deleting campaign:", error);
+      toast.error(error.message || "Error al eliminar campaña", {
+        id: loadingToast,
+      });
+    }
+  };
+  const handlePreview = (campaign: any) => {
     setPreviewCampaign(campaign);
   };
-  const handleOpenDashboard = (campaign) => {
+  const handleOpenDashboard = (campaign: any) => {
     setSelectedCampaign(campaign);
     setShowCampaignDashboard(true);
   };
@@ -1287,13 +1319,13 @@ const RewardsManagement = () => {
     }
   };
   const handleCreateCampaign = (
-    campaignName,
-    selectedSegment,
-    selectedTemplate,
-    selectedWhatsAppTemplate,
-    deliveryMethods,
-    promoCode,
-    discountPercentage
+    campaignName: string,
+    selectedSegment?: CustomerSegment | null,
+    selectedTemplate?: any,
+    selectedWhatsAppTemplate?: any,
+    deliveryMethods?: { whatsapp: boolean; sms: boolean },
+    promoCode?: string,
+    discountPercentage?: string
   ) => {
     // Store campaign data and proceed to details screen
     setNewCampaignData({
@@ -1312,40 +1344,142 @@ const RewardsManagement = () => {
     setShowCampaignDetailsModal(false);
     setShowNewCampaignModal(true);
   };
-  const handleFinalizeCampaign = (campaignDetails) => {
-    // Create a new campaign with all the provided data
-    const newCampaign = {
-      id: Date.now(),
-      name: newCampaignData.name,
-      description: "Nueva campaña creada",
-      pointsRequired: 100,
-      expirationDays: 30,
-      active: true,
-      status: "active",
-      icon: "award",
-      image:
-        campaignDetails.whatsappTemplate?.variables?.image_url ||
-        newCampaignData.selectedTemplate?.image ||
-        "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
-      emailSubject: newCampaignData.name,
-      emailBody: "Descripción de la campaña",
-      startDate: campaignDetails.startDate,
-      endDate: campaignDetails.endDate,
-      conditions: campaignDetails.rewardCode
-        ? `Usa el código ${campaignDetails.rewardCode} para obtener ${campaignDetails.discountPercentage}% de descuento`
-        : "Términos y condiciones aplican",
-      cta: "Ver más",
-      templateName: newCampaignData.selectedTemplate
-        ? newCampaignData.selectedTemplate.name
-        : "Template predeterminado",
-      sent: false,
-      deliveryMethods: campaignDetails.deliveryMethods,
-      whatsappTemplate: campaignDetails.whatsappTemplate,
-      segment:
-        newCampaignData.selectedSegment?.segment_name || "Todos los clientes",
-    };
-    setCampaigns([...campaigns, newCampaign]);
-    setShowCampaignDetailsModal(false);
+  const handleFinalizeCampaign = async (campaignDetails: any) => {
+    if (!restaurantId) {
+      toast.error("Error: No se encontró el ID del restaurante");
+      return;
+    }
+
+    const loadingToast = toast.loading("Creando campaña...");
+
+    try {
+      // Validar que tenemos los datos necesarios
+      if (!newCampaignData.selectedSegment?.id) {
+        toast.error("Debes seleccionar un segmento de clientes", {
+          id: loadingToast,
+        });
+        return;
+      }
+
+      // Procesar discount value (opcional)
+      const discountValue = parseFloat(
+        newCampaignData.discountPercentage || campaignDetails.discountPercentage
+      );
+      const hasValidDiscount =
+        discountValue && !isNaN(discountValue) && discountValue > 0;
+
+      // Prepare campaign data for API
+      const campaignData: any = {
+        restaurant_id: restaurantId,
+        name: newCampaignData.name,
+        description: campaignDetails.description || "Nueva campaña creada",
+        segment_id: newCampaignData.selectedSegment.id,
+        reward_type: campaignDetails.rewardType || "discount_percentage",
+        start_date: campaignDetails.startDate,
+        end_date: campaignDetails.endDate,
+        status: campaignDetails.status || 'running',
+        delivery_methods: Object.entries(campaignDetails.deliveryMethods || {})
+          .filter(([_, enabled]) => enabled)
+          .map(([method]) => method),
+        auto_send: campaignDetails.autoSend || false,
+        send_immediately: campaignDetails.sendImmediately || false,
+      };
+
+      // Agregar reward_value solo si es válido
+      if (hasValidDiscount) {
+        campaignData.reward_value = discountValue;
+      }
+
+      // Agregar reward_code solo si existe
+      const rewardCode =
+        newCampaignData.promoCode || campaignDetails.rewardCode;
+      if (rewardCode && rewardCode.trim()) {
+        campaignData.reward_code = rewardCode.trim();
+      }
+
+      // Agregar reward_description si existe
+      if (campaignDetails.description && campaignDetails.description.trim()) {
+        campaignData.reward_description = campaignDetails.description.trim();
+      }
+
+      // Log para debug
+      console.log("Creating campaign with data:", campaignData);
+
+      // Create campaign via API
+      const createdCampaign = await campaignsApi.createCampaign(campaignData);
+
+      // Associate templates if any
+      if (
+        newCampaignData.selectedTemplate ||
+        newCampaignData.selectedWhatsAppTemplate
+      ) {
+        const templates = [];
+
+        // Asociar template de SMS si existe
+        if (
+          newCampaignData.selectedTemplate?.id &&
+          campaignDetails.deliveryMethods?.sms
+        ) {
+          console.log(
+            "Associating SMS template:",
+            newCampaignData.selectedTemplate.id
+          );
+          templates.push({
+            template_id: newCampaignData.selectedTemplate.id,
+            template_type: "sms" as const,
+            is_primary: true,
+          });
+        }
+
+        // Asociar template de WhatsApp si existe (ahora soporta strings)
+        if (
+          newCampaignData.selectedWhatsAppTemplate?.id &&
+          campaignDetails.deliveryMethods?.whatsapp
+        ) {
+          console.log(
+            "Associating WhatsApp template:",
+            newCampaignData.selectedWhatsAppTemplate.id
+          );
+          templates.push({
+            template_id: newCampaignData.selectedWhatsAppTemplate.id,
+            template_type: "whatsapp" as const,
+            is_primary: true,
+            custom_variables: campaignDetails.whatsappTemplate?.variables || {},
+          });
+        }
+
+        if (templates.length > 0) {
+          console.log("Templates to associate:", templates);
+          await campaignsApi.associateTemplates(createdCampaign.id, {
+            restaurant_id: restaurantId,
+            templates,
+          });
+        }
+      }
+
+      toast.success("Campaña creada exitosamente", { id: loadingToast });
+
+      // Reload campaigns to show the new one
+      await loadCampaigns();
+
+      setShowCampaignDetailsModal(false);
+
+      // Reset campaign data
+      setNewCampaignData({
+        name: "",
+        selectedSegment: null,
+        selectedTemplate: null,
+        selectedWhatsAppTemplate: undefined,
+        deliveryMethods: { whatsapp: false, sms: false },
+        promoCode: "",
+        discountPercentage: "",
+      });
+    } catch (error: any) {
+      console.error("Error creating campaign:", error);
+      toast.error(error.message || "Error al crear campaña", {
+        id: loadingToast,
+      });
+    }
   };
   return (
     <div className="w-full bg-gray-50 min-h-screen">
@@ -1386,7 +1520,7 @@ const RewardsManagement = () => {
             count={allCount}
             active={activeFilter === "all"}
             onClick={() => setActiveFilter("all")}
-            icon={<TargetIcon className="h-6 w-6" />}
+            icon={<AwardIcon className="h-6 w-6" />}
           />
           <KpiButton
             label="Activas"
@@ -1413,7 +1547,7 @@ const RewardsManagement = () => {
 
         {/* Campaigns Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCampaigns.map((campaign) => (
+          {filteredCampaigns.map((campaign: any) => (
             <div
               key={campaign.id}
               onClick={() => handleOpenDashboard(campaign)}
@@ -1421,8 +1555,7 @@ const RewardsManagement = () => {
             >
               <CampaignCard
                 campaign={campaign}
-                onPreview={(e) => {
-                  e.stopPropagation();
+                onPreview={(campaign) => {
                   handlePreview(campaign);
                 }}
                 onToggleActive={(id, status) => {
@@ -1463,6 +1596,7 @@ const RewardsManagement = () => {
         isOpen={showCampaignDashboard}
         onClose={() => setShowCampaignDashboard(false)}
         campaign={selectedCampaign}
+        restaurantId={restaurantId}
       />
 
       {/* Pricing Modal */}
