@@ -481,6 +481,8 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
         onSave={handleBannerCropSave}
         onImageUpload={handleBannerImageUploadFromModal}
         title="Ajustar Banner del Restaurante"
+        restaurantName={restaurantName}
+        logoImage={logoImage}
       />
       </div>
     </div>
