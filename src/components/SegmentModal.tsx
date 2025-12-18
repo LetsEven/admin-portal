@@ -37,6 +37,36 @@ const SegmentModal: React.FC<SegmentModalProps> = ({
   // Contar filtros activos
   const activeFiltersCount = Object.values(filters).filter(value => value !== 'all').length;
 
+  // Preview debounced function
+  const debouncedPreview = useCallback(async (currentFilters: SegmentFilters) => {
+    // Clear previous timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Set new timeout for debounced preview
+    debounceTimeoutRef.current = setTimeout(async () => {
+      console.log('Fetching preview for filters:', currentFilters);
+      setPreviewLoading(true);
+      setPreviewError('');
+
+      try {
+        const previewData = await segmentsApi.previewSegment({
+          restaurant_id: restaurantId,
+          filters: currentFilters
+        });
+        setPreviewCount(previewData.customer_count);
+        console.log('Preview result:', previewData.customer_count, 'customers');
+      } catch (error: any) {
+        console.error('Preview error:', error);
+        setPreviewError(error.message || 'Error al obtener preview');
+        setPreviewCount(null);
+      } finally {
+        setPreviewLoading(false);
+      }
+    }, 300); // Reduced debounce time for better UX
+  }, [restaurantId]);
+
   // Initialize form with editing data
   useEffect(() => {
     if (editingSegment) {
@@ -63,6 +93,41 @@ const SegmentModal: React.FC<SegmentModalProps> = ({
     setPreviewError('');
     setSaveError('');
   }, [editingSegment, isOpen]);
+
+  // Load initial preview when modal opens (show all customers by default)
+  const hasLoadedInitialPreview = useRef(false);
+
+  useEffect(() => {
+    if (isOpen && !hasLoadedInitialPreview.current) {
+      hasLoadedInitialPreview.current = true;
+
+      if (!editingSegment) {
+        // For new segments, show total customer count immediately
+        setTimeout(() => {
+          debouncedPreview({
+            gender: 'all',
+            age_range: 'all',
+            number_of_visits: 'all',
+            last_visit: 'all',
+            single_purchase_total: 'all',
+          });
+        }, 100);
+      } else {
+        // For editing segments, show preview of current filters
+        setTimeout(() => {
+          debouncedPreview(editingSegment.filters || {
+            gender: 'all',
+            age_range: 'all',
+            number_of_visits: 'all',
+            last_visit: 'all',
+            single_purchase_total: 'all',
+          });
+        }, 100);
+      }
+    } else if (!isOpen) {
+      hasLoadedInitialPreview.current = false;
+    }
+  }, [isOpen, editingSegment, debouncedPreview]);
   // Manejar cierre con tecla ESC
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
@@ -96,48 +161,6 @@ const SegmentModal: React.FC<SegmentModalProps> = ({
     setSegmentName(value);
     validateName(value);
   };
-  // Preview debounced function
-  const debouncedPreview = useCallback(async (currentFilters: SegmentFilters) => {
-    // Clear previous timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-
-    // Set new timeout for debounced preview
-    debounceTimeoutRef.current = setTimeout(async () => {
-      const hasActiveFilters = Object.values(currentFilters).some(value => value !== 'all');
-
-      if (hasActiveFilters) {
-        // Prevent multiple simultaneous preview calls
-        if (previewLoading) {
-          console.log('Preview already loading, skipping...');
-          return;
-        }
-
-        console.log('Fetching preview for filters:', currentFilters);
-        setPreviewLoading(true);
-        setPreviewError('');
-
-        try {
-          const previewData = await segmentsApi.previewSegment({
-            restaurant_id: restaurantId,
-            filters: currentFilters
-          });
-          setPreviewCount(previewData.customer_count);
-          console.log('Preview result:', previewData.customer_count, 'customers');
-        } catch (error: any) {
-          console.error('Preview error:', error);
-          setPreviewError(error.message || 'Error al obtener preview');
-          setPreviewCount(null);
-        } finally {
-          setPreviewLoading(false);
-        }
-      } else {
-        setPreviewCount(null);
-        setPreviewError('');
-      }
-    }, 800); // Increased to 800ms for better debouncing
-  }, [restaurantId, previewLoading]);
 
   // Manejar cambios en filtros
   const handleFilterChange = (filterKey: keyof SegmentFilters, value: string) => {
@@ -387,46 +410,84 @@ const SegmentModal: React.FC<SegmentModalProps> = ({
             </select>
           </div> */}
         </div>
-        {/* Active filters summary with preview */}
-        {activeFiltersCount > 0 && <div className="mb-6 p-4 bg-custom-green-50 rounded-lg border border-custom-green-200">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-custom-green-600 mr-2" />
+        {/* Preview section - always visible */}
+        <div className="mb-6 p-4 bg-custom-green-50 rounded-lg border border-custom-green-200">
+          {activeFiltersCount > 0 ? (
+            <>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <CheckCircleIcon className="h-5 w-5 text-custom-green-600 mr-2" />
+                  <span className="text-sm font-medium text-custom-green-800">
+                    {activeFiltersCount} filtro
+                    {activeFiltersCount !== 1 ? 's' : ''} activo
+                    {activeFiltersCount !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <button onClick={handleClearFilters} className="text-sm text-custom-green-600 hover:text-custom-green-700 font-medium flex items-center">
+                  <RefreshCwIcon className="h-4 w-4 mr-1" />
+                  Limpiar filtros
+                </button>
+              </div>
+
+              {/* Preview Results with filters */}
+              <div className="mt-3 pt-3 border-t border-custom-green-200">
+                {previewLoading ? (
+                  <div className="flex items-center text-sm text-custom-green-700">
+                    <LoaderIcon className="h-4 w-4 mr-2 animate-spin" />
+                    Calculando clientes que coinciden...
+                  </div>
+                ) : previewError ? (
+                  <div className="flex items-center text-sm text-red-600">
+                    <span className="text-red-500 mr-2">⚠️</span>
+                    {previewError}
+                  </div>
+                ) : previewCount !== null ? (
+                  <div className="flex items-center text-sm text-custom-green-700">
+                    <UsersIcon className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">
+                      {previewCount} cliente{previewCount !== 1 ? 's' : ''} coincide{previewCount !== 1 ? 'n' : ''}
+                    </span>
+                    <span className="ml-1">con estos filtros</span>
+                  </div>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center mb-2">
+                <UsersIcon className="h-5 w-5 text-custom-green-600 mr-2" />
                 <span className="text-sm font-medium text-custom-green-800">
-                  {activeFiltersCount} filtro
-                  {activeFiltersCount !== 1 ? 's' : ''} activo
-                  {activeFiltersCount !== 1 ? 's' : ''}
+                  Vista previa de clientes
                 </span>
               </div>
-              <button onClick={handleClearFilters} className="text-sm text-custom-green-600 hover:text-custom-green-700 font-medium flex items-center">
-                <RefreshCwIcon className="h-4 w-4 mr-1" />
-                Limpiar filtros
-              </button>
-            </div>
 
-            {/* Preview Results */}
-            <div className="mt-3 pt-3 border-t border-custom-green-200">
-              {previewLoading ? (
-                <div className="flex items-center text-sm text-custom-green-700">
-                  <LoaderIcon className="h-4 w-4 mr-2 animate-spin" />
-                  Calculando clientes que coinciden...
-                </div>
-              ) : previewError ? (
-                <div className="flex items-center text-sm text-red-600">
-                  <span className="text-red-500 mr-2">⚠️</span>
-                  {previewError}
-                </div>
-              ) : previewCount !== null ? (
-                <div className="flex items-center text-sm text-custom-green-700">
-                  <UsersIcon className="h-4 w-4 mr-2" />
-                  <span className="font-semibold">
-                    {previewCount} cliente{previewCount !== 1 ? 's' : ''} coincide{previewCount !== 1 ? 'n' : ''}
-                  </span>
-                  <span className="ml-1">con estos filtros</span>
-                </div>
-              ) : null}
-            </div>
-          </div>}
+              {/* Preview Results without filters (all customers) */}
+              <div className="mt-3 pt-3 border-t border-custom-green-200">
+                {previewLoading ? (
+                  <div className="flex items-center text-sm text-custom-green-700">
+                    <LoaderIcon className="h-4 w-4 mr-2 animate-spin" />
+                    Cargando total de clientes...
+                  </div>
+                ) : previewError ? (
+                  <div className="flex items-center text-sm text-red-600">
+                    <span className="text-red-500 mr-2">⚠️</span>
+                    {previewError}
+                  </div>
+                ) : previewCount !== null ? (
+                  <div className="flex items-center text-sm text-custom-green-700">
+                    <UsersIcon className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">
+                      {previewCount} cliente{previewCount !== 1 ? 's' : ''} total
+                    </span>
+                    <span className="ml-1 text-custom-green-600">
+                      (sin filtros aplicados)
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            </>
+          )}
+        </div>
         {/* Error Message */}
         {saveError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
