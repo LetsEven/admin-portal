@@ -7,6 +7,11 @@ import {
   AlertCircleIcon,
   UploadIcon,
 } from "lucide-react";
+import {
+  WhatsAppTemplate,
+  PRE_APPROVED_TEMPLATES
+} from "../utils/whatsappTemplates";
+import { ImageUploadService } from "../services/imageUploadService";
 
 interface WhatsAppTemplateModalProps {
   isOpen: boolean;
@@ -17,131 +22,8 @@ interface WhatsAppTemplateModalProps {
   discountPercentage?: string;
 }
 
-export interface WhatsAppTemplate {
-  id: string;
-  name: string;
-  category: "marketing" | "utility";
-  language: string;
-  status: "approved" | "pending" | "rejected";
-  header?: {
-    type: "text" | "image";
-    text?: string;
-    variables?: string[];
-  };
-  body: {
-    text: string;
-    variables: string[];
-  };
-  footer?: string;
-  buttons?: Array<{
-    type: "url" | "phone" | "quick_reply";
-    text: string;
-    url?: string;
-    phone?: string;
-  }>;
-  estimatedCost: string;
-  description: string;
-}
-
-// Templates pre-aprobados para WhatsApp Business API
-const PRE_APPROVED_TEMPLATES: WhatsAppTemplate[] = [
-  {
-    id: "promo_general",
-    name: "Promoción General",
-    category: "marketing",
-    language: "es_MX",
-    status: "approved",
-    header: {
-      type: "image",
-      variables: ["image_url"],
-    },
-    body: {
-      text: "Hola, ¡tenemos una oferta especial para ti! 🎉\n\nDisfruta de {{1}}% de descuento en {{2}}.\n\nUsa el código: *{{3}}*",
-      variables: ["discount", "product_name", "codigo"],
-    },
-    buttons: [
-      { type: "url", text: "Ver menú", url: "https://xquisito.ai/menu" },
-    ],
-    estimatedCost: "~$0.005 USD",
-    description: "Template versátil para promociones generales con descuento",
-  },
-  {
-    id: "recuperacion_clientes",
-    name: "Recuperación de Clientes",
-    category: "marketing",
-    language: "es_MX",
-    status: "approved",
-    header: {
-      type: "text",
-      text: "¡Te extrañamos! 💙",
-      variables: [],
-    },
-    body: {
-      text: "Hola,\n\nHace {{1}} que no te vemos y queremos que regreses.\n\nTe regalamos *{{2}}% de descuento* en tu próxima visita.\n\nCódigo: *{{3}}*",
-      variables: ["days_inactive", "discount", "codigo"],
-    },
-    estimatedCost: "~$0.005 USD",
-    description: "Reactivar clientes inactivos con incentivo",
-  },
-  {
-    id: "ultima_llamada",
-    name: "Última Llamada / Urgencia",
-    category: "marketing",
-    language: "es_MX",
-    status: "approved",
-    header: {
-      type: "text",
-      text: "⏰ ¡ÚLTIMA OPORTUNIDAD!",
-      variables: [],
-    },
-    body: {
-      text: "Hola, tu oferta de *{{1}}* está por expirar.\n\nCódigo: *{{4}}*\n\n¡No te quedes sin tu beneficio!",
-      variables: ["offer_name", "discount", "codigo"],
-    },
-    buttons: [
-      { type: "url", text: "Canjear ahora", url: "https://xquisito.ai/redeem" },
-    ],
-    estimatedCost: "~$0.005 USD",
-    description: "Crear urgencia para ofertas próximas a expirar",
-  },
-  {
-    id: "cumpleanos",
-    name: "Cumpleaños",
-    category: "marketing",
-    language: "es_MX",
-    status: "approved",
-    header: {
-      type: "image",
-      variables: ["birthday_image"],
-    },
-    body: {
-      text: "🎂 ¡FELIZ CUMPLEAÑOS! 🎉\n\nQueremos celebrar contigo este día especial.\n\nTe regalamos {{1}}% de descuento.\n\nCódigo: *{{2}}*",
-      variables: ["discount", "codigo"],
-    },
-    estimatedCost: "~$0.005 USD",
-    description: "Felicitación de cumpleaños con regalo especial",
-  },
-  {
-    id: "recomendacion_personalizada",
-    name: "Recomendación Personalizada",
-    category: "marketing",
-    language: "es_MX",
-    status: "approved",
-    header: {
-      type: "image",
-      variables: ["recommended_dish_image"],
-    },
-    body: {
-      text: "Hola, basado en tus gustos, creemos que te encantará:\n\n🍽️ *{{1}}*\n\n💫 Especial para ti: {{2}}% OFF\n\nCódigo: *{{3}}*",
-      variables: ["dish_name", "discount", "codigo"],
-    },
-    buttons: [
-      { type: "url", text: "Ordenar ahora", url: "https://xquisito.ai/order" },
-    ],
-    estimatedCost: "~$0.005 USD",
-    description: "Recomendación basada en historial del cliente",
-  },
-];
+// Re-export for backward compatibility
+export type { WhatsAppTemplate };
 
 const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
   isOpen,
@@ -202,17 +84,24 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
     setUploadingHeaderImage(true);
 
     try {
-      // Create a local URL for preview
+      // Crear preview local inmediatamente
       const localUrl = URL.createObjectURL(file);
-      setHeaderImageUrl(localUrl);
+      setImageUrl(localUrl);
 
-      // Here you would upload to your server
-      // For now, we'll just use the local URL
-      // const uploadedUrl = await uploadImageToServer(file);
-      // setHeaderImageUrl(uploadedUrl);
+      // Subir imagen a Supabase Storage
+      console.log("📤 Uploading WhatsApp template image to Supabase...");
+      const uploadedUrl = await ImageUploadService.uploadImage(file, 'banner');
+
+      // Actualizar con la URL permanente de Supabase
+      setHeaderImageUrl(uploadedUrl);
+      setImageUrl(uploadedUrl);
+
+      console.log("✅ Image uploaded successfully:", uploadedUrl);
     } catch (error) {
       console.error("Error uploading image:", error);
       alert("Error al subir la imagen. Por favor intenta de nuevo.");
+      setHeaderImageUrl("");
+      setImageUrl("");
     } finally {
       setUploadingHeaderImage(false);
     }
@@ -224,7 +113,19 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
 
   const handleConfirm = () => {
     if (selectedTemplate) {
-      onSelectTemplate(selectedTemplate);
+      // Crear una copia del template con las variables incluidas
+      const templateWithVariables = {
+        ...selectedTemplate,
+        selectedVariables: {
+          ...variables,
+          // Agregar la imagen del header según el tipo de variable que espere el template
+          ...(selectedTemplate.header?.type === 'image' && headerImageUrl
+            ? { [selectedTemplate.header.variables?.[0] || 'image_url']: headerImageUrl }
+            : {}),
+        },
+      };
+
+      onSelectTemplate(templateWithVariables as WhatsAppTemplate);
       onClose();
     }
   };

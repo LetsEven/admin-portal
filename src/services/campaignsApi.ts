@@ -37,6 +37,7 @@ export interface Campaign {
   total_redeemed?: number;
   budget_limit?: number;
   current_spend?: number;
+  first_sent_at?: string | null;
   created_at: string;
   updated_at: string;
   created_by?: string;
@@ -213,6 +214,13 @@ class CampaignsApiService {
     }, token);
   }
 
+  async sendCampaign(campaignId: string, restaurantId: number, token: string): Promise<any> {
+    return this.makeRequest<any>(`/${campaignId}/send`, {
+      method: 'POST',
+      body: JSON.stringify({ restaurant_id: restaurantId }),
+    }, token);
+  }
+
   // ===============================================
   // MÉTODOS DE TEMPLATES
   // ===============================================
@@ -290,6 +298,9 @@ export function useCampaignsApi() {
 
     updateCampaignStatus: (campaignId: string, status: string, restaurantId: number) =>
       makeAuthenticatedRequest((token) => campaignsApiService.updateCampaignStatus(campaignId, status, restaurantId, token)),
+
+    sendCampaign: (campaignId: string, restaurantId: number) =>
+      makeAuthenticatedRequest((token) => campaignsApiService.sendCampaign(campaignId, restaurantId, token)),
 
     // Métodos de templates
     associateTemplates: (campaignId: string, templatesData: AssociateTemplatesData) =>

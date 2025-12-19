@@ -95,7 +95,7 @@ const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({
         whatsappTemplate: selectedWhatsAppTemplate
           ? {
               template: selectedWhatsAppTemplate,
-              variables: {},
+              variables: selectedWhatsAppTemplate.selectedVariables || {},
             }
           : undefined,
         startDate,
@@ -293,6 +293,7 @@ const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({
             </p>
           )}
         </div>
+
         {/* Footer */}
         <div className="flex justify-end space-x-3">
           <button

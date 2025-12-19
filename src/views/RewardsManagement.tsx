@@ -27,6 +27,15 @@ import {
 import { useSmsTemplateApi, SmsTemplate } from "../services/smsTemplateApi";
 import { useRestaurant } from "../contexts/RestaurantContext";
 import toast from "react-hot-toast";
+import {
+  getTemplateById,
+  whatsAppTemplateToText,
+  extractImageFromWhatsAppTemplate
+} from "../utils/whatsappTemplates";
+import {
+  renderSmsTemplateToText,
+  extractImageFromBlocks
+} from "../utils/smsTemplateUtils";
 
 // Saved segments fallback (will be replaced by API data)
 const fallbackSegments: CustomerSegment[] = [];
@@ -979,6 +988,26 @@ const RewardsManagement = () => {
         const durationInMs = endDate.getTime() - startDate.getTime();
         const durationInDays = Math.ceil(durationInMs / (1000 * 60 * 60 * 24));
 
+        // Extract image from templates if available
+        let campaignImage = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60";
+
+        if (campaign.templates && campaign.templates.length > 0) {
+          // Iterate through templates to find an image
+          for (const template of campaign.templates) {
+            if (template.template_data?.blocks) {
+              // Find first image block
+              const imageBlock = template.template_data.blocks.find(
+                (block: any) => block.type === 'image' && block.content
+              );
+
+              if (imageBlock?.content) {
+                campaignImage = imageBlock.content;
+                break; // Use first image found
+              }
+            }
+          }
+        }
+
         return {
           id: campaign.id,
           name: campaign.name,
@@ -988,8 +1017,7 @@ const RewardsManagement = () => {
           active: campaign.status === "running",
           status: mapCampaignStatus(campaign.status),
           icon: "award",
-          image:
-            "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
+          image: campaignImage,
           emailSubject: campaign.name,
           emailBody: campaign.reward_description || campaign.description || "",
           startDate: campaign.start_date,
@@ -1108,10 +1136,28 @@ const RewardsManagement = () => {
 
       const apiStatus = apiStatusMap[status] || "paused";
 
+      // Find the campaign to check if it has been sent
+      const campaign = campaigns.find(c => c.id === id);
+
       // Update campaign status via API
       await campaignsApi.updateCampaignStatus(id, apiStatus, restaurantId);
 
-      toast.success("Estado actualizado exitosamente", { id: loadingToast });
+      // If activating campaign (status = "running") and it hasn't been sent yet, send it
+      if (apiStatus === "running" && campaign && !campaign.first_sent_at) {
+        toast.loading("Enviando campaña al segmento...", { id: loadingToast });
+
+        try {
+          await campaignsApi.sendCampaign(id, restaurantId);
+          toast.success("Campaña activada y enviada exitosamente", { id: loadingToast });
+        } catch (sendError: any) {
+          console.error("Error sending campaign:", sendError);
+          toast.error(`Campaña activada pero error al enviar: ${sendError.message}`, {
+            id: loadingToast,
+          });
+        }
+      } else {
+        toast.success("Estado actualizado exitosamente", { id: loadingToast });
+      }
 
       // Reload campaigns to reflect changes
       await loadCampaigns();
@@ -1420,14 +1466,42 @@ const RewardsManagement = () => {
           newCampaignData.selectedTemplate?.id &&
           campaignDetails.deliveryMethods?.sms
         ) {
+          const promoCode = newCampaignData.promoCode || campaignDetails.rewardCode || "";
+          const discountPercentage = newCampaignData.discountPercentage || campaignDetails.discountPercentage || "";
+
+          // Renderizar template a texto con variables
+          const templateText = renderSmsTemplateToText(
+            newCampaignData.selectedTemplate.blocks || [],
+            newCampaignData.name,
+            promoCode,
+            discountPercentage
+          );
+
+          // Extraer imagen si existe
+          const templateImage = extractImageFromBlocks(newCampaignData.selectedTemplate.blocks || []);
+
           console.log(
             "Associating SMS template:",
-            newCampaignData.selectedTemplate.id
+            newCampaignData.selectedTemplate.id,
+            "with blocks:",
+            newCampaignData.selectedTemplate.blocks,
+            "rendered text:",
+            templateText
           );
+
           templates.push({
             template_id: newCampaignData.selectedTemplate.id,
             template_type: "sms" as const,
             is_primary: true,
+            custom_variables: {
+              name: newCampaignData.selectedTemplate.name,
+              blocks: newCampaignData.selectedTemplate.blocks || [],
+              template_text: templateText, // Texto renderizado con código y descuento
+              image_url: templateImage, // URL de la imagen si existe
+              campaign_name: newCampaignData.name,
+              promo_code: promoCode,
+              discount_percentage: discountPercentage,
+            },
           });
         }
 
@@ -1440,11 +1514,48 @@ const RewardsManagement = () => {
             "Associating WhatsApp template:",
             newCampaignData.selectedWhatsAppTemplate.id
           );
+
+          // Obtener el template completo desde utils
+          const fullWhatsAppTemplate = getTemplateById(newCampaignData.selectedWhatsAppTemplate.id);
+
+          // Preparar variables para el template
+          // Primero usar las variables seleccionadas por el usuario en el modal
+          const templateVariables: Record<string, string> = {
+            discount: newCampaignData.discountPercentage || campaignDetails.discountPercentage || "",
+            codigo: newCampaignData.promoCode || campaignDetails.rewardCode || "",
+            product_name: newCampaignData.name,
+            offer_name: newCampaignData.name,
+            dish_name: newCampaignData.name,
+            ...(newCampaignData.selectedWhatsAppTemplate.selectedVariables || {}), // Variables del modal
+            ...(campaignDetails.whatsappTemplate?.variables || {}),
+          };
+
+          // Convertir template a texto con variables reemplazadas
+          const templateAsText = fullWhatsAppTemplate
+            ? whatsAppTemplateToText(fullWhatsAppTemplate, templateVariables)
+            : "";
+
+          // Extraer imagen de las variables
+          const whatsappImage = extractImageFromWhatsAppTemplate(templateVariables);
+
+          console.log("WhatsApp template variables:", templateVariables, "Image:", whatsappImage);
+
           templates.push({
             template_id: newCampaignData.selectedWhatsAppTemplate.id,
             template_type: "whatsapp" as const,
             is_primary: true,
-            custom_variables: campaignDetails.whatsappTemplate?.variables || {},
+            custom_variables: {
+              template_id: newCampaignData.selectedWhatsAppTemplate.id,
+              template_name: newCampaignData.selectedWhatsAppTemplate.name,
+              template_structure: fullWhatsAppTemplate, // Template completo con estructura
+              template_text: templateAsText, // Versión de texto con variables reemplazadas
+              image_url: whatsappImage, // URL de la imagen si existe en header
+              variables: templateVariables, // Variables usadas
+              campaign_name: newCampaignData.name,
+              category: fullWhatsAppTemplate?.category,
+              language: fullWhatsAppTemplate?.language,
+              estimated_cost: fullWhatsAppTemplate?.estimatedCost,
+            },
           });
         }
 
@@ -1457,7 +1568,22 @@ const RewardsManagement = () => {
         }
       }
 
-      toast.success("Campaña creada exitosamente", { id: loadingToast });
+      // If campaign was created with "running" status, send it immediately
+      if (campaignData.status === "running") {
+        toast.loading("Enviando campaña al segmento...", { id: loadingToast });
+
+        try {
+          await campaignsApi.sendCampaign(createdCampaign.id, restaurantId);
+          toast.success("Campaña creada y enviada exitosamente", { id: loadingToast });
+        } catch (sendError: any) {
+          console.error("Error sending campaign:", sendError);
+          toast.error(`Campaña creada pero error al enviar: ${sendError.message}`, {
+            id: loadingToast,
+          });
+        }
+      } else {
+        toast.success("Campaña creada exitosamente", { id: loadingToast });
+      }
 
       // Reload campaigns to show the new one
       await loadCampaigns();
