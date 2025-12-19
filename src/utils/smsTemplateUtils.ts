@@ -52,8 +52,8 @@ export function renderSmsTemplateToText(
         break;
 
       case 'image':
-        // Las imágenes se mantienen como URL, no se renderizan en texto
-        text += `[Imagen: ${block.content}]\n\n`;
+        // Las imágenes se envían como MMS adjunto (mediaUrl), no en el texto
+        // Por lo tanto, se omiten del mensaje de texto para evitar mostrar URLs largas
         break;
 
       default:
