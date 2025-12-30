@@ -9,6 +9,7 @@ import RewardsPricingModal from "../components/RewardsPricingModal";
 import { segmentsApi, CustomerSegment } from "../services/segmentsApi";
 import { setAuthHook, useAdminPortalApi } from "../services/adminPortalApi";
 import { useCampaignsApi } from "../services/campaignsApi";
+import { useSubscriptionsApi } from "../services/subscriptionsApi";
 import { useAuth } from "@clerk/nextjs";
 import {
   PlusIcon,
@@ -697,12 +698,18 @@ const RewardsManagement = () => {
   const auth = useAuth();
   const adminApi = useAdminPortalApi();
   const campaignsApi = useCampaignsApi();
+  const subscriptionsApi = useSubscriptionsApi();
   const { restaurant, loading: restaurantLoading } = useRestaurant();
 
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
   const [campaignsError, setCampaignsError] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+
+  // Plan and limits state
+  const [currentPlan, setCurrentPlan] = useState<any>(null);
+  const [planLimits, setPlanLimits] = useState<any>(null);
+  const [campaignUsage, setCampaignUsage] = useState<number>(0);
   const [previewCampaign, setPreviewCampaign] = useState(null);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showCampaignDashboard, setShowCampaignDashboard] = useState(false);
@@ -783,8 +790,35 @@ const RewardsManagement = () => {
     if (restaurantId && !restaurantLoading) {
       loadSegments();
       loadCampaigns();
+      loadPlanInfo();
     }
   }, [restaurantId, restaurantLoading]);
+
+  const loadPlanInfo = async () => {
+    if (!restaurantId) return;
+
+    try {
+      console.log("Loading plan info for restaurant:", restaurantId);
+      const [subscription, plans] = await Promise.all([
+        subscriptionsApi.getCurrentSubscription(),
+        subscriptionsApi.getPlans()
+      ]);
+
+      console.log("Current subscription:", subscription);
+      setCurrentPlan(subscription);
+
+      if (subscription && plans) {
+        const planConfig = plans.find(p => p.id === subscription.plan_type);
+        if (planConfig) {
+          setPlanLimits(planConfig.limits);
+          console.log("Plan limits loaded:", planConfig.limits);
+          console.log(`✅ Plan: ${subscription.plan_type}, Campaigns limit: ${planConfig.limits.campaigns_per_month}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading plan info:", error);
+    }
+  };
 
   const loadCampaigns = async () => {
     if (!restaurantId) {
@@ -848,6 +882,7 @@ const RewardsManagement = () => {
       });
 
       setCampaigns(transformedCampaigns);
+      setCampaignUsage(transformedCampaigns.length);
       console.log(
         "Campaigns loaded successfully:",
         transformedCampaigns.length
@@ -992,8 +1027,36 @@ const RewardsManagement = () => {
     setSelectedCampaign(campaign);
     setShowCampaignDashboard(true);
   };
+  // Check if user can create new campaign
+  const canCreateCampaign = () => {
+    if (!planLimits) return true; // Allow if limits not loaded yet
+
+    const limit = planLimits.campaigns_per_month;
+    if (limit === -1) return true; // Unlimited
+
+    return campaignUsage < limit;
+  };
+
+  const getRemainingCampaigns = () => {
+    if (!planLimits) return null;
+
+    const limit = planLimits.campaigns_per_month;
+    if (limit === -1) return "Ilimitadas";
+
+    return Math.max(0, limit - campaignUsage);
+  };
+
   // New campaign flow handlers
   const handleOpenNewCampaign = () => {
+    if (!canCreateCampaign()) {
+      const remaining = getRemainingCampaigns();
+      toast.error(
+        `Has alcanzado el límite de campañas de tu plan. Campañas restantes: ${remaining}. ¡Actualiza tu plan para crear más campañas!`
+      );
+      setShowPricingModal(true);
+      return;
+    }
+
     setShowDeliveryMethodModal(true);
   };
 
@@ -1310,9 +1373,20 @@ const RewardsManagement = () => {
       });
     } catch (error: any) {
       console.error("Error creating campaign:", error);
-      toast.error(error.message || "Error al crear campaña", {
-        id: loadingToast,
-      });
+
+      // Check if it's a campaign limit error
+      if (error.message?.includes('límite de campañas') ||
+          error.response?.data?.error_code === 'CAMPAIGN_LIMIT_EXCEEDED') {
+        toast.error('¡Límite de campañas alcanzado! Actualiza tu plan para crear más campañas.', {
+          id: loadingToast,
+          duration: 6000
+        });
+        setShowPricingModal(true);
+      } else {
+        toast.error(error.message || "Error al crear campaña", {
+          id: loadingToast,
+        });
+      }
     }
   };
   return (
@@ -1328,6 +1402,26 @@ const RewardsManagement = () => {
               <p className="text-sm text-gray-600">
                 Gestiona tus campañas de recompensas y fidelización
               </p>
+              {/* Plan info */}
+              {currentPlan && planLimits && (
+                <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                    Plan {currentPlan.plan_type}
+                  </span>
+                  <span>
+                    Campañas: {campaignUsage}/{planLimits.campaigns_per_month === -1 ? '∞' : planLimits.campaigns_per_month}
+                  </span>
+                  {getRemainingCampaigns() !== null && (
+                    <span className={`${
+                      typeof getRemainingCampaigns() === 'number' && getRemainingCampaigns() <= 1
+                        ? 'text-red-600 font-medium'
+                        : 'text-green-600'
+                    }`}>
+                      Restantes: {getRemainingCampaigns()}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex space-x-3">
               <button
@@ -1338,7 +1432,12 @@ const RewardsManagement = () => {
               </button>
               <button
                 onClick={handleOpenNewCampaign}
-                className="bg-custom-green-600 text-white px-4 py-2 rounded-md hover:bg-custom-green-700 transition-colors flex items-center"
+                disabled={!canCreateCampaign()}
+                className={`px-4 py-2 rounded-md transition-colors flex items-center ${
+                  canCreateCampaign()
+                    ? 'bg-custom-green-600 text-white hover:bg-custom-green-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
               >
                 <PlusIcon className="h-5 w-5 mr-2" />
                 Nueva Campaña
@@ -1436,8 +1535,12 @@ const RewardsManagement = () => {
       {/* Pricing Modal */}
       <RewardsPricingModal
         isOpen={showPricingModal}
-        onClose={() => setShowPricingModal(false)}
-        currentPlan="Básico"
+        onClose={() => {
+          setShowPricingModal(false);
+          // Reload plan info when modal closes in case plan was updated
+          loadPlanInfo();
+        }}
+        currentPlan={currentPlan?.plan_type || "básico"}
       />
 
       {/* Delivery Method Selection Modal */}
