@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
-import { Camera, Edit3, Trash2, Upload, PlusIcon } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Camera, Edit3, Trash2, Upload, PlusIcon, MapPin, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ImageCropModal from './ImageCropModal';
 import BannerCropModal from './BannerCropModal';
+import BranchDropdown from './BranchDropdown';
 import { ImageUploadService } from '../services/imageUploadService';
 import { useUser } from '@clerk/nextjs';
+import { useAdminPortalApi } from '../services/adminPortalApi';
+import { useRestaurant } from '../contexts/RestaurantContext';
+
+interface Branch {
+  id: string;
+  name: string;
+  address: string;
+  active: boolean;
+}
 
 interface RestaurantHeaderProps {
   restaurantName?: string;
@@ -17,6 +27,8 @@ interface RestaurantHeaderProps {
   onUpdateLogo?: (image: string) => void;
   onAddSectionClick?: () => void;
   onViewMenuClick?: () => void;
+  selectedBranch?: Branch | null;
+  onBranchChange?: (branch: Branch | null) => void;
 }
 
 const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
@@ -29,14 +41,24 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
   onUpdateBanner,
   onUpdateLogo,
   onAddSectionClick,
-  onViewMenuClick
+  onViewMenuClick,
+  selectedBranch,
+  onBranchChange
 }) => {
   const { user } = useUser();
+  const { restaurant } = useRestaurant();
+  const adminPortalApi = useAdminPortalApi();
   const isNewRestaurant = restaurantName === "Mi Restaurante" && !bannerImage && !logoImage;
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [tempName, setTempName] = useState(restaurantName);
   const [tempDescription, setTempDescription] = useState(restaurantDescription);
+
+  // Branch selection state
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
+  const [showBranchDropdown, setShowBranchDropdown] = useState(false);
+  const branchButtonRef = useRef<HTMLButtonElement>(null);
 
   // Image crop modal state
   const [showCropModal, setShowCropModal] = useState(false);
@@ -49,6 +71,42 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
   // Upload states
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+
+  // Load branches when restaurant is available
+  useEffect(() => {
+    loadBranches();
+  }, [restaurant?.id]);
+
+  // Note: Click outside handling is now managed by BranchDropdown component
+
+  const loadBranches = async () => {
+    if (!restaurant?.id) return;
+
+    try {
+      setBranchesLoading(true);
+      const branchesData = await adminPortalApi.getBranches();
+      setBranches(branchesData.branches || []);
+
+      // Auto-select first branch if none selected
+      if (!selectedBranch && branchesData.branches?.length > 0) {
+        onBranchChange?.(branchesData.branches[0]);
+      }
+    } catch (error) {
+      console.error('Error loading branches:', error);
+      toast.error('Error al cargar sucursales');
+    } finally {
+      setBranchesLoading(false);
+    }
+  };
+
+  const handleBranchSelect = (branch: Branch | null) => {
+    onBranchChange?.(branch);
+    setShowBranchDropdown(false);
+  };
+
+  const handleBranchDropdownClose = () => {
+    setShowBranchDropdown(false);
+  };
 
   const handleImageUpload = async (type: 'banner' | 'logo') => {
     if (!user) {
@@ -435,14 +493,35 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
       {/* Action Buttons - Positioned freely relative to entire header */}
       <div className="absolute top-52 right-6">
         <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+          {/* Branch Selector */}
+          {branches.length > 0 && (
+            <div className="mr-3">
+              <button
+                ref={branchButtonRef}
+                onClick={() => setShowBranchDropdown(!showBranchDropdown)}
+                className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm bg-[#173E44] text-sm font-medium text-white hover:bg-[#0f2c31] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44] transition-all duration-200 ${
+                  showBranchDropdown ? 'ring-2 ring-[#173E44] ring-offset-2' : ''
+                }`}
+              >
+                <MapPin className="h-4 w-4 mr-2 text-gray-300" />
+                <span className="truncate max-w-32">
+                  {selectedBranch ? selectedBranch.name : 'Todas las sucursales'}
+                </span>
+                <ChevronDown className={`ml-2 h-4 w-4 text-gray-300 transition-transform duration-200 ${
+                  showBranchDropdown ? 'rotate-180' : ''
+                }`} />
+              </button>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={onAddSectionClick}
             disabled={!restaurantName || restaurantName.trim() === '' || restaurantName === "Mi Restaurante"}
-            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm transition-all duration-200 ${
+            className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm transition-all duration-200 ${
               !restaurantName || restaurantName.trim() === '' || restaurantName === "Mi Restaurante"
-                ? 'text-gray-400 bg-gray-300 cursor-not-allowed'
-                : 'text-white bg-[#173E44] hover:bg-[#0f2c31] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44]'
+                ? 'text-gray-400 bg-gray-300 border-gray-300 cursor-not-allowed'
+                : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
             }`}
             title={
               !restaurantName || restaurantName.trim() === '' || restaurantName === "Mi Restaurante"
@@ -462,6 +541,16 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Branch Dropdown Portal */}
+      <BranchDropdown
+        isOpen={showBranchDropdown}
+        branches={branches}
+        selectedBranch={selectedBranch}
+        onBranchSelect={handleBranchSelect}
+        onClose={handleBranchDropdownClose}
+        triggerRef={branchButtonRef}
+      />
 
       {/* Image Crop Modal */}
       <ImageCropModal

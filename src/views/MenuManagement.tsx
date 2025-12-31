@@ -12,6 +12,13 @@ import RestaurantHeader from '../components/RestaurantHeader';
 import { useMenuAdminPortalApi } from '../services/menuAdminPortalApi';
 import { MenuSection, MenuItem } from '../services/adminPortalApi';
 
+interface Branch {
+  id: string;
+  name: string;
+  address: string;
+  active: boolean;
+}
+
 const MenuManagement = () => {
   const [isHydrated, setIsHydrated] = useState(false);
   const { user } = useUser();
@@ -24,6 +31,9 @@ const MenuManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Branch selection state
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+
   const loadData = async () => {
     if (!user || !restaurant) {
       console.log('⏳ Waiting for user and restaurant data...');
@@ -34,23 +44,18 @@ const MenuManagement = () => {
       setLoading(true);
       setError(null);
 
-      console.log('🔍 Loading sections and items for restaurant:', restaurant.name, 'user:', user.id);
-
       try {
-        const [sectionsData, itemsData] = await Promise.all([
-          menuApi.sections.getAll(),
-          menuApi.items.getAll()
-        ]);
+        const sectionsData = await menuApi.sections.getAll();
+
+        // Use filtered items if branch is selected, otherwise get all items
+        const itemsData = selectedBranch
+          ? await menuApi.items.getAllByBranch(selectedBranch.id)
+          : await menuApi.items.getAll();
 
         // Sort sections by display_order to ensure proper ordering
         const sortedSections = sectionsData.sort((a, b) => a.display_order - b.display_order);
         setSections(sortedSections);
         setMenuItems(itemsData);
-
-        console.log('✅ Data loaded from backend API:', {
-          sections: sectionsData,
-          items: itemsData.length
-        });
 
       } catch (apiError) {
         const userSectionsKey = `sections_${user.id}`;
@@ -71,7 +76,6 @@ const MenuManagement = () => {
           setSections([]);
           setMenuItems([]);
 
-          console.log('✅ Initialized with empty data for new user');
         }
       }
 
@@ -93,7 +97,7 @@ const MenuManagement = () => {
     if (isHydrated && user && restaurant && !restaurantLoading) {
       loadData();
     }
-  }, [isHydrated, user, restaurant, restaurantLoading]);
+  }, [isHydrated, user, restaurant, restaurantLoading, selectedBranch]);
 
   const [showItemForm, setShowItemForm] = useState(false);
   const [showSectionForm, setShowSectionForm] = useState(false);
@@ -175,7 +179,6 @@ const MenuManagement = () => {
   };
   const handleItemFormSubmit = async (values: any) => {
     try {
-      console.log('🔍 Submitting item:', values);
 
       let sectionId: number;
 
@@ -224,11 +227,11 @@ const MenuManagement = () => {
         base_price: values.base_price,
         discount: values.discount || 0,
         custom_fields: customFields,
-        display_order: 0
+        display_order: 0,
+        availableBranches: values.availableBranches || []
       };
 
       if (values.id) {
-        console.log('🔍 Updating item:', values.id);
         await menuApi.items.update(values.id, itemData);
       } else {
         await menuApi.items.create(itemData);
@@ -404,6 +407,8 @@ const MenuManagement = () => {
         onUpdateLogo={() => {}}
         onAddSectionClick={() => {}}
         onViewMenuClick={() => {}}
+        selectedBranch={selectedBranch}
+        onBranchChange={setSelectedBranch}
       />
       <div className="mt-6">
         <div className="text-center py-12">
@@ -426,6 +431,8 @@ const MenuManagement = () => {
         onUpdateLogo={() => {}}
         onAddSectionClick={() => {}}
         onViewMenuClick={() => {}}
+        selectedBranch={selectedBranch}
+        onBranchChange={setSelectedBranch}
       />
       <div className="mt-6">
         <div className="text-center py-12">
@@ -454,9 +461,32 @@ const MenuManagement = () => {
         onUpdateLogo={handleUpdateLogo}
         onAddSectionClick={handleAddSectionClick}
         onViewMenuClick={() => setShowMobilePreview(true)}
+        selectedBranch={selectedBranch}
+        onBranchChange={setSelectedBranch}
       />
 
       <div className="mt-6">
+        {/* Branch filter info */}
+        {/* {selectedBranch && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <FilterIcon className="h-4 w-4 text-blue-600" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-blue-900">
+                  Filtrando por sucursal: {selectedBranch.name}
+                </p>
+                <p className="text-xs text-blue-700">
+                  {selectedBranch.address}
+                </p>
+              </div>
+            </div>
+          </div>
+        )} */}
+
         {Object.keys(itemsByCategory).length === 0 ? <div className="text-center py-12">
           <p className="text-gray-500">
             No hay platillos en esta categoría. Agrega una sección y platillos

@@ -32,6 +32,7 @@ export interface CreateItemRequest {
   discount?: number;
   custom_fields?: CustomField[];
   display_order?: number;
+  availableBranches?: string[]; // Array de branch IDs donde estará disponible
 }
 
 export interface UpdateItemRequest {
@@ -44,6 +45,7 @@ export interface UpdateItemRequest {
   custom_fields?: CustomField[];
   is_available?: boolean;
   display_order?: number;
+  availableBranches?: string[]; // Array de branch IDs donde estará disponible
 }
 
 // ===============================================
@@ -152,6 +154,13 @@ class MenuAdminPortalApiService {
     }, token);
   }
 
+  async getAllItemsByBranch(branchId: string | null, token: string): Promise<MenuItem[]> {
+    const endpoint = branchId ? `/items/by-branch/${branchId}` : '/items/by-branch';
+    return this.makeRequest<MenuItem[]>(endpoint, {
+      method: 'GET',
+    }, token);
+  }
+
   async getItemById(itemId: number, token: string): Promise<MenuItem> {
     return this.makeRequest<MenuItem>(`/items/${itemId}`, {
       method: 'GET',
@@ -237,6 +246,9 @@ export function useMenuAdminPortalApi() {
     items: {
       getAll: (filters?: { section_id?: number; is_available?: boolean }) => makeAuthenticatedRequest(
         (token) => menuAdminPortalApiService.getAllItems(token, filters)
+      ),
+      getAllByBranch: (branchId: string | null) => makeAuthenticatedRequest(
+        (token) => menuAdminPortalApiService.getAllItemsByBranch(branchId, token)
       ),
       getById: (id: number) => makeAuthenticatedRequest(
         (token) => menuAdminPortalApiService.getItemById(id, token)
