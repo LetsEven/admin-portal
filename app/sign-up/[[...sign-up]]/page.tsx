@@ -108,12 +108,12 @@ export default function Page() {
           <img
             src="logo-short-green.webp"
             alt="Xquisito Logo"
-            className="size-18 justify-self-center"
+            className="size-16 justify-self-center"
           />
         </div>
 
         {/* Banner de bienvenida para usuarios invitados */}
-        <div className="bg-green-500/20 backdrop-blur-sm border border-green-400/30 rounded-lg p-4 mb-6 w-full">
+        {/* <div className="bg-green-500/20 backdrop-blur-sm border border-green-400/30 rounded-lg p-4 mb-6 w-full">
           <div className="flex items-center">
             <div className="text-green-300 text-2xl mr-3">🎉</div>
             <div className="text-left">
@@ -125,7 +125,7 @@ export default function Page() {
               </p>
             </div>
           </div>
-        </div>
+        </div> */}
 
         <div className="w-full">
           <Root>
