@@ -11,16 +11,20 @@
 te ha invitado a Xquisito{{else}}
 Tu invitación a Xquisito{{/if}}
     </re-preheader>
-    
     <!-- Header -->
-    <re-header background-color="#173E44" padding="60px 40px" align="center">
-        <re-block align="center">
-            <re-text font-size="24px" margin="0px" align="center">
-                {{> app_logo}}
-            </re-text>
+    <re-header background-color="#173E44" padding="80px 40px" align="center">
+        <re-block align="center" padding="60px 0px" width="100%">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="text-align: center;">
+                <tr>
+                    <td align="center" style="padding: 20px 0;">
+                        <div style="font-size: 48px; line-height: 1; margin: 0; text-align: center;">
+                            {{> app_logo}}
+                        </div>
+                    </td>
+                </tr>
+            </table>
         </re-block>
     </re-header>
-
     <!-- Main Content -->
     <re-main background-color="#ffffff" padding="60px 40px">
         <!-- Greeting -->
@@ -32,7 +36,7 @@ Tu invitación a Xquisito{{/if}}
         <!-- Message -->
         <re-block padding="0px 0px 40px 0px" align="center">
             <re-text color="#555555" align="center">
-                Bienvenido al <strong>Portal de Administrador</strong>, la plataforma líder en gestión gastronómica digital. Tu acceso te permitirá gestionar menús, promociones, recompensas y mucho más.
+                Bienvenido al <strong>Portal de Administrador</strong>, la plataforma líder en soluciones digitales para la hospitalidad. Tu acceso te permitirá gestionar menús, promociones, recompensas y mucho más.
             </re-text>
         </re-block>
         <!-- Features Box -->
@@ -52,11 +56,11 @@ Tu invitación a Xquisito{{/if}}
                 ✓ Configurar múltiples métodos de pago
             </re-text>
         </re-block>
-        <re-block background-color="#fff3cd" border-radius="12px" padding="24px" margin="0px 0px 40px 0px" align="center">
-            <re-text color="#856404" font-size="15px" font-weight="normal" margin="0px 0px 8px 0px" align="center">
+        <re-block background-color="#eab3f4" border-radius="12px" padding="24px" margin="0px 0px 40px 0px" align="center">
+            <re-text color="#000000" font-size="15px" font-weight="normal" margin="0px 0px 8px 0px" align="center">
                 ⏰ Tiempo limitado
             </re-text>
-            <re-text color="#856404" font-size="14px" align="center">
+            <re-text color="#000000" font-size="14px" align="center">
                 Esta invitación expirará en <strong>{{invitation.expires_in_days}} días</strong>.<br>
                 ¡No esperes más y activa tu cuenta ahora!
             </re-text>
@@ -97,9 +101,6 @@ Tu invitación a Xquisito{{/if}}
         </re-text>
         <re-text color="#2A5A62" font-size="15px" margin="0px 0px 24px 0px" align="center">
             Donde la tecnología se encuentra con el buen comer
-        </re-text>
-        <re-text font-size="14px" align="center" margin="0px 0px 20px 0px">
-            <a href="https://xquisito.ai" style="color: #2A5A62; margin: 0px 15px; font-weight: 500;">Sitio Web</a><a href="https://xquisito.ai" style="color: #2A5A62; margin: 0px 15px; font-weight: 500;">Soporte</a><a href="https://xquisito.ai" style="color: #2A5A62; margin: 0px 15px; font-weight: 500;">Privacidad</a>
         </re-text>
         <re-text font-size="12px" color="#888888" align="center">
             © 2025 Xquisito. Todos los derechos reservados.<br>
