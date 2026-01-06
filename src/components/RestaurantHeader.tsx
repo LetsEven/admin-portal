@@ -330,13 +330,14 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-8 relative">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-8 relative" style={{ height:"500px"}}>
       {/* Banner Section */}
       <div className="relative h-40 group">
         {bannerImage ? (
           <div
             className="w-full h-full"
             style={{
+              height: "350px",
               backgroundImage: `url(${bannerImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
@@ -387,7 +388,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
       </div>
 
       {/* Profile Section */}
-      <div className="relative px-6 pb-6">
+      <div className="relative px-6 pb-6" style={{marginTop:"10rem"}}>
         {/* Logo/Profile Image */}
         <div className="relative -mt-16 mb-4">
           <div className="relative inline-block group/logo">
@@ -512,7 +513,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
       </div>
 
       {/* Action Buttons - Positioned freely relative to entire header */}
-      <div className="absolute top-52 right-6">
+      <div className="absolute top-52 right-6" style={{top:"26rem"}}>
         <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
           {/* Branch Selector */}
           {branches.length > 0 && (

@@ -262,10 +262,10 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   };
 
   const handleMaxSelectionsChange = (id: string, maxSelections: number) => {
-    // Validar que el valor esté entre 1 y 4
-    if (maxSelections < 1 || maxSelections > 4) {
+    // Validar que el valor esté entre 1 y 10
+    if (maxSelections < 1 || maxSelections > 10) {
       console.warn(
-        `maxSelections debe estar entre 1 y 4, recibido: ${maxSelections}`
+        `maxSelections debe estar entre 1 y 10, recibido: ${maxSelections}`
       );
       return;
     }
@@ -693,11 +693,11 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                               type="number"
                               id={`max-selections-${field.id}`}
                               min="1"
-                              max="4"
+                              max="10"
                               value={field.maxSelections || 1}
                               onChange={(e) => {
                                 const value = parseInt(e.target.value);
-                                if (value >= 1 && value <= 4) {
+                                if (value >= 1 && value <= 10) {
                                   handleMaxSelectionsChange(field.id, value);
                                 }
                               }}
