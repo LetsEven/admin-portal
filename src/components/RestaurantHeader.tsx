@@ -513,7 +513,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
       </div>
 
       {/* Action Buttons - Positioned freely relative to entire header */}
-      <div className="absolute top-52 right-6" style={{top:"26rem"}}>
+      <div className="absolute top-52 right-6" style={{top:"23rem"}}>
         <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
           {/* Branch Selector */}
           {branches.length > 0 && (
