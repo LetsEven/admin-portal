@@ -409,11 +409,32 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
             <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover/logo:opacity-100 transition-opacity duration-200 flex items-center justify-center">
               <div className="flex space-x-2">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (logoImage) {
-                      // Si ya hay logo, abrir modal de recorte con imagen actual
-                      setTempImageSrc(logoImage);
-                      setShowCropModal(true);
+                      try {
+                        // Precargar la imagen para asegurar que se carga completamente
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+
+                        const imagePromise = new Promise<string>((resolve, reject) => {
+                          img.onload = () => resolve(logoImage);
+                          img.onerror = reject;
+                        });
+
+                        img.src = logoImage;
+
+                        // Esperar a que la imagen se cargue completamente
+                        await imagePromise;
+
+                        // Ahora abrir el modal con la imagen precargada
+                        setTempImageSrc(logoImage);
+                        setShowCropModal(true);
+                      } catch (error) {
+                        console.error('Error preloading image:', error);
+                        // Si hay error, abrir modal sin imagen
+                        setTempImageSrc('');
+                        setShowCropModal(true);
+                      }
                     } else {
                       // Si no hay logo, abrir modal sin imagen (se podrá subir desde ahí)
                       setTempImageSrc('');

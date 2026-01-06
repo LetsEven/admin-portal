@@ -2,9 +2,11 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { PlusIcon, MicIcon, SendIcon } from "lucide-react";
+import Joyride from 'react-joyride';
 import Layout from "../../src/components/Layout";
 import { useRestaurant } from "../../src/contexts/RestaurantContext";
 import { useUser } from "@clerk/nextjs";
+import { usePepperOnboarding, pepperJoyrideTheme } from "../../src/hooks/usePepperOnboarding";
 
 // Función para comunicarse con el agente a través del backend
 async function chatWithAgent(message: string, sessionId: string | null = null) {
@@ -114,6 +116,7 @@ const PepperPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { isMobile, isTablet, isDesktop, width } = useResponsive();
@@ -122,13 +125,36 @@ const PepperPage: React.FC = () => {
   const { restaurant } = useRestaurant();
   const { user } = useUser();
 
+  // Hook para onboarding
+  const {
+    run: runTour,
+    steps: tourSteps,
+    stepIndex: tourStepIndex,
+    handleJoyrideCallback,
+    startOnboarding,
+  } = usePepperOnboarding();
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Iniciar onboarding cuando el componente esté listo
+  useEffect(() => {
+    if (isHydrated && user && restaurant) {
+      // Esperar un poco para que los elementos del DOM estén disponibles
+      setTimeout(() => {
+        startOnboarding();
+      }, 1000);
+    }
+  }, [isHydrated, user, restaurant, startOnboarding]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -232,11 +258,77 @@ const PepperPage: React.FC = () => {
 
   return (
     <>
+      {/* Componente Joyride para onboarding de Pepper - Solo después de hidratación */}
+      {isHydrated && (
+        <Joyride
+          steps={tourSteps}
+          run={runTour}
+          stepIndex={tourStepIndex}
+          callback={handleJoyrideCallback}
+          continuous={true}
+          showProgress={true}
+          showSkipButton={true}
+          showBackButton={true}
+          spotlightClicks={false}
+          disableOverlayClose={true}
+          disableScrollParentFix={false}
+          scrollToFirstStep={true}
+          scrollDuration={300}
+          styles={pepperJoyrideTheme}
+          options={{
+            arrowColor: '#2A5A62',
+            backgroundColor: '#ffffff',
+            overlayColor: 'rgba(0, 0, 0, 0.5)',
+            primaryColor: '#2A5A62',
+            textColor: '#173E44',
+            width: 400,
+            zIndex: 10000,
+          }}
+          locale={{
+            back: 'Atrás',
+            close: 'Cerrar',
+            last: 'Finalizar',
+            next: 'Siguiente',
+            nextLabelWithProgress: `Siguiente {step} of {steps}`,
+            skip: 'Saltar',
+          }}
+        />
+      )}
 
       <style jsx global>{`
         main > div {
           padding-top: 0 !important;
           padding-bottom: 0 !important;
+        }
+
+        /* Corrección del posicionamiento para el step 3 del tour de Pepper */
+        .__floater[data-placement="top"] .react-joyride__spotlight {
+          position: fixed !important;
+          border-radius: 25px !important;
+          min-height: 60px !important;
+          min-width: 200px !important;
+        }
+
+        /* Asegurar que el spotlight encuentre correctamente el textarea */
+        [data-tour="chat-input"] {
+          position: relative;
+          z-index: 1;
+        }
+
+        /* Ajuste específico del tooltip para el chat-input */
+        .react-joyride__tooltip[data-step="2"] {
+          margin-bottom: 20px !important;
+        }
+
+        /* Forzar posicionamiento correcto cuando es el último paso */
+        .react-joyride__spotlight {
+          transition: all 0.3s ease-in-out !important;
+        }
+
+        /* Contenedor del chat input debe ser detectable */
+        .react-joyride__spotlight[style*="top: -10px"] {
+          top: auto !important;
+          bottom: 120px !important;
         }
       `}</style>
 
@@ -263,6 +355,7 @@ const PepperPage: React.FC = () => {
                   <div
                     className={`mx-auto rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-emerald-400 shadow-lg flex items-center justify-center overflow-hidden
                       w-16 h-16 mb-4 sm:w-20 sm:h-20 sm:mb-5 md:w-24 md:h-24 md:mb-6`}
+                    data-tour="pepper-logo"
                   >
                     <video
                       src="/video-icon-pepper.webm"
@@ -407,7 +500,10 @@ const PepperPage: React.FC = () => {
                 maxWidth: isMobile ? "400px" : isTablet ? "500px" : "700px",
               }}
             >
-              <div className="bg-white rounded-full shadow-md px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-3 flex items-center space-x-2 sm:space-x-3">
+              <div 
+                className="bg-white rounded-full shadow-md px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-3 flex items-center space-x-2 sm:space-x-3"
+                data-tour="chat-input"
+                >
                 {/* Plus Button - Hidden on small screens */}
                 <button className="hidden sm:flex w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-gray-100 hover:bg-gray-200 rounded-full items-center justify-center transition-colors flex-shrink-0">
                   <PlusIcon className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
