@@ -780,12 +780,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                                         type="number"
                                         min="0"
                                         step="0.01"
-                                        value={option.price}
+                                        value={option.price || ""}
                                         onChange={(e) =>
                                           handleOptionPriceChange(
                                             field.id,
                                             optionIndex,
-                                            parseFloat(e.target.value) || 0
+                                            e.target.value === "" ? 0 : parseFloat(e.target.value) || 0
                                           )
                                         }
                                         placeholder="0.00"
