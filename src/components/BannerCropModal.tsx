@@ -104,10 +104,10 @@ const getMobileCroppedImg = async (
 ): Promise<string> => {
   const image = await createImage(imageSrc);
 
-  // Dimensiones optimizadas para vista móvil (más cuadrada)
-  // Mantiene la relación pero optimizada para pantallas móviles
+  // Dimensiones que simulan exactamente cómo se ve en flexbill móvil
+  // Usa las medidas reales de dispositivos móviles
   const mobileWidth = 375; // Ancho estándar de móvil
-  const mobileHeight = 200; // Altura apropiada para banner móvil
+  const mobileHeight = 200; // Altura real del banner en móvil (375:200 ratio)
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
@@ -207,7 +207,7 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
 
       // Reset mobile mode
       setMobileCrop({ x: 0, y: 0 });
-      setMobileZoom(1.2); // Zoom inicial ligeramente mayor para móvil
+      setMobileZoom(1.0); // Zoom inicial estándar para ver mejor el encuadre
       setMobileRotation(0);
       setMobileCroppedAreaPixels(null);
 
@@ -309,7 +309,7 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
       setDesktopRotation(0);
     } else {
       setMobileCrop({ x: 0, y: 0 });
-      setMobileZoom(1.2);
+      setMobileZoom(1.0);
       setMobileRotation(0);
     }
   };
@@ -436,7 +436,7 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                       }`}>
                         {editMode === 'desktop'
                           ? '🖥️ Modo Desktop - Vista amplia para escritorio'
-                          : '📱 Modo Móvil - Optimiza para pantallas pequeñas'
+                          : '📱 Modo Móvil - Simula cómo se verá en dispositivos 375px'
                         }
                       </p>
                       <p className={`text-sm ${
@@ -444,7 +444,7 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                       }`}>
                         {editMode === 'desktop'
                           ? 'Ajusta tu banner para pantallas grandes (21:9). Bueno para mostrar toda la imagen.'
-                          : 'Ajusta tu banner para móviles (16:9). Enfócate en la parte más importante de la imagen.'
+                          : 'Ajusta cómo se verá en flexbill y otros servicios móviles. La vista previa simula exactamente el resultado final.'
                         }
                       </p>
                     </div>
@@ -459,7 +459,7 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                       crop={currentCrop}
                       zoom={currentZoom}
                       rotation={currentRotation}
-                      aspect={editMode === 'desktop' ? 21/9 : 16/9} // Desktop: 21:9, Mobile: 16:9
+                      aspect={editMode === 'desktop' ? 21/9 : 375/200} // Desktop: 21:9, Mobile: 375:200 (simula móvil real)
                       onCropChange={editMode === 'desktop' ? setDesktopCrop : setMobileCrop}
                       onCropComplete={onCropComplete}
                       onZoomChange={editMode === 'desktop' ? setDesktopZoom : setMobileZoom}
@@ -632,14 +632,15 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                       }}>
                         <div className="bg-white rounded-[50px] overflow-hidden h-full">
                           <div className="relative bg-white rounded-[30px] overflow-y-auto h-full scrollbar-hide">
-                            {/* Preview banner image - Better mobile proportions */}
-                            <div className="relative w-full h-48 overflow-hidden">
-                              <img
-                                src={mobilePreviewSrc || previewImageSrc || imageSrc}
-                                alt="Banner Preview Mobile"
-                                className="absolute top-0 left-0 w-full h-full object-cover z-0"
+                            {/* Preview banner image - Simula exactamente flexbill móvil */}
+                            <div className="relative w-full h-48 overflow-hidden banner-preview-mobile">
+                              <div
+                                className="absolute top-0 left-0 w-full h-full z-0"
                                 style={{
-                                  objectPosition: 'center center',
+                                  backgroundImage: `url(${mobilePreviewSrc || previewImageSrc || imageSrc})`,
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center center',
+                                  backgroundRepeat: 'no-repeat',
                                   imageRendering: 'high-quality'
                                 }}
                               />
@@ -694,12 +695,12 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                                 <div className="text-center text-gray-400 text-xs px-4">
                                   <div className="bg-gray-50 rounded-lg p-3 mb-3">
                                     <p className="font-medium text-gray-700">
-                                      📱 Vista previa móvil
+                                      📱 Simulación Flexbill Móvil
                                     </p>
                                     <p className="mt-1">
                                       {mobilePreviewSrc
-                                        ? "Imagen optimizada para ancho móvil"
-                                        : "🔄 Adaptando imagen al ancho móvil..."
+                                        ? "✅ Así se verá en dispositivos de 375px de ancho"
+                                        : "🔄 Generando simulación móvil..."
                                       }
                                     </p>
                                   </div>

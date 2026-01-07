@@ -136,3 +136,12 @@
     background-position: 200% 0;
   }
 }
+
+/* Vista previa realista para simular servicios externos */
+.banner-preview-mobile {
+  /* Simula exactamente cómo se ve en flexbill y otros servicios */
+  background-size: contain !important;
+  background-position: center top !important; /* Coincide con flexbill móvil */
+  background-repeat: no-repeat !important;
+  background-color: #f8f9fa; /* Color de fondo igual que flexbill */
+}
