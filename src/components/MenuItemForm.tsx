@@ -17,7 +17,7 @@ interface CustomField {
   name: string;
   type: "dropdown" | "checkboxes" | "dropdown-quantity";
   required: boolean;
-  maxSelections?: number; // Para checkboxes: cantidad máxima seleccionable (1-4)
+  maxSelections?: number; // Para checkboxes: cantidad máxima seleccionable (1-10)
   options: Array<{
     id: string;
     name: string;
@@ -33,7 +33,8 @@ interface MenuItemFormProps {
     price: number;
     base_price?: number;
     discount?: number;
-    category: string;
+    category: string; // Mantenemos para compatibilidad
+    section_id?: number; // Agregamos section_id como primary
     image: string;
     customFields?: CustomField[];
     availableBranches?: string[]; // Array de branch IDs donde está disponible
@@ -41,6 +42,7 @@ interface MenuItemFormProps {
   onSubmit: (values: any) => void;
   onCancel: () => void;
   preselectedCategory?: string;
+  preselectedSectionId?: number; // Agregamos para manejar section_id
 }
 const MenuItemForm: React.FC<MenuItemFormProps> = ({
   initialValues = {
@@ -51,10 +53,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     category: "",
     image: "",
     customFields: [],
+    availableBranches: [],
   },
   onSubmit,
   onCancel,
   preselectedCategory,
+  preselectedSectionId,
 }) => {
   const { user } = useUser();
   // Si estamos editando (tiene id y base_price), usar base_price directamente
@@ -67,7 +71,8 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   const [values, setValues] = useState({
     ...initialValues,
     price: displayPrice,
-    category: preselectedCategory || initialValues.category,
+    category: initialValues.id ? initialValues.category : (preselectedCategory || initialValues.category),
+    section_id: initialValues.id ? initialValues.section_id : (preselectedSectionId || initialValues.section_id),
   });
 
   // Branch availability state
@@ -150,7 +155,6 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     if (!user) {
       toast.error("Debes estar autenticado para subir imágenes", {
         duration: 3000,
-        icon: "🔐",
       });
       return;
     }
@@ -193,13 +197,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
         console.log("✅ Item image uploaded successfully:", publicUrl);
         toast.success("Imagen subida correctamente", {
           duration: 2000,
-          icon: "📷",
+          icon: "",
         });
       } catch (error) {
         console.error("❌ Error uploading item image:", error);
         toast.error("Error al subir la imagen. Por favor intenta de nuevo.", {
           duration: 4000,
-          icon: "⚠️",
         });
 
         // Reset on error
@@ -354,12 +357,10 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     if (initialValues.id) {
       toast.success(`Actualizando "${values.name}"`, {
         duration: 2000,
-        icon: "✏️",
       });
     } else {
       toast.success(`Guardando platillo "${values.name}"`, {
         duration: 2000,
-        icon: "💾",
       });
     }
 
@@ -560,7 +561,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                   {selectedBranches.length === 0 && (
                     <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
                       <p className="text-xs text-yellow-800">
-                        ⚠️ Este producto no estará disponible en ninguna sucursal.
+                        Este producto no estará disponible en ninguna sucursal.
                       </p>
                     </div>
                   )}

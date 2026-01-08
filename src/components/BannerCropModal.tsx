@@ -391,8 +391,8 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                   Sube tu imagen completa para el banner
                 </p>
                 <p className="text-sm text-gray-500 mb-4">
-                  ✨ Usa toda tu imagen - sin límites de grid. Vista previa móvil incluida.<br/>
-                  📐 Formatos: JPG, PNG | Recomendado: 2100x900px+ (21:9)
+                  Usa toda tu imagen - sin límites de grid. Vista previa móvil incluida.<br/>
+                  Formatos: JPG, PNG | Recomendado: 2100x900px+ (21:9)
                 </p>
                 <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-custom-green-600 hover:bg-custom-green-700 transition-colors cursor-pointer">
                   <Upload className="h-4 w-4 mr-2" />
@@ -699,8 +699,8 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                                     </p>
                                     <p className="mt-1">
                                       {mobilePreviewSrc
-                                        ? "✅ Así se verá en dispositivos de 375px de ancho"
-                                        : "🔄 Generando simulación móvil..."
+                                        ? "Así se verá en dispositivos de 375px de ancho"
+                                        : "Generando simulación móvil..."
                                       }
                                     </p>
                                   </div>

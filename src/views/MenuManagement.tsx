@@ -105,20 +105,28 @@ const MenuManagement = () => {
   const [currentItem, setCurrentItem] = useState<any>(null);
   const [filterCategory, setFilterCategory] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
 
   const allCategories = sections.map(s => s.name);
+
   const handleAddItemClick = (category: string) => {
+    // Buscar section_id por nombre para robustez
+    const section = sections.find(s => s.name === category);
+
+    console.log({section})
     toast.success(`Agregando producto a la sección "${category}"`, {
       duration: 2000,
-      icon: '🍽️'
     });
     setCurrentItem(null);
     setSelectedCategory(category);
+    setSelectedSectionId(section?.id || null); // Establecer section_id
     setShowItemForm(true);
   };
+
   const handleAddSectionClick = () => {
     setShowSectionForm(true);
   };
+
   const handleEditClick = (id: number) => {
     const itemToEdit = menuItems.find(item => item.id === id);
     if (itemToEdit) {
@@ -139,12 +147,17 @@ const MenuManagement = () => {
 
       const adaptedItem = {
         ...itemToEdit,
-        category: section?.name || '',
+        category: section?.name || '', // Mantenemos para compatibilidad visual
+        section_id: itemToEdit.section_id, // Agregamos section_id primario
         image: itemToEdit.image_url || '',
         customFields: customFields
       };
 
+      console.log({adaptedItem})
+
       setCurrentItem(adaptedItem);
+      setSelectedCategory(''); // Reset selectedCategory cuando se edita
+      setSelectedSectionId(null); // Reset selectedSectionId cuando se edita
       setShowItemForm(true);
     }
   };
@@ -162,7 +175,6 @@ const MenuManagement = () => {
         toast.dismiss(loadingToast);
         toast.success(`"${itemName}" eliminado correctamente`, {
           duration: 3000,
-          icon: '🗑️'
         });
       } catch (error) {
         console.error('❌ Error deleting item:', error);
@@ -182,21 +194,26 @@ const MenuManagement = () => {
 
       let sectionId: number;
 
-      if (values.id) {
+      console.log({values})
+      // NUEVA LÓGICA: Priorizar section_id sobre category name
+      if (values.section_id) {
+        // Si tenemos section_id, usarlo directamente (más robusto)
+        sectionId = values.section_id;
+      } else if (values.id) {
+        // Si estamos editando pero no tenemos section_id, buscar por item actual
         const currentItem = menuItems.find(item => item.id === values.id);
-        const currentSection = sections.find(s => s.id === currentItem?.section_id);
-
-        if (currentSection && currentSection.name === values.category) {
-          sectionId = currentSection.id;
+        if (currentItem?.section_id) {
+          sectionId = currentItem.section_id;
         } else {
-          const newSection = sections.find(s => s.name === values.category);
-          if (!newSection) {
+          // Fallback: buscar por nombre de categoría (lógica antigua)
+          const section = sections.find(s => s.name === values.category);
+          if (!section) {
             throw new Error(`Section "${values.category}" not found`);
           }
-          sectionId = newSection.id;
+          sectionId = section.id;
         }
       } else {
-        // For new items: find section by name
+        // Para items nuevos: buscar por nombre si no hay section_id
         const section = sections.find(s => s.name === values.category);
         if (!section) {
           throw new Error(`Section "${values.category}" not found`);
@@ -532,7 +549,7 @@ const MenuManagement = () => {
           </div>
         )}
       </div>
-      {showItemForm && <MenuItemForm initialValues={currentItem || undefined} onSubmit={handleItemFormSubmit} onCancel={() => setShowItemForm(false)} preselectedCategory={selectedCategory} />}
+      {showItemForm && <MenuItemForm initialValues={currentItem || undefined} onSubmit={handleItemFormSubmit} onCancel={() => setShowItemForm(false)} preselectedCategory={selectedCategory} preselectedSectionId={selectedSectionId || undefined} />}
       {showSectionForm && <SectionForm sections={sections} onSubmit={handleSectionFormSubmit} onCancel={() => setShowSectionForm(false)} />}
       {showMobilePreview && <MobileMenuPreview menuItems={menuItems} sections={sections} onClose={() => setShowMobilePreview(false)} />}
     </div>;
