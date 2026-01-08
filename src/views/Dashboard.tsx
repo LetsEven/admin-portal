@@ -25,10 +25,12 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import Joyride, { STATUS } from 'react-joyride';
 import { useAnalytics, type AnalyticsFilters } from "../hooks/useAnalytics";
 import { useRestaurant } from "../hooks/useRestaurant";
 import { useAdminPortalApi } from "../services/adminPortalApi";
 import { useUser, useAuth } from "@clerk/nextjs";
+import { useOnboarding, joyrideTheme } from "../hooks/useOnboarding";
 import toast from "react-hot-toast";
 
 // Estilos CSS en línea para los sliders
@@ -192,6 +194,17 @@ const Dashboard = () => {
     getDashboardSummary,
     clearError,
   } = useAnalytics();
+
+  // Hook para onboarding
+  const {
+    run: runTour,
+    steps: tourSteps,
+    stepIndex: tourStepIndex,
+    handleJoyrideCallback,
+    startOnboarding,
+    skipOnboarding,
+    resetOnboarding
+  } = useOnboarding();
 
   const { restaurant } = useRestaurant();
   const [sucursalSeleccionada, setSucursalSeleccionada] = useState(
@@ -837,15 +850,74 @@ const Dashboard = () => {
     loadEnabledServices();
   }, [user?.id, isSignedIn]);
 
+  // Iniciar onboarding cuando los datos estén cargados
+  useEffect(() => {
+    if (!isLoading && dashboardData && userRestaurants.length > 0 && user) {
+      // Esperar un poco para que los elementos del DOM estén disponibles
+      setTimeout(() => {
+        startOnboarding();
+      }, 1000);
+    }
+  }, [isLoading, dashboardData, userRestaurants, user, startOnboarding]);
+
   return (
     <div className="w-full">
+      {/* Componente Joyride para onboarding */}
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        stepIndex={tourStepIndex}
+        callback={handleJoyrideCallback}
+        continuous={true}
+        showProgress={true}
+        showSkipButton={true}
+        showBackButton={true}
+        spotlightClicks={false}
+        disableOverlayClose={true}
+        disableScrollParentFix={true}
+        styles={joyrideTheme}
+        options={{
+          arrowColor: '#2A5A62',
+          backgroundColor: '#ffffff',
+          overlayColor: 'rgba(0, 0, 0, 0.5)',
+          primaryColor: '#2A5A62',
+          textColor: '#173E44',
+          width: 400,
+          zIndex: 10000,
+        }}
+        locale={{
+          back: 'Atrás',
+          close: 'Cerrar',
+          last: 'Finalizar',
+          next: 'Siguiente',
+          nextLabelWithProgress: `Siguiente {step} of {steps}`,
+          skip: 'Saltar',
+        }}
+      />
+
       {/* Estilos para los sliders */}
       <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
+
+      {/* Estilos para el onboarding step 2 */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .__floater[x-placement="right"] {
+          transform: translate3d(60px, 110px, 0px) !important;
+          transition: none !important;
+        }
+        .__floater.__floater__open[x-placement="right"] {
+          transform: translate3d(60px, 110px, 0px) !important;
+          transition: none !important;
+        }
+        .react-joyride__tooltip {
+          max-width: 400px !important;
+          width: 400px !important;
+        }
+      ` }} />
 
       {/* Filtros superiores y header del restaurante */}
       <div className="flex items-start justify-between mb-6 gap-6">
         {/* Filtros superiores  */}
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-4" data-tour="filtros-avanzados">
           {/* Filtro Género */}
           <div className="relative">
             <button
@@ -1075,6 +1147,7 @@ const Dashboard = () => {
               }}
               disabled={isLoading}
               className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
+              data-tour="actualizar-datos"
             >
               <RotateCcwIcon
                 className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
@@ -1378,7 +1451,7 @@ const Dashboard = () => {
       </div>
 
       {/* Gráfico de Ingresos Totales */}
-      <div className="bg-white rounded-lg shadow-md border border-gray-100 p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-md border border-gray-100 p-6 mb-6" data-tour="consumo-activity">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
           {obtenerTituloGrafico()}
         </h3>
@@ -1447,266 +1520,268 @@ const Dashboard = () => {
       </div>
 
       {/* Tarjetas de métricas */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        {/* Ventas totales */}
-        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-          <div className="p-8">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-custom-green-100 p-3 rounded-full">
-                <BarChart2Icon className="h-6 w-6 text-custom-green-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Ventas totales
-                  </dt>
-                  <dd>
-                    <div className="text-lg font-medium text-gray-900">
-                      {isLoading
-                        ? "Cargando..."
-                        : `$${dashboardData?.metricas?.ventasTotales?.toLocaleString() || "0"}`}
-                    </div>
-                  </dd>
-                </dl>
+      <div data-tour="indicadores-clave">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6" >
+          {/* Ventas totales */}
+          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+            <div className="p-8">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 bg-custom-green-100 p-3 rounded-full">
+                  <BarChart2Icon className="h-6 w-6 text-custom-green-600" />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Ventas totales
+                    </dt>
+                    <dd>
+                      <div className="text-lg font-medium text-gray-900">
+                        {isLoading
+                          ? "Cargando..."
+                          : `$${dashboardData?.metricas?.ventasTotales?.toLocaleString() || "0"}`}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
               </div>
             </div>
+            {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+              <div className="text-sm">
+                <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
+                  Ver todo
+                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            </div> */}
           </div>
-          {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-            <div className="text-sm">
+
+          {/* Órdenes Activas */}
+          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+            <div className="p-8">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 bg-blue-100 p-3 rounded-full">
+                  <ShoppingCartIcon className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Órdenes Activas
+                    </dt>
+                    <dd>
+                      <div className="text-lg font-medium text-gray-900">
+                        {isLoading
+                          ? "Cargando..."
+                          : dashboardData?.metricas?.ordenesActivas || "0"}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+            {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+              <div className="text-sm">
+                <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
+                  Ver todo
+                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            </div> */}
+          </div>
+
+          {/* Pedidos */}
+          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+            <div className="p-8">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 bg-amber-100 p-3 rounded-full">
+                  <ShoppingBagIcon className="h-6 w-6 text-amber-600" />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Pedidos
+                    </dt>
+                    <dd>
+                      <div className="text-lg font-medium text-gray-900">
+                        {isLoading
+                          ? "Cargando..."
+                          : dashboardData?.metricas?.pedidos || "0"}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+            {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+              <div className="text-sm">
+                <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
+                  Ver todo
+                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            </div> */}
+          </div>
+
+          {/* Ticket Promedio */}
+          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+            <div className="p-8">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 bg-purple-100 p-3 rounded-full">
+                  <DollarSignIcon className="h-6 w-6 text-purple-600" />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Ticket Promedio
+                    </dt>
+                    <dd>
+                      <div className="text-lg font-medium text-gray-900">
+                        {isLoading
+                          ? "Cargando..."
+                          : `$${dashboardData?.metricas?.ticketPromedio?.toLocaleString() || "0"}`}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+            {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+              <div className="text-sm">
+                <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
+                  Ver todo
+                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            </div> */}
+          </div>
+        </div>
+
+        {/* Secciones adicionales */}
+        <div
+          className={`grid grid-cols-1 gap-6 mb-6 ${
+            servicesLoaded
+              ? isFlexBillEnabled
+                ? "lg:grid-cols-3"
+                : "lg:grid-cols-2"
+              : "lg:grid-cols-3"
+          }`}
+        >
+          {/* Órdenes Totales */}
+          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+            <div className="p-8">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 bg-custom-green-100 p-2 rounded-full">
+                  <CheckIcon className="h-5 w-5 text-custom-green-600" />
+                </div>
+                <div className="ml-4 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Órdenes Totales
+                    </dt>
+                    <dd>
+                      <div className="text-base font-medium text-gray-900">
+                        {isLoading
+                          ? "Cargando..."
+                          : dashboardData?.metricas?.pedidos || "0"}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+            {/* <div className="text-sm">
               <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
                 Ver todo
                 <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </a>
-            </div>
-          </div> */}
-        </div>
-
-        {/* Órdenes Activas */}
-        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-          <div className="p-8">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-blue-100 p-3 rounded-full">
-                <ShoppingCartIcon className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Órdenes Activas
-                  </dt>
-                  <dd>
-                    <div className="text-lg font-medium text-gray-900">
-                      {isLoading
-                        ? "Cargando..."
-                        : dashboardData?.metricas?.ordenesActivas || "0"}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
+            </div> */}
           </div>
-          {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-            <div className="text-sm">
-              <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                Ver todo
-                <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </a>
-            </div>
-          </div> */}
-        </div>
 
-        {/* Pedidos */}
-        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-          <div className="p-8">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-amber-100 p-3 rounded-full">
-                <ShoppingBagIcon className="h-6 w-6 text-amber-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Pedidos
-                  </dt>
-                  <dd>
-                    <div className="text-lg font-medium text-gray-900">
-                      {isLoading
-                        ? "Cargando..."
-                        : dashboardData?.metricas?.pedidos || "0"}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-            <div className="text-sm">
-              <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                Ver todo
-                <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </a>
-            </div>
-          </div> */}
-        </div>
-
-        {/* Ticket Promedio */}
-        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-          <div className="p-8">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-purple-100 p-3 rounded-full">
-                <DollarSignIcon className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Ticket Promedio
-                  </dt>
-                  <dd>
-                    <div className="text-lg font-medium text-gray-900">
-                      {isLoading
-                        ? "Cargando..."
-                        : `$${dashboardData?.metricas?.ticketPromedio?.toLocaleString() || "0"}`}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-            <div className="text-sm">
-              <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                Ver todo
-                <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </a>
-            </div>
-          </div> */}
-        </div>
-      </div>
-
-      {/* Secciones adicionales */}
-      <div
-        className={`grid grid-cols-1 gap-6 mb-6 ${
-          servicesLoaded
-            ? isFlexBillEnabled
-              ? "lg:grid-cols-3"
-              : "lg:grid-cols-2"
-            : "lg:grid-cols-3"
-        }`}
-      >
-        {/* Órdenes Totales */}
-        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-          <div className="p-8">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-custom-green-100 p-2 rounded-full">
-                <CheckIcon className="h-5 w-5 text-custom-green-600" />
-              </div>
-              <div className="ml-4 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Órdenes Totales
-                  </dt>
-                  <dd>
-                    <div className="text-base font-medium text-gray-900">
-                      {isLoading
-                        ? "Cargando..."
-                        : dashboardData?.metricas?.pedidos || "0"}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          {/* <div className="text-sm">
-            <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-              Ver todo
-              <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </a>
-          </div> */}
-        </div>
-
-        {/* Artículo más vendido */}
-        <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-          <div className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-amber-100 p-2 rounded-full">
-                <CrownIcon className="h-5 w-5 text-amber-600" />
-              </div>
-              <div className="ml-4 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Artículo más vendido
-                  </dt>
-                  <dd>
-                    <div className="text-base font-medium text-gray-900">
-                      {isLoadingTopItem
-                        ? "Cargando..."
-                        : dashboardData?.articulo_mas_vendido?.nombre ||
-                          topSellingItem?.nombre ||
-                          "Sin datos"}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {isLoadingTopItem
-                        ? ""
-                        : `${dashboardData?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          {/* <div className="text-sm">
-            <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-              Ver todo
-              <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </a>
-          </div> */}
-        </div>
-
-        {/* Tiempo Promedio x cuenta - Solo mostrar si FlexBill está habilitado */}
-        {servicesLoaded && isFlexBillEnabled && (
+          {/* Artículo más vendido */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
             <div className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center flex-1">
-                  <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
-                    <ClockIcon className="h-5 w-5 text-red-600" />
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Tiempo Promedio x cuenta
-                      </dt>
-                      <dd>
-                        <div className="text-base font-medium text-gray-900">
-                          {isLoading
-                            ? "Cargando..."
-                            : dashboardData?.tiempo_promedio_mesa
-                                ?.tiempo_promedio_formateado || "Sin datos"}
-                        </div>
-                      </dd>
-                    </dl>
-                  </div>
+              <div className="flex items-center">
+                <div className="flex-shrink-0 bg-amber-100 p-2 rounded-full">
+                  <CrownIcon className="h-5 w-5 text-amber-600" />
                 </div>
-                <span className="bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded ml-3">
-                  Flex Bill
-                </span>
+                <div className="ml-4 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Artículo más vendido
+                    </dt>
+                    <dd>
+                      <div className="text-base font-medium text-gray-900">
+                        {isLoadingTopItem
+                          ? "Cargando..."
+                          : dashboardData?.articulo_mas_vendido?.nombre ||
+                            topSellingItem?.nombre ||
+                            "Sin datos"}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {isLoadingTopItem
+                          ? ""
+                          : `${dashboardData?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
               </div>
             </div>
+            {/* <div className="text-sm">
+              <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
+                Ver todo
+                <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            </div> */}
           </div>
-        )}
+
+          {/* Tiempo Promedio x cuenta - Solo mostrar si FlexBill está habilitado */}
+          {servicesLoaded && isFlexBillEnabled && (
+            <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center flex-1">
+                    <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
+                      <ClockIcon className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <dl>
+                        <dt className="text-sm font-medium text-gray-500 truncate">
+                          Tiempo Promedio x cuenta
+                        </dt>
+                        <dd>
+                          <div className="text-base font-medium text-gray-900">
+                            {isLoading
+                              ? "Cargando..."
+                              : dashboardData?.tiempo_promedio_mesa
+                                  ?.tiempo_promedio_formateado || "Sin datos"}
+                          </div>
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+                  <span className="bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded ml-3">
+                    Flex Bill
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       {/* Recent Activity */}
-      <div className="mt-7">
+      <div className="mt-7" data-tour="actividad-reciente">
         <h2 className="text-lg font-medium text-gray-900 flex items-center mb-4">
           Actividad reciente
           <span className="ml-2 bg-custom-green-100 text-custom-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">

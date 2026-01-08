@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { XIcon, UploadIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { XIcon, UploadIcon, PlusIcon, TrashIcon, MapPin, CheckIcon } from "lucide-react";
 import { ImageUploadService } from "../services/imageUploadService";
 import { useUser } from "@clerk/nextjs";
+import { useAdminPortalApi } from "../services/adminPortalApi";
 import toast from "react-hot-toast";
+
+interface Branch {
+  id: string;
+  name: string;
+  address: string;
+  active: boolean;
+}
 
 interface CustomField {
   id: string;
@@ -28,6 +36,7 @@ interface MenuItemFormProps {
     category: string;
     image: string;
     customFields?: CustomField[];
+    availableBranches?: string[]; // Array de branch IDs donde está disponible
   };
   onSubmit: (values: any) => void;
   onCancel: () => void;
@@ -60,12 +69,63 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     price: displayPrice,
     category: preselectedCategory || initialValues.category,
   });
+
+  // Branch availability state
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [selectedBranches, setSelectedBranches] = useState<string[]>(initialValues.availableBranches || []);
+  const [branchesLoading, setBranchesLoading] = useState(false);
+  const adminPortalApi = useAdminPortalApi();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialValues.customFields || []
   );
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Load branches when component mounts
+  useEffect(() => {
+    loadBranches();
+  }, []);
+
+  const loadBranches = async () => {
+    try {
+      setBranchesLoading(true);
+      const branchesData = await adminPortalApi.getBranches();
+      setBranches(branchesData.branches || []);
+
+      // If no branches were initially selected and we have branches, select all by default
+      if (selectedBranches.length === 0 && branchesData.branches?.length > 0) {
+        const allBranchIds = branchesData.branches.map(branch => branch.id);
+        setSelectedBranches(allBranchIds);
+      }
+    } catch (error) {
+      console.error('Error loading branches:', error);
+      toast.error('Error al cargar sucursales');
+    } finally {
+      setBranchesLoading(false);
+    }
+  };
+
+  const handleBranchToggle = (branchId: string) => {
+    setSelectedBranches(prev => {
+      if (prev.includes(branchId)) {
+        return prev.filter(id => id !== branchId);
+      } else {
+        return [...prev, branchId];
+      }
+    });
+  };
+
+  const isAllBranchesSelected = branches.length > 0 && selectedBranches.length === branches.length;
+  const isSomeBranchesSelected = selectedBranches.length > 0 && selectedBranches.length < branches.length;
+
+  const handleSelectAllBranches = () => {
+    if (isAllBranchesSelected) {
+      setSelectedBranches([]);
+    } else {
+      setSelectedBranches(branches.map(branch => branch.id));
+    }
+  };
   // Set initial image preview if an image URL exists
   useEffect(() => {
     if (initialValues.image && initialValues.image.startsWith("http")) {
@@ -202,10 +262,10 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   };
 
   const handleMaxSelectionsChange = (id: string, maxSelections: number) => {
-    // Validar que el valor esté entre 1 y 4
-    if (maxSelections < 1 || maxSelections > 4) {
+    // Validar que el valor esté entre 1 y 10
+    if (maxSelections < 1 || maxSelections > 10) {
       console.warn(
-        `maxSelections debe estar entre 1 y 4, recibido: ${maxSelections}`
+        `maxSelections debe estar entre 1 y 10, recibido: ${maxSelections}`
       );
       return;
     }
@@ -311,6 +371,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
       price: priceWithTax,
       base_price: basePrice,
       customFields,
+      availableBranches: selectedBranches,
     });
   };
   return (
@@ -430,6 +491,85 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                 onChange={handleChange}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
               />
+            </div>
+
+            {/* Disponibilidad por Sucursal Section */}
+            <div className="pt-4 border-t border-gray-200">
+              <div className="flex justify-between items-center mb-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  <MapPin className="h-4 w-4 inline mr-2" />
+                  Disponibilidad por Sucursal
+                </label>
+                {branches.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleSelectAllBranches}
+                    className="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    {isAllBranchesSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
+                  </button>
+                )}
+              </div>
+
+              {branchesLoading ? (
+                <div className="text-center py-4">
+                  <div className="text-sm text-gray-500">Cargando sucursales...</div>
+                </div>
+              ) : branches.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500 italic">
+                    No hay sucursales configuradas para este restaurante.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600 mb-3">
+                    Selecciona las sucursales donde este producto estará disponible:
+                  </p>
+                  {branches.map((branch) => (
+                    <label
+                      key={branch.id}
+                      className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                        selectedBranches.includes(branch.id)
+                          ? 'border-green-300 bg-green-50'
+                          : 'border-gray-200 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedBranches.includes(branch.id)}
+                          onChange={() => handleBranchToggle(branch.id)}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                        />
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900">
+                            {branch.name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {branch.address}
+                          </div>
+                        </div>
+                      </div>
+                      {selectedBranches.includes(branch.id) && (
+                        <CheckIcon className="h-4 w-4 text-green-600 ml-auto" />
+                      )}
+                    </label>
+                  ))}
+
+                  {selectedBranches.length === 0 && (
+                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-xs text-yellow-800">
+                        ⚠️ Este producto no estará disponible en ninguna sucursal.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mt-2 text-xs text-gray-500">
+                    {selectedBranches.length} de {branches.length} sucursal{branches.length !== 1 ? 'es' : ''} seleccionada{selectedBranches.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Personalización Section */}
@@ -553,11 +693,11 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                               type="number"
                               id={`max-selections-${field.id}`}
                               min="1"
-                              max="4"
+                              max="10"
                               value={field.maxSelections || 1}
                               onChange={(e) => {
                                 const value = parseInt(e.target.value);
-                                if (value >= 1 && value <= 4) {
+                                if (value >= 1 && value <= 10) {
                                   handleMaxSelectionsChange(field.id, value);
                                 }
                               }}
@@ -640,12 +780,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                                         type="number"
                                         min="0"
                                         step="0.01"
-                                        value={option.price}
+                                        value={option.price || ""}
                                         onChange={(e) =>
                                           handleOptionPriceChange(
                                             field.id,
                                             optionIndex,
-                                            parseFloat(e.target.value) || 0
+                                            e.target.value === "" ? 0 : parseFloat(e.target.value) || 0
                                           )
                                         }
                                         placeholder="0.00"
@@ -711,7 +851,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                   required
                   min="0"
                   step="0.01"
-                  value={values.price ? Number(values.price).toFixed(2) : ""}
+                  value={values.price ?
+                    // Limpiar errores de punto flotante pero mantener edición natural
+                    (parseFloat(values.price) % 1 === 0 ?
+                      parseFloat(values.price).toString() :
+                      parseFloat(values.price).toFixed(2).replace(/\.?0+$/, ''))
+                    : ""}
                   onChange={handleChange}
                   className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
                 />

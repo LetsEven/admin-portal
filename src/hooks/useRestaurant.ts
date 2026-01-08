@@ -111,7 +111,6 @@ export function useRestaurant(): UseRestaurantReturn {
       setIsLoading(true);
 
       const token = await getAuthToken();
-
       console.log('🔍 [useRestaurant] Obteniendo restaurante del backend...');
 
       // Primero intentar obtener el restaurante existente

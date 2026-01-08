@@ -5,9 +5,11 @@ import DeliveryMethodModal from "../components/DeliveryMethodModal";
 import TemplateDesignerModal from "../components/TemplateDesignerModal";
 import CampaignDetailsModal from "../components/CampaignDetailsModal";
 import CampaignDashboardModal from "../components/CampaignDashboardModal";
+import RewardsPricingModal from "../components/RewardsPricingModal";
 import { segmentsApi, CustomerSegment } from "../services/segmentsApi";
 import { setAuthHook, useAdminPortalApi } from "../services/adminPortalApi";
 import { useCampaignsApi } from "../services/campaignsApi";
+import { useSubscriptionsApi } from "../services/subscriptionsApi";
 import { useAuth } from "@clerk/nextjs";
 import {
   PlusIcon,
@@ -700,184 +702,23 @@ const EmailPreview: React.FC<EmailPreviewProps> = ({ campaign, onClose }) => {
     </div>
   );
 };
-// Componente para mostrar planes de precios
-interface RewardsPricingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  currentPlan?: string;
-}
-
-const RewardsPricingModal: React.FC<RewardsPricingModalProps> = ({
-  isOpen,
-  onClose,
-  currentPlan = "Básico",
-}) => {
-  if (!isOpen) return null;
-  const plans = [
-    {
-      name: "Básico",
-      price: "Gratis",
-      features: [
-        "1 campaña activa x mes",
-        "Estadísticas básicas",
-        "Soporte por email",
-      ],
-      gradient:
-        currentPlan === "Básico"
-          ? "from-green-400/20 to-green-600/20"
-          : "from-gray-400/20 to-gray-600/20",
-      borderColor:
-        currentPlan === "Básico" ? "border-green-400/30" : "border-gray-300/30",
-    },
-    {
-      name: "Premium",
-      price: "$20 USD",
-      features: [
-        "5 campañas x mes",
-        "Estadísticas avanzadas",
-        "Segmentación de clientes",
-        "Soporte prioritario",
-      ],
-      gradient:
-        currentPlan === "Premium"
-          ? "from-green-400/20 to-green-600/20"
-          : "from-gray-400/20 to-gray-600/20",
-      borderColor:
-        currentPlan === "Premium"
-          ? "border-green-400/30"
-          : "border-gray-300/30",
-    },
-    {
-      name: "Ultra",
-      price: "$30 USD",
-      features: [
-        "Hasta 10 campañas x mes",
-        "Estadísticas avanzadas",
-        "Segmentación avanzada",
-        "Soporte 24/7",
-      ],
-      gradient:
-        currentPlan === "Ultra"
-          ? "from-green-400/20 to-green-600/20"
-          : "from-gray-400/20 to-gray-600/20",
-      borderColor:
-        currentPlan === "Ultra" ? "border-green-400/30" : "border-gray-300/30",
-    },
-  ];
-
-  return (
-    <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]"
-        onClick={onClose}
-      ></div>
-      <div className="relative max-w-3xl w-full mx-4 p-4">
-        <button
-          onClick={onClose}
-          className="absolute -top-6 right-2 text-white hover:text-gray-300 z-10 p-2 rounded-full hover:bg-white/20 transition-all duration-200"
-        >
-          <XIcon className="h-5 w-5" />
-        </button>
-
-        {/* Plans Grid */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {plans.map((plan) => (
-            <div key={plan.name} className={`group relative`}>
-              {/* Glass morphism card */}
-              <div
-                className={`relative bg-white/10 backdrop-blur-md rounded-xl p-4 border ${plan.borderColor} shadow-xl transition-all duration-300 transform hover:scale-105 hover:bg-white/15 ${plan.name === currentPlan ? "ring-2 ring-white/50 bg-white/15" : ""} h-80`}
-              >
-                {/* Background gradient overlay */}
-                <div
-                  className={`absolute inset-0 bg-gradient-to-br ${plan.gradient} rounded-xl opacity-50`}
-                ></div>
-
-                {/* Current plan badge */}
-                {plan.name === currentPlan && (
-                  <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-white text-custom-green-600 px-3 py-1 rounded-full text-xs font-medium shadow-lg">
-                      Plan Actual
-                    </span>
-                  </div>
-                )}
-
-                {/* Card content */}
-                <div className="relative z-10 flex flex-col h-full">
-                  <div className="text-center mb-4">
-                    <h3 className="text-lg font-bold text-white mb-1">
-                      {plan.name}
-                    </h3>
-                    <div className="text-2xl font-extrabold text-white mb-1">
-                      {plan.price}
-                    </div>
-                    {plan.price !== "Gratis" && (
-                      <p className="text-white/70 text-xs">por mes</p>
-                    )}
-                  </div>
-
-                  {/* Features */}
-                  <ul
-                    className={`space-y-2 mb-4 flex-grow ${plan.price === "Gratis" ? "mt-4" : ""}`}
-                  >
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-start">
-                        <div className="flex-shrink-0 w-4 h-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mt-0.5 mr-2">
-                          <svg
-                            className="w-2 h-2 text-white"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                        <span className="text-white/90 text-xs leading-relaxed">
-                          {feature}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* CTA Button */}
-                  <button
-                    className={`w-full py-2 px-4 rounded-lg text-xs font-semibold transition-all duration-300 mt-auto ${
-                      plan.name === currentPlan
-                        ? "bg-white/20 text-white cursor-default backdrop-blur-sm border border-white/30"
-                        : "bg-white text-gray-900 hover:bg-white/90 hover:shadow-lg transform hover:-translate-y-0.5"
-                    }`}
-                    disabled={plan.name === currentPlan}
-                  >
-                    {plan.name === currentPlan
-                      ? "Tu Plan Actual"
-                      : "Seleccionar Plan"}
-                  </button>
-                </div>
-
-                {/* Decorative elements */}
-                <div className="absolute top-2 right-2 w-4 h-4 bg-white/10 rounded-full blur-sm"></div>
-                <div className="absolute bottom-2 left-2 w-3 h-3 bg-white/5 rounded-full blur-sm"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
 // Main Component
 const RewardsManagement = () => {
   const auth = useAuth();
   const adminApi = useAdminPortalApi();
   const campaignsApi = useCampaignsApi();
+  const subscriptionsApi = useSubscriptionsApi();
   const { restaurant, loading: restaurantLoading } = useRestaurant();
 
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
   const [campaignsError, setCampaignsError] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+
+  // Plan and limits state
+  const [currentPlan, setCurrentPlan] = useState<any>(null);
+  const [planLimits, setPlanLimits] = useState<any>(null);
+  const [campaignUsage, setCampaignUsage] = useState<number>(0);
   const [previewCampaign, setPreviewCampaign] = useState(null);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showCampaignDashboard, setShowCampaignDashboard] = useState(false);
@@ -958,8 +799,35 @@ const RewardsManagement = () => {
     if (restaurantId && !restaurantLoading) {
       loadSegments();
       loadCampaigns();
+      loadPlanInfo();
     }
   }, [restaurantId, restaurantLoading]);
+
+  const loadPlanInfo = async () => {
+    if (!restaurantId) return;
+
+    try {
+      console.log("Loading plan info for restaurant:", restaurantId);
+      const [subscription, plans] = await Promise.all([
+        subscriptionsApi.getCurrentSubscription(),
+        subscriptionsApi.getPlans()
+      ]);
+
+      console.log("Current subscription:", subscription);
+      setCurrentPlan(subscription);
+
+      if (subscription && plans) {
+        const planConfig = plans.find(p => p.id === subscription.plan_type);
+        if (planConfig) {
+          setPlanLimits(planConfig.limits);
+          console.log("Plan limits loaded:", planConfig.limits);
+          console.log(`✅ Plan: ${subscription.plan_type}, Campaigns limit: ${planConfig.limits.campaigns_per_month}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading plan info:", error);
+    }
+  };
 
   const loadCampaigns = async () => {
     if (!restaurantId) {
@@ -1042,6 +910,7 @@ const RewardsManagement = () => {
       });
 
       setCampaigns(transformedCampaigns);
+      setCampaignUsage(transformedCampaigns.length);
       console.log(
         "Campaigns loaded successfully:",
         transformedCampaigns.length
@@ -1204,8 +1073,36 @@ const RewardsManagement = () => {
     setSelectedCampaign(campaign);
     setShowCampaignDashboard(true);
   };
+  // Check if user can create new campaign
+  const canCreateCampaign = () => {
+    if (!planLimits) return true; // Allow if limits not loaded yet
+
+    const limit = planLimits.campaigns_per_month;
+    if (limit === -1) return true; // Unlimited
+
+    return campaignUsage < limit;
+  };
+
+  const getRemainingCampaigns = () => {
+    if (!planLimits) return null;
+
+    const limit = planLimits.campaigns_per_month;
+    if (limit === -1) return "Ilimitadas";
+
+    return Math.max(0, limit - campaignUsage);
+  };
+
   // New campaign flow handlers
   const handleOpenNewCampaign = () => {
+    if (!canCreateCampaign()) {
+      const remaining = getRemainingCampaigns();
+      toast.error(
+        `Has alcanzado el límite de campañas de tu plan. Campañas restantes: ${remaining}. ¡Actualiza tu plan para crear más campañas!`
+      );
+      setShowPricingModal(true);
+      return;
+    }
+
     setShowDeliveryMethodModal(true);
   };
 
@@ -1602,9 +1499,20 @@ const RewardsManagement = () => {
       });
     } catch (error: any) {
       console.error("Error creating campaign:", error);
-      toast.error(error.message || "Error al crear campaña", {
-        id: loadingToast,
-      });
+
+      // Check if it's a campaign limit error
+      if (error.message?.includes('límite de campañas') ||
+          error.response?.data?.error_code === 'CAMPAIGN_LIMIT_EXCEEDED') {
+        toast.error('¡Límite de campañas alcanzado! Actualiza tu plan para crear más campañas.', {
+          id: loadingToast,
+          duration: 6000
+        });
+        setShowPricingModal(true);
+      } else {
+        toast.error(error.message || "Error al crear campaña", {
+          id: loadingToast,
+        });
+      }
     }
   };
   return (
@@ -1620,6 +1528,26 @@ const RewardsManagement = () => {
               <p className="text-sm text-gray-600">
                 Gestiona tus campañas de recompensas y fidelización
               </p>
+              {/* Plan info */}
+              {currentPlan && planLimits && (
+                <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                    Plan {currentPlan.plan_type}
+                  </span>
+                  <span>
+                    Campañas: {campaignUsage}/{planLimits.campaigns_per_month === -1 ? '∞' : planLimits.campaigns_per_month}
+                  </span>
+                  {getRemainingCampaigns() !== null && (
+                    <span className={`${
+                      typeof getRemainingCampaigns() === 'number' && getRemainingCampaigns() <= 1
+                        ? 'text-red-600 font-medium'
+                        : 'text-green-600'
+                    }`}>
+                      Restantes: {getRemainingCampaigns()}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex space-x-3">
               <button
@@ -1630,7 +1558,12 @@ const RewardsManagement = () => {
               </button>
               <button
                 onClick={handleOpenNewCampaign}
-                className="bg-custom-green-600 text-white px-4 py-2 rounded-md hover:bg-custom-green-700 transition-colors flex items-center"
+                disabled={!canCreateCampaign()}
+                className={`px-4 py-2 rounded-md transition-colors flex items-center ${
+                  canCreateCampaign()
+                    ? 'bg-custom-green-600 text-white hover:bg-custom-green-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
               >
                 <PlusIcon className="h-5 w-5 mr-2" />
                 Nueva Campaña
@@ -1728,8 +1661,12 @@ const RewardsManagement = () => {
       {/* Pricing Modal */}
       <RewardsPricingModal
         isOpen={showPricingModal}
-        onClose={() => setShowPricingModal(false)}
-        currentPlan="Básico"
+        onClose={() => {
+          setShowPricingModal(false);
+          // Reload plan info when modal closes in case plan was updated
+          loadPlanInfo();
+        }}
+        currentPlan={currentPlan?.plan_type || "básico"}
       />
 
       {/* Delivery Method Selection Modal */}

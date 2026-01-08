@@ -1,0 +1,111 @@
+<re-html>
+<re-head>
+    <re-title>
+        ¡Bienvenido a Xquisito Admin Portal! 🚀
+    </re-title>
+</re-head>
+<re-body background-color="#f8f9fa" padding="40px 10px">
+    <re-preheader>
+        {{#if inviter_name}}
+{{escapeURIs inviter_name}}
+te ha invitado a Xquisito{{else}}
+Tu invitación a Xquisito{{/if}}
+    </re-preheader>
+    <!-- Header -->
+    <re-header background-color="#173E44" padding="80px 40px" align="center">
+        <re-block align="center" padding="60px 0px" width="100%">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="text-align: center;">
+                <tr>
+                    <td align="center" style="padding: 20px 0;">
+                        <div style="font-size: 48px; line-height: 1; margin: 0; text-align: center;">
+                            {{> app_logo}}
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </re-block>
+    </re-header>
+    <!-- Main Content -->
+    <re-main background-color="#ffffff" padding="60px 40px">
+        <!-- Greeting -->
+        <re-block padding="0px 0px 30px 0px" align="center">
+            <re-text font-size="20px" color="#2A5A62" font-weight="normal">
+                {{#if inviter_name}}¡Hola! <strong>Xquisito</strong> te ha invitado a unirte al <strong>Portal de Administrador</strong>.{{else}}¡Hola! Has sido invitado a unirte a <strong>{{app.name}}</strong>.{{/if}}
+            </re-text>
+        </re-block>
+        <!-- Message -->
+        <re-block padding="0px 0px 40px 0px" align="center">
+            <re-text color="#555555" align="center">
+                Bienvenido al <strong>Portal de Administrador</strong>, la plataforma líder en soluciones digitales para la hospitalidad. Tu acceso te permitirá gestionar menús, promociones, recompensas y mucho más.
+            </re-text>
+        </re-block>
+        <!-- Features Box -->
+        <re-block background-color="#f8fffe" border-radius="16px" padding="40px" margin="0px 0px 40px 0px" align="center">
+            <re-heading level="h3" color="#173E44" font-weight="normal" margin="0px 0px 20px 0px" align="center">
+                🚀 Con tu cuenta podrás:
+            </re-heading>
+            <re-text color="#555555" font-size="15px" align="center">
+                ✓ Gestionar tu restaurante y menús digitales<br>
+                <br>
+                ✓ Crear campañas promocionales efectivas<br>
+                <br>
+                ✓ Administrar sistemas de recompensas<br>
+                <br>
+                ✓ Acceder a analytics y reportes detallados<br>
+                <br>
+                ✓ Configurar múltiples métodos de pago
+            </re-text>
+        </re-block>
+        <re-block background-color="#eab3f4" border-radius="12px" padding="24px" margin="0px 0px 40px 0px" align="center">
+            <re-text color="#000000" font-size="15px" font-weight="normal" margin="0px 0px 8px 0px" align="center">
+                ⏰ Tiempo limitado
+            </re-text>
+            <re-text color="#000000" font-size="14px" align="center">
+                Esta invitación expirará en <strong>{{invitation.expires_in_days}} días</strong>.<br>
+                ¡No esperes más y activa tu cuenta ahora!
+            </re-text>
+        </re-block>
+        <!-- Expiration -->
+        <re-block padding="20px 0px" align="center">
+            <re-button href="{{action_url}}" background-color="#2A5A62" border-radius="25px" padding="18px 48px" class="cl-branded-button">
+                Aceptar invitación y empezar
+            </re-button>
+        </re-block>
+        <!-- CTA Button -->
+        <!-- Fallback -->
+        <re-block padding="20px 0px" align="center">
+            <re-text font-size="14px" color="#888888" align="center">
+                ¿Problemas con el botón? <a href="{{action_url}}" style="color: #2A5A62; font-weight: 500;">Haz clic aquí para acceder directamente</a>
+            </re-text>
+        </re-block>
+        <!-- Security -->
+        <re-block background-color="#f8f9fa" border-radius="12px" padding="24px" margin="40px 0px 0px 0px">
+            <re-text color="#173E44" font-size="14px" font-weight="normal" margin="0px 0px 8px 0px">
+                🔐 Nota de seguridad
+            </re-text>
+            <re-text color="#555555" font-size="13px">
+                Este enlace de invitación es único y personal. No lo compartas con nadie más. Si no solicitaste esta invitación, puedes ignorar este email de forma segura.
+            </re-text>
+        </re-block>
+        <!-- Support -->
+        <re-block padding="30px 0px 0px 0px" align="center">
+            <re-text color="#888888" font-size="14px" align="center">
+                ¿Necesitas ayuda? Contáctanos en <a href="mailto:soporte@xquisito.com" style="color: #2A5A62; font-weight: 500;">contacto@xquisito.ai</a>
+            </re-text>
+        </re-block>
+    </re-main>
+    <!-- Footer -->
+    <re-footer background-color="#f8f9fa" padding="40px" align="center">
+        <re-text color="#173E44" font-size="22px" font-weight="normal" margin="0px 0px 8px 0px" align="center">
+            Xquisito
+        </re-text>
+        <re-text color="#2A5A62" font-size="15px" margin="0px 0px 24px 0px" align="center">
+            Donde la tecnología se encuentra con el buen comer
+        </re-text>
+        <re-text font-size="12px" color="#888888" align="center">
+            © 2025 Xquisito. Todos los derechos reservados.<br>
+            Powered by Clerk Authentication
+        </re-text>
+    </re-footer>
+</re-body>
+</re-html>

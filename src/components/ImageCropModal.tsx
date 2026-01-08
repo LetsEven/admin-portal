@@ -39,8 +39,8 @@ const getCroppedImg = async (
 ): Promise<string> => {
   const image = await createImage(imageSrc);
 
-  // Create final canvas with the desired size
-  const finalSize = 120;
+  // Create final canvas with better size for higher quality
+  const finalSize = 300; // Increased from 120 to 300 for better quality
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
@@ -87,7 +87,8 @@ const getCroppedImg = async (
   // Restore the transformation state
   ctx.restore();
 
-  return canvas.toDataURL('image/png', 1.0);
+  // Use JPEG with high quality for better compression and quality
+  return canvas.toDataURL('image/jpeg', 0.95);
 };
 
 const ImageCropModal: React.FC<ImageCropModalProps> = ({
@@ -114,21 +115,20 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
   const calculateZoomValues = useCallback(async (imgSrc: string) => {
     try {
       const img = await createImage(imgSrc);
-      const circleDiameter = 450; // Larger circle diameter for bigger crop area
+      const circleDiameter = 400; // Circle diameter for crop area
 
-      // Calculate minimum zoom allowing extreme zoom out for dramatic effect
-      // Much smaller base value for very wide zoom out range
+      // Calculate minimum zoom - allow zoom out but not too extreme
       const minZoomToFill = Math.max(
         circleDiameter / img.naturalWidth,
         circleDiameter / img.naturalHeight
-      ) * 0.3; // Very low minimum for extreme zoom out
+      ) * 0.5; // Reasonable minimum for zoom out
 
-      // Calculate optimal initial zoom (should show image well fitted in circle)
-      // Start at a reasonable level where user can see the whole image
+      // Calculate optimal initial zoom to fit image nicely in circle
+      // This should show the full image at a good size for editing
       const fitZoom = Math.max(
         circleDiameter / img.naturalWidth,
         circleDiameter / img.naturalHeight
-      ) * 0.8; // Good initial zoom for viewing
+      ) * 1.1; // Slightly larger than fit for better viewing
 
       const clampedInitialZoom = Math.max(minZoomToFill, Math.min(maxZoom, fitZoom));
 
@@ -138,7 +138,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
       };
     } catch (error) {
       console.error('Error calculating zoom values:', error);
-      return { minZoom: 0.2, initialZoom: 1.0 };
+      return { minZoom: 0.5, initialZoom: 1.2 };
     }
   }, [maxZoom]);
 
@@ -179,8 +179,11 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
       calculateZoomValues(imageSrc).then(({ minZoom: newMinZoom, initialZoom: newInitialZoom }) => {
         setMinZoom(newMinZoom);
         setInitialZoom(newInitialZoom);
+
+        // Use the calculated initial zoom for optimal viewing
         setZoom(newInitialZoom);
-        // Calculate initial percentage in the new -300% to 300% range
+
+        // Calculate percentage based on actual initial zoom
         const midZoom = (newMinZoom + maxZoom) / 2;
         let initialPercent;
         if (newInitialZoom <= midZoom) {
@@ -188,7 +191,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
         } else {
           initialPercent = ((newInitialZoom - midZoom) / (maxZoom - midZoom)) * 300;
         }
-        setZoomPercent(initialPercent);
+        setZoomPercent(Math.round(initialPercent));
       });
     }
   }, [isOpen, imageSrc, calculateZoomValues, maxZoom]);
@@ -298,12 +301,21 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
                   cropShape="round"
                   showGrid={false}
                   restrictPosition={false}
-                  minZoom={0.1}
-                  maxZoom={5}
+                  minZoom={minZoom}
+                  maxZoom={maxZoom}
                   onCropChange={setCrop}
                   onCropComplete={onCropComplete}
                   onZoomChange={handleZoomChange}
                   onRotationChange={setRotation}
+                  style={{
+                    containerStyle: {
+                      backgroundColor: '#f9fafb',
+                    },
+                    cropAreaStyle: {
+                      border: '2px solid #173E44',
+                      boxShadow: '0 0 0 9999em rgba(0,0,0,0.5)'
+                    }
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

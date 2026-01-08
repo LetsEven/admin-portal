@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBagIcon, CreditCardIcon, LayoutGridIcon, SmartphoneIcon, ShoppingCartIcon, ReceiptIcon, ScanLineIcon } from 'lucide-react';
+import { ShoppingBagIcon, CreditCardIcon, LayoutGridIcon, SmartphoneIcon, ShoppingCartIcon, ReceiptIcon, ScanLineIcon, BedIcon } from 'lucide-react';
 import TapOrderDashboardModal from '../components/TapOrderDashboardModal';
 import FlexBillDashboardModal from '../components/FlexBillDashboardModal';
 import FoodHallDashboardModal from '../components/FoodHallDashboardModal';
@@ -44,6 +44,13 @@ const SERVICE_MAPPING: Record<string, ServiceInfo> = {
     name: 'Pick N Go',
     description: 'Órdenes anticipadas desde redes sociales o sitio web. El cliente ordena y paga desde su celular antes de llegar al local, a través de un link el cual puede ser publicado en redes sociales. Al llegar, simplemente recoge su pedido ya listo.',
     icon: 'shopping-cart',
+    enabled: false
+  },
+  'room-service': {
+    id: 'room-service',
+    name: 'Room Service',
+    description: 'Servicio a la habitación para hoteles. Los huéspedes pueden ordenar comida, bebidas y servicios directamente desde su habitación usando su celular. Los pedidos se procesan automáticamente y se entregan directamente a la habitación especificada. Ideal para hoteles que quieren digitalizar y agilizar su room service.',
+    icon: 'bed',
     enabled: false
   }
 };
@@ -157,6 +164,8 @@ const PromotionsManagement = () => {
         return <ScanLineIcon className="h-7 w-7 text-custom-green-600 group-hover:text-custom-green-600 transition-colors duration-200" />;
       case 'shopping-cart':
         return <ShoppingCartIcon className="h-7 w-7 text-custom-green-600 group-hover:text-custom-green-600 transition-colors duration-200" />;
+      case 'bed':
+        return <BedIcon className="h-7 w-7 text-custom-green-600 group-hover:text-custom-green-600 transition-colors duration-200" />;
       default:
         return <ShoppingBagIcon className="h-7 w-7 text-custom-green-600 group-hover:text-custom-green-600 transition-colors duration-200" />;
     }
@@ -168,7 +177,7 @@ const PromotionsManagement = () => {
             Gestión de Dine
           </h1>
           <p className="text-sm text-gray-500">
-            Gestiona los servicios clave de tu restaurante para ofrecer una
+            Gestiona los servicios clave de tu restaurante u hotel para ofrecer una
             operación más eficiente y moderna
           </p>
         </div>
