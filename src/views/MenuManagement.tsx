@@ -10,7 +10,7 @@ import SectionForm from '../components/SectionForm';
 import MobileMenuPreview from '../components/MobileMenuPreview';
 import RestaurantHeader from '../components/RestaurantHeader';
 import { useMenuAdminPortalApi } from '../services/menuAdminPortalApi';
-import { MenuSection, MenuItem } from '../services/adminPortalApi';
+import { MenuSection, MenuItem } from '../services/menuAdminPortalApi';
 
 interface Branch {
   id: string;
@@ -68,7 +68,7 @@ const MenuManagement = () => {
           const sectionsData = JSON.parse(savedSections);
           const itemsData = JSON.parse(savedItems);
 
-          const sortedSections = sectionsData.sort((a, b) => a.display_order - b.display_order);
+          const sortedSections = sectionsData.sort((a: MenuSection, b: MenuSection) => a.display_order - b.display_order);
           setSections(sortedSections);
           setMenuItems(itemsData);
 
@@ -498,18 +498,18 @@ const MenuManagement = () => {
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
-              {items.map( item => 
-                <MenuItemCard 
-                  key={item.id} 
-                  id={item.id} 
-                  name={item.name} 
-                  description={item.description} 
-                  price={item.price} 
-                  discount={item.discount} 
-                  category={sections.find(s => s.id === item.section_id)?.name || ''} 
-                  image={item.image_url || ''} 
-                  onEdit={handleEditClick} 
-                  onDelete={handleDeleteClick} 
+              {items.map( item =>
+                <MenuItemCard
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  description={item.description || ''}
+                  price={item.price}
+                  discount={item.discount}
+                  category={sections.find(s => s.id === item.section_id)?.name || ''}
+                  image={item.image_url || ''}
+                  onEdit={handleEditClick}
+                  onDelete={handleDeleteClick}
                 />)
               }
 

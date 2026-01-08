@@ -1,20 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { XIcon, Search, Settings } from 'lucide-react';
 import { useRestaurant } from '../contexts/RestaurantContext';
-interface MenuItem {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  discount?: number;
-  section_id: number;
-  image_url?: string;
-}
-
-interface MenuSection {
-  id: number;
-  name: string;
-}
+import { MenuItem, MenuSection } from '../services/adminPortalApi';
 
 interface MobileMenuPreviewProps {
   menuItems: MenuItem[];

@@ -976,7 +976,7 @@ const Settings = () => {
           {/* Selector de Sucursal */}
           <div className="flex items-center space-x-2 mr-8">
             <label className="text-sm font-medium text-gray-700">
-              Editando sucursal:
+              Sucursal:
             </label>
             <select
               value={selectedBranch}

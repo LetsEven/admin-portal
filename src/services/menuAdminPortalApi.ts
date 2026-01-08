@@ -1,6 +1,9 @@
 import { useAuth } from '@clerk/nextjs';
 import { MenuSection, MenuItem, CustomField } from './adminPortalApi';
 
+// Re-export types for convenience
+export type { MenuSection, MenuItem, CustomField };
+
 // ===============================================
 // CONFIGURACIÓN DE LA API DE MENÚ
 // ===============================================

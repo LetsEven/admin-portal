@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { XIcon, PlusIcon, TrashIcon, GripIcon } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { MenuSection } from '../services/menuApi';
+import { MenuSection } from '../services/adminPortalApi';
 
 interface SectionFormProps {
   sections: MenuSection[];
