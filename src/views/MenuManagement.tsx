@@ -113,7 +113,6 @@ const MenuManagement = () => {
     // Buscar section_id por nombre para robustez
     const section = sections.find(s => s.name === category);
 
-    console.log({section})
     toast.success(`Agregando producto a la sección "${category}"`, {
       duration: 2000,
     });
@@ -152,8 +151,6 @@ const MenuManagement = () => {
         image: itemToEdit.image_url || '',
         customFields: customFields
       };
-
-      console.log({adaptedItem})
 
       setCurrentItem(adaptedItem);
       setSelectedCategory(''); // Reset selectedCategory cuando se edita
