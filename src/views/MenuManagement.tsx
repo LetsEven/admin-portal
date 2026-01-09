@@ -585,7 +585,7 @@ const MenuManagement = () => {
           close: 'Cerrar',
           last: 'Finalizar',
           next: 'Siguiente',
-          nextLabelWithProgress: `Siguiente {step} of {steps}`,
+          nextLabelWithProgress: `Siguiente {step} de {steps}`,
           skip: 'Saltar tour',
         }}
       />

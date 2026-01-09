@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import Joyride from 'react-joyride';
 import {
   SaveIcon,
   Upload,
@@ -14,6 +15,7 @@ import { useRestaurant } from "../hooks/useRestaurant";
 import { ImageUploadService } from "../services/imageUploadService";
 import ImageCropModal from "../components/ImageCropModal";
 import { useAdminPortalApi } from "../services/adminPortalApi";
+import { useSettingsOnboarding, joyrideTheme } from "../hooks/useSettingsOnboarding";
 
 interface SettingsData {
   name: string;
@@ -53,6 +55,9 @@ const Settings = () => {
     useRestaurant();
   const adminPortalApi = useAdminPortalApi();
   const [settings, setSettings] = useState<SettingsData | null>(null);
+
+  // Settings onboarding tour
+  const { run, steps, handleJoyrideCallback, startOnboarding } = useSettingsOnboarding();
 
   // Estados para servicios habilitados
   const [isPickNGoEnabled, setIsPickNGoEnabled] = useState(false);
@@ -385,6 +390,18 @@ const Settings = () => {
       }
     }
   }, [branches, selectedBranch, settings?.name]); // Dependencia en settings.name para evitar loops
+
+  // Iniciar tour cuando la página esté completamente cargada
+  useEffect(() => {
+    if (settings && !isLoading && branches.length > 0 && !branchesLoading) {
+      // Pequeño delay para asegurar que todos los elementos están renderizados
+      const timer = setTimeout(() => {
+        startOnboarding();
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [settings, isLoading, branches.length, branchesLoading, startOnboarding]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -974,7 +991,7 @@ const Settings = () => {
 
         <div className="flex items-center space-x-2">
           {/* Selector de Sucursal */}
-          <div className="flex items-center space-x-2 mr-8">
+          <div className="flex items-center space-x-2 mr-8" data-tour="branches-tables">
             <label className="text-sm font-medium text-gray-700">
               Editando sucursal:
             </label>
@@ -998,14 +1015,14 @@ const Settings = () => {
           <span className="text-sm text-gray-700">
             {user?.firstName || "Usuario"}
           </span>
-          <div className="pointer-events-none">
+          <div>
             <UserButton afterSignOutUrl="/sign-in" />
           </div>
         </div>
       </div>
       <form onSubmit={handleSubmit} className="mt-6 space-y-8">
         {/* Restaurant Information */}
-        <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+        <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6" data-tour="restaurant-info">
           <div className="md:grid md:grid-cols-3 md:gap-6">
             <div className="md:col-span-1">
               <h3 className="text-lg font-medium leading-6 text-gray-900">
@@ -1263,7 +1280,7 @@ const Settings = () => {
           </div>
         </div>
         {/* Opening Hours */}
-        <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+        <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6" data-tour="opening-hours">
           <div className="md:grid md:grid-cols-3 md:gap-6">
             <div className="md:col-span-1">
               <h3 className="text-lg font-medium leading-6 text-gray-900">
@@ -1399,7 +1416,7 @@ const Settings = () => {
           </div>
         </div>
         {/* Notifications */}
-        <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+        <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6" data-tour="notifications">
           <div className="md:grid md:grid-cols-3 md:gap-6">
             <div className="md:col-span-1">
               <h3 className="text-lg font-medium leading-6 text-gray-900">
@@ -1596,6 +1613,7 @@ const Settings = () => {
           </button>
           <button
             type="submit"
+            data-tour="save-button"
             disabled={isUpdating || saveStatus === "saving"}
             className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -1617,6 +1635,27 @@ const Settings = () => {
         onSave={handleCropSave}
         onImageUpload={handleImageUploadFromModal}
         title="Ajustar Logo del Restaurante"
+      />
+
+      {/* Tour guiado para configuraciones */}
+      <Joyride
+        callback={handleJoyrideCallback}
+        continuous
+        hideCloseButton
+        run={run}
+        scrollToFirstStep
+        showProgress
+        showSkipButton
+        steps={steps}
+        styles={joyrideTheme}
+        locale={{
+          back: 'Atrás',
+          close: 'Cerrar',
+          last: 'Finalizar',
+          next: 'Siguiente',
+          nextLabelWithProgress: `Siguiente {step} de {steps}`,
+          skip: 'Saltar tour',
+        }}
       />
     </div>
   );

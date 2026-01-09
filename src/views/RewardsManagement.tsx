@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import Joyride from 'react-joyride';
 import SegmentModal from "../components/SegmentModal";
 import NewCampaignModal from "../components/NewCampaignModal";
 import DeliveryMethodModal from "../components/DeliveryMethodModal";
@@ -11,6 +12,7 @@ import { setAuthHook, useAdminPortalApi } from "../services/adminPortalApi";
 import { useCampaignsApi } from "../services/campaignsApi";
 import { useSubscriptionsApi } from "../services/subscriptionsApi";
 import { useAuth } from "@clerk/nextjs";
+import { useRewardsOnboarding, joyrideTheme } from "../hooks/useRewardsOnboarding";
 import {
   PlusIcon,
   AwardIcon,
@@ -701,6 +703,9 @@ const RewardsManagement = () => {
   const subscriptionsApi = useSubscriptionsApi();
   const { restaurant, loading: restaurantLoading } = useRestaurant();
 
+  // Rewards onboarding tour
+  const { run, steps, handleJoyrideCallback, startOnboarding } = useRewardsOnboarding();
+
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
   const [campaignsError, setCampaignsError] = useState("");
@@ -793,6 +798,18 @@ const RewardsManagement = () => {
       loadPlanInfo();
     }
   }, [restaurantId, restaurantLoading]);
+
+  // Iniciar tour cuando la página esté completamente cargada
+  useEffect(() => {
+    if (!campaignsLoading && currentPlan && planLimits) {
+      // Pequeño delay para asegurar que todos los elementos están renderizados
+      const timer = setTimeout(() => {
+        startOnboarding();
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [campaignsLoading, currentPlan, planLimits, startOnboarding]);
 
   const loadPlanInfo = async () => {
     if (!restaurantId) return;
@@ -1404,7 +1421,7 @@ const RewardsManagement = () => {
               </p>
               {/* Plan info */}
               {currentPlan && planLimits && (
-                <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
+                <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500" data-tour="plan-info">
                   <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
                     Plan {currentPlan.plan_type}
                   </span>
@@ -1431,6 +1448,7 @@ const RewardsManagement = () => {
                 Ver Planes
               </button>
               <button
+                data-tour="new-campaign-btn"
                 onClick={handleOpenNewCampaign}
                 disabled={!canCreateCampaign()}
                 className={`px-4 py-2 rounded-md transition-colors flex items-center ${
@@ -1447,7 +1465,7 @@ const RewardsManagement = () => {
         </div>
 
         {/* KPI Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" data-tour="kpi-filters">
           <KpiButton
             label="Todas"
             count={allCount}
@@ -1479,7 +1497,7 @@ const RewardsManagement = () => {
         </div>
 
         {/* Campaigns Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour="campaigns-grid">
           {filteredCampaigns.map((campaign: any) => (
             <div
               key={campaign.id}
@@ -1615,6 +1633,27 @@ const RewardsManagement = () => {
         selectedTemplate={newCampaignData.selectedTemplate}
         selectedWhatsAppTemplate={newCampaignData.selectedWhatsAppTemplate}
         initialDeliveryMethods={newCampaignData.deliveryMethods}
+      />
+
+      {/* Tour guiado para gestión de recompensas */}
+      <Joyride
+        callback={handleJoyrideCallback}
+        continuous
+        hideCloseButton
+        run={run}
+        scrollToFirstStep
+        showProgress
+        showSkipButton
+        steps={steps}
+        styles={joyrideTheme}
+        locale={{
+          back: 'Atrás',
+          close: 'Cerrar',
+          last: 'Finalizar',
+          next: 'Siguiente',
+          nextLabelWithProgress: `Siguiente {step} de {steps}`,
+          skip: 'Saltar tour',
+        }}
       />
     </div>
   );
