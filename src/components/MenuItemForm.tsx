@@ -65,7 +65,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   // Si no tiene base_price (datos antiguos), calcular dividiendo entre 1.16
   // Si es nuevo, usar el precio tal cual
   const displayPrice = initialValues.id
-    ? (initialValues.base_price ?? initialValues.price / 1.16)
+    ? (initialValues.base_price ?? Math.round((initialValues.price / 1.16) * 100) / 100)
     : initialValues.price;
 
   const [values, setValues] = useState({
@@ -143,13 +143,24 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     >
   ) => {
     const { name, value } = e.target;
-    setValues({
-      ...values,
-      [name]:
-        name === "price" || name === "discount"
-          ? parseFloat(value) || 0
-          : value,
-    });
+
+    if (name === "price" || name === "discount") {
+      if (value === "") {
+        setValues({ ...values, [name]: "" });
+        return;
+      }
+
+      // Validar que solo tenga máximo 2 decimales
+      const decimalRegex = /^\d*\.?\d{0,2}$/;
+      if (!decimalRegex.test(value)) {
+        return; // No actualizar si tiene más de 2 decimales
+      }
+
+      // Mantener como string para preservar la edición natural
+      setValues({ ...values, [name]: value });
+    } else {
+      setValues({ ...values, [name]: value });
+    }
   };
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!user) {
@@ -365,8 +376,9 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     }
 
     // Siempre aplicar el 16% de IVA al precio antes de guardar en BD
-    const priceWithTax = values.price * 1.16;
-    const basePrice = values.price; // Precio sin IVA
+    const numericPrice = parseFloat(values.price) || 0;
+    const priceWithTax = numericPrice * 1.16;
+    const basePrice = numericPrice; // Precio sin IVA
     onSubmit({
       ...values,
       price: priceWithTax,
@@ -852,22 +864,18 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                   required
                   min="0"
                   step="0.01"
-                  value={values.price ?
-                    // Limpiar errores de punto flotante pero mantener edición natural
-                    (parseFloat(values.price) % 1 === 0 ?
-                      parseFloat(values.price).toString() :
-                      parseFloat(values.price).toFixed(2).replace(/\.?0+$/, ''))
-                    : ""}
+                  value={values.price || ""}
                   onChange={handleChange}
+                  placeholder="0.00"
                   className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
                 />
               </div>
-              {values.price > 0 && (
+              {parseFloat(values.price) > 0 && (
                 <div className="mt-2 flex justify-between items-center">
                   <p className="text-sm text-gray-700">
                     <span className="font-medium">Precio mas IVA (16%):</span>
                     <span className="ml-2 font-semibold">
-                      ${(values.price * 1.16).toFixed(2)}
+                      ${(parseFloat(values.price) * 1.16).toFixed(2)}
                     </span>
                   </p>
                   <p className="text-sm text-gray-700">
@@ -875,9 +883,9 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                     <span className="ml-2 font-semibold text-custom-green-600">
                       $
                       {(
-                        values.price *
+                        parseFloat(values.price) *
                         1.16 *
-                        (1 - (values.discount || 0) / 100)
+                        (1 - (parseFloat(values.discount) || 0) / 100)
                       ).toFixed(2)}
                     </span>
                   </p>
