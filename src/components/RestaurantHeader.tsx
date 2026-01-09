@@ -29,6 +29,7 @@ interface RestaurantHeaderProps {
   onViewMenuClick?: () => void;
   selectedBranch?: Branch | null;
   onBranchChange?: (branch: Branch | null) => void;
+  'data-tour'?: string;
 }
 
 const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
@@ -43,7 +44,8 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
   onAddSectionClick,
   onViewMenuClick,
   selectedBranch,
-  onBranchChange
+  onBranchChange,
+  'data-tour': dataTour
 }) => {
   const { user } = useUser();
   const { restaurant } = useRestaurant();
@@ -293,7 +295,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
   };
 
   return (
-    <div >
+    <div data-tour={dataTour}>
       {/* New Restaurant Setup Banner */}
       {isNewRestaurant && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6">
@@ -538,6 +540,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
 
           <button
             type="button"
+            data-tour="add-section-btn"
             onClick={onAddSectionClick}
             disabled={!restaurantName || restaurantName.trim() === '' || restaurantName === "Mi Restaurante"}
             className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm transition-all duration-200 ${
@@ -556,6 +559,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
           </button>
           <button
             type="button"
+            data-tour="mobile-preview-btn"
             onClick={onViewMenuClick}
             className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
           >

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { PlusIcon, FilterIcon } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import toast from 'react-hot-toast';
+import Joyride from 'react-joyride';
 import { useRestaurant } from '../contexts/RestaurantContext';
 import MenuItemCard from '../components/MenuItemCard';
 import MenuItemForm from '../components/MenuItemForm';
@@ -11,6 +12,7 @@ import MobileMenuPreview from '../components/MobileMenuPreview';
 import RestaurantHeader from '../components/RestaurantHeader';
 import { useMenuAdminPortalApi } from '../services/menuAdminPortalApi';
 import { MenuSection, MenuItem } from '../services/adminPortalApi';
+import { useMenuOnboarding, joyrideTheme } from '../hooks/useMenuOnboarding';
 
 interface Branch {
   id: string;
@@ -24,6 +26,9 @@ const MenuManagement = () => {
   const { user } = useUser();
   const { restaurant, loading: restaurantLoading, updateRestaurant, createRestaurant } = useRestaurant();
   const menuApi = useMenuAdminPortalApi();
+
+  // Menu onboarding tour
+  const { run, steps, handleJoyrideCallback, startOnboarding } = useMenuOnboarding();
 
   // State for API data
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -98,6 +103,18 @@ const MenuManagement = () => {
       loadData();
     }
   }, [isHydrated, user, restaurant, restaurantLoading, selectedBranch]);
+
+  // Iniciar tour cuando la página esté completamente cargada
+  useEffect(() => {
+    if (!loading && sections.length > 0 && menuItems.length > 0) {
+      // Pequeño delay para asegurar que todos los elementos están renderizados
+      const timer = setTimeout(() => {
+        startOnboarding();
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, sections.length, menuItems.length, startOnboarding]);
 
   const [showItemForm, setShowItemForm] = useState(false);
   const [showSectionForm, setShowSectionForm] = useState(false);
@@ -467,6 +484,7 @@ const MenuManagement = () => {
 
   return <div className="w-full">
       <RestaurantHeader
+        data-tour="restaurant-header"
         restaurantName={restaurant?.name || ''}
         bannerImage={restaurant?.banner_url || ''}
         logoImage={restaurant?.logo_url || ''}
@@ -506,28 +524,29 @@ const MenuManagement = () => {
             No hay platillos en esta categoría. Agrega una sección y platillos
             para comenzar.
           </p>
-          </div> : Object.entries(itemsByCategory).map(([category, items]) => <div key={category} className="mb-8">
+          </div> : Object.entries(itemsByCategory).map(([category, items], categoryIndex) => <div key={category} className="mb-8">
 
-            <SectionHeader title={category} />
+            <SectionHeader title={category} data-tour={categoryIndex === 0 ? "section-header" : undefined} />
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
-              {items.map( item => 
-                <MenuItemCard 
-                  key={item.id} 
-                  id={item.id} 
-                  name={item.name} 
-                  description={item.description} 
-                  price={item.price} 
-                  discount={item.discount} 
-                  category={sections.find(s => s.id === item.section_id)?.name || ''} 
-                  image={item.image_url || ''} 
-                  onEdit={handleEditClick} 
-                  onDelete={handleDeleteClick} 
+              {items.map((item, itemIndex) =>
+                <MenuItemCard
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  description={item.description}
+                  price={item.price}
+                  discount={item.discount}
+                  category={sections.find(s => s.id === item.section_id)?.name || ''}
+                  image={item.image_url || ''}
+                  onEdit={handleEditClick}
+                  onDelete={handleDeleteClick}
+                  data-tour={categoryIndex === 0 && itemIndex === 0 ? "menu-item-card" : undefined}
                 />)
               }
 
-              <button onClick={() => handleAddItemClick(category)} className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-48 hover:bg-gray-50 transition-colors">
+              <button onClick={() => handleAddItemClick(category)} data-tour={categoryIndex === 0 ? "add-item-btn" : undefined} className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-48 hover:bg-gray-50 transition-colors">
                 <div className="text-center">
                   <PlusIcon className="mx-auto h-12 w-12 text-gray-400" />
                   <span className="mt-2 block text-sm font-medium text-gray-500">
@@ -549,6 +568,27 @@ const MenuManagement = () => {
       {showItemForm && <MenuItemForm initialValues={currentItem || undefined} onSubmit={handleItemFormSubmit} onCancel={() => setShowItemForm(false)} preselectedCategory={selectedCategory} preselectedSectionId={selectedSectionId || undefined} />}
       {showSectionForm && <SectionForm sections={sections} onSubmit={handleSectionFormSubmit} onCancel={() => setShowSectionForm(false)} />}
       {showMobilePreview && <MobileMenuPreview menuItems={menuItems} sections={sections} onClose={() => setShowMobilePreview(false)} />}
+
+      {/* Tour guiado para gestión de menú */}
+      <Joyride
+        callback={handleJoyrideCallback}
+        continuous
+        hideCloseButton
+        run={run}
+        scrollToFirstStep
+        showProgress
+        showSkipButton
+        steps={steps}
+        styles={joyrideTheme}
+        locale={{
+          back: 'Atrás',
+          close: 'Cerrar',
+          last: 'Finalizar',
+          next: 'Siguiente',
+          nextLabelWithProgress: `Siguiente {step} of {steps}`,
+          skip: 'Saltar tour',
+        }}
+      />
     </div>;
 };
 export default MenuManagement;

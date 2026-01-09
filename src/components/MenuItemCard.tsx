@@ -10,6 +10,7 @@ interface MenuItemCardProps {
   image: string;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
+  'data-tour'?: string;
 }
 const MenuItemCard: React.FC<MenuItemCardProps> = ({
   id,
@@ -20,14 +21,15 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
   category,
   image,
   onEdit,
-  onDelete
+  onDelete,
+  'data-tour': dataTour
 }) => {
   // Comprueba si es un Hot Dawg para aplicar el estilo especial
   const isHotDawg = category === 'Hot Dawgs';
   // Calcular precio con descuento si hay descuento
   const hasDiscount = discount && discount > 0;
   const discountedPrice = hasDiscount ? price * (1 - discount / 100) : price;  
-  return <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 hover:shadow-md border border-gray-100">
+  return <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 hover:shadow-md border border-gray-100" data-tour={dataTour}>
       <div className="relative h-56 w-full overflow-hidden">
         {image ? (
           <img
