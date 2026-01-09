@@ -186,7 +186,7 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
 
   // Estados generales
   const [isCropping, setIsCropping] = useState(false);
-  const [showMobilePreview, setShowMobilePreview] = useState(true); // Activar por defecto
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [previewImageSrc, setPreviewImageSrc] = useState<string>('');
   const [mobilePreviewSrc, setMobilePreviewSrc] = useState<string>(''); // Vista previa específica para móvil
 
@@ -217,6 +217,15 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
       setMobilePreviewSrc('');
     }
   }, [isOpen]);
+
+  // ✅ UX IMPROVEMENT: Auto-gestionar preview según modo
+  useEffect(() => {
+    if (editMode === 'mobile') {
+      setShowMobilePreview(true); // Activar automáticamente el preview móvil
+    } else if (editMode === 'desktop') {
+      setShowMobilePreview(false); // Ocultar preview móvil en modo desktop
+    }
+  }, [editMode]);
 
   const onCropComplete = useCallback(
     (croppedArea: Area, croppedAreaPixels: Area) => {
@@ -359,19 +368,6 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
           </div>
 
           <div className="flex items-center space-x-3">
-            {imageSrc && (
-              <button
-                onClick={() => setShowMobilePreview(!showMobilePreview)}
-                className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  showMobilePreview
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <Smartphone className="h-4 w-4 mr-2" />
-                {showMobilePreview ? '📱 Vista activa' : 'Ver preview'}
-              </button>
-            )}
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -435,8 +431,8 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                         editMode === 'desktop' ? 'text-blue-900' : 'text-green-900'
                       }`}>
                         {editMode === 'desktop'
-                          ? '🖥️ Modo Desktop - Vista amplia para escritorio'
-                          : '📱 Modo Móvil - Simula cómo se verá en dispositivos 375px'
+                          ? 'Modo Desktop - Vista amplia para escritorio'
+                          : 'Modo Móvil - Simula cómo se verá en dispositivos móviles'
                         }
                       </p>
                       <p className={`text-sm ${
@@ -444,7 +440,7 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                       }`}>
                         {editMode === 'desktop'
                           ? 'Ajusta tu banner para pantallas grandes (21:9). Bueno para mostrar toda la imagen.'
-                          : 'Ajusta cómo se verá en flexbill y otros servicios móviles. La vista previa simula exactamente el resultado final.'
+                          : 'Ajusta cómo se verá en flexbill y otros servicios móviles. La vista previa simula el resultado final.'
                         }
                       </p>
                     </div>
@@ -695,11 +691,11 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                                 <div className="text-center text-gray-400 text-xs px-4">
                                   <div className="bg-gray-50 rounded-lg p-3 mb-3">
                                     <p className="font-medium text-gray-700">
-                                      📱 Simulación Flexbill Móvil
+                                      Simulación Móvil
                                     </p>
                                     <p className="mt-1">
                                       {mobilePreviewSrc
-                                        ? "Así se verá en dispositivos de 375px de ancho"
+                                        ? "Así se verá en dispositivos de móviles"
                                         : "Generando simulación móvil..."
                                       }
                                     </p>
