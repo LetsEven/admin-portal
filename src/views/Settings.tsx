@@ -393,16 +393,15 @@ const Settings = () => {
 
   // Iniciar tour cuando la página esté completamente cargada
   useEffect(() => {
-    // Tour se muestra siempre para explicar funcionalidad, sin importar estado de datos
-    if (!isLoading && isSignedIn && user) {
+    if (settings && !isLoading && branches.length > 0 && !branchesLoading) {
       // Pequeño delay para asegurar que todos los elementos están renderizados
       const timer = setTimeout(() => {
         startOnboarding();
-      }, 1500);
+      }, 1000);
 
       return () => clearTimeout(timer);
     }
-  }, [isLoading, isSignedIn, user?.id, startOnboarding]);
+  }, [settings, isLoading, branches.length, branchesLoading, startOnboarding]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
