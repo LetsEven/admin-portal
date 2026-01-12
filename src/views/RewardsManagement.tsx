@@ -1421,7 +1421,7 @@ const RewardsManagement = () => {
                 Gestiona tus campañas de recompensas y fidelización
               </p>
               {/* Plan info */}
-              {currentPlan && planLimits && (
+              {currentPlan && planLimits ? (
                 <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500" data-tour="plan-info">
                   <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
                     Plan {currentPlan.plan_type}
@@ -1439,7 +1439,27 @@ const RewardsManagement = () => {
                     </span>
                   )}
                 </div>
-              )}
+              ) : run ? (
+                // Placeholder durante el tour cuando no hay plan
+                <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                      Ejemplo para tour guiado
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-4 text-xs text-gray-500" data-tour="plan-info">
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                      Plan Básico
+                    </span>
+                    <span>
+                      Campañas: 0/5
+                    </span>
+                    <span className="text-green-600">
+                      Restantes: 5
+                    </span>
+                  </div>
+                </div>
+              ) : null}
             </div>
             <div className="flex space-x-3">
               <button

@@ -393,15 +393,14 @@ const Settings = () => {
 
   // Iniciar tour cuando la página esté completamente cargada
   useEffect(() => {
-    if (settings && !isLoading && branches.length > 0 && !branchesLoading) {
-      // Pequeño delay para asegurar que todos los elementos están renderizados
+    if (!isLoading && isSignedIn && user) {
       const timer = setTimeout(() => {
         startOnboarding();
-      }, 1000);
+      }, 1500);
 
       return () => clearTimeout(timer);
     }
-  }, [settings, isLoading, branches.length, branchesLoading, startOnboarding]);
+  }, [isLoading, isSignedIn, user?.id, startOnboarding]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
