@@ -801,15 +801,16 @@ const RewardsManagement = () => {
 
   // Iniciar tour cuando la página esté completamente cargada
   useEffect(() => {
-    if (!campaignsLoading && currentPlan && planLimits) {
+    // Tour se muestra siempre para explicar funcionalidad, sin importar estado de datos
+    if (!restaurantLoading && restaurant?.id) {
       // Pequeño delay para asegurar que todos los elementos están renderizados
       const timer = setTimeout(() => {
         startOnboarding();
-      }, 1000);
+      }, 1500);
 
       return () => clearTimeout(timer);
     }
-  }, [campaignsLoading, currentPlan, planLimits, startOnboarding]);
+  }, [restaurantLoading, restaurant?.id, startOnboarding]);
 
   const loadPlanInfo = async () => {
     if (!restaurantId) return;

@@ -106,15 +106,16 @@ const MenuManagement = () => {
 
   // Iniciar tour cuando la página esté completamente cargada
   useEffect(() => {
-    if (!loading && sections.length > 0 && menuItems.length > 0) {
+    // Tour se muestra siempre para explicar funcionalidad, sin importar estado de datos
+    if (!loading && isHydrated && user && restaurant && !restaurantLoading) {
       // Pequeño delay para asegurar que todos los elementos están renderizados
       const timer = setTimeout(() => {
         startOnboarding();
-      }, 1000);
+      }, 1500);
 
       return () => clearTimeout(timer);
     }
-  }, [loading, sections.length, menuItems.length, startOnboarding]);
+  }, [loading, isHydrated, user, restaurant, restaurantLoading, startOnboarding]);
 
   const [showItemForm, setShowItemForm] = useState(false);
   const [showSectionForm, setShowSectionForm] = useState(false);

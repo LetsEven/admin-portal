@@ -80,15 +80,16 @@ const PromotionsManagement = () => {
 
   // Iniciar tour cuando los servicios estén cargados
   useEffect(() => {
-    if (!loading && services.length > 0) {
+    // Tour se muestra siempre para explicar funcionalidad, sin importar estado de datos
+    if (!loading) {
       // Pequeño delay para asegurar que todos los elementos están renderizados
       const timer = setTimeout(() => {
         startOnboarding();
-      }, 1000);
+      }, 1500);
 
       return () => clearTimeout(timer);
     }
-  }, [loading, services.length, startOnboarding]);
+  }, [loading, startOnboarding]);
 
   const loadServices = async () => {
     try {
