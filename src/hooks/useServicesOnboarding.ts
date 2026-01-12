@@ -69,12 +69,6 @@ const servicesOnboardingSteps: Step[] = [
     disableBeacon: true,
   },
   {
-    target: '[data-tour="services-list"]',
-    content: 'Estos son los servicios de Xquisito. Cada uno ofrece una experiencia diferente para tus clientes.',
-    title: 'Servicios Disponibles',
-    placement: 'top',
-  },
-  {
     target: '[data-tour="service-status"]',
     content: 'Los servicios pueden estar activos o inactivos. Contacta a soporte para activar los servicios que necesites.',
     title: 'Estado del Servicio',

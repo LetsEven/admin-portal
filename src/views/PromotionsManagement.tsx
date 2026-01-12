@@ -225,7 +225,7 @@ const PromotionsManagement = () => {
 
       {/* Lista de servicios */}
       {!loading && !error && (
-        <div className="mt-6 flex flex-col space-y-4" data-tour="services-list">
+        <div className="mt-6 flex flex-col space-y-4">
           {services.map((service, index) => {
             const isEnabled = service.enabled;
 
