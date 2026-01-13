@@ -311,7 +311,7 @@ const RewardsPricingModal: React.FC<RewardsPricingModalProps> = ({
                   {/* Popular badge */}
                   {plan.planData.popular && !plan.isCurrentPlan && (
                     <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-gradient-to-r from-orange-400 to-orange-600 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+                      <span className="bg-gradient-to-r px-3 py-1 rounded-full text-xs font-medium shadow-lg text-black bg-[#EAB3F4]" >
                         Más Popular
                       </span>
                     </div>
