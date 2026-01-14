@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingBagIcon, CreditCardIcon, LayoutGridIcon, SmartphoneIcon, ShoppingCartIcon, ReceiptIcon, ScanLineIcon, BedIcon } from 'lucide-react';
+import Joyride from 'react-joyride';
 import TapOrderDashboardModal from '../components/TapOrderDashboardModal';
 import FlexBillDashboardModal from '../components/FlexBillDashboardModal';
 import FoodHallDashboardModal from '../components/FoodHallDashboardModal';
@@ -7,6 +8,7 @@ import PickNGoDashboardModal from '../components/PickNGoDashboardModal';
 import TapPayDashboardModal from '../components/TapPayDashboardModal';
 import InactiveServiceModal from '../components/InactiveServiceModal';
 import { useAdminPortalApi, ServiceInfo } from '../services/adminPortalApi';
+import { useServicesOnboarding, joyrideTheme } from '../hooks/useServicesOnboarding';
 import toast from 'react-hot-toast';
 
 // Mapeo de servicios del main-portal a servicios del admin-portal
@@ -60,6 +62,9 @@ const PromotionsManagement = () => {
   const [services, setServices] = useState<ServiceInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Services onboarding tour
+  const { run, steps, handleJoyrideCallback, startOnboarding } = useServicesOnboarding();
   const [showTapOrderDashboard, setShowTapOrderDashboard] = useState(false);
   const [showFlexBillDashboard, setShowFlexBillDashboard] = useState(false);
   const [showFoodHallDashboard, setShowFoodHallDashboard] = useState(false);
@@ -72,6 +77,19 @@ const PromotionsManagement = () => {
   useEffect(() => {
     loadServices();
   }, []);
+
+  // Iniciar tour cuando los servicios estén cargados
+  useEffect(() => {
+    // Tour se muestra siempre para explicar funcionalidad, sin importar estado de datos
+    if (!loading) {
+      // Pequeño delay para asegurar que todos los elementos están renderizados
+      const timer = setTimeout(() => {
+        startOnboarding();
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, startOnboarding]);
 
   const loadServices = async () => {
     try {
@@ -208,7 +226,7 @@ const PromotionsManagement = () => {
       {/* Lista de servicios */}
       {!loading && !error && (
         <div className="mt-6 flex flex-col space-y-4">
-          {services.map((service) => {
+          {services.map((service, index) => {
             const isEnabled = service.enabled;
 
             return (
@@ -219,6 +237,7 @@ const PromotionsManagement = () => {
                     ? 'border-custom-green-200'  // Removido hover effects y cursor-pointer temporalmente
                     : 'border-gray-200 opacity-60 cursor-not-allowed'
                 }`}
+                data-tour={index === 0 ? "service-status" : undefined}
                 // onClick={() => handleServiceClick(service)} // Temporalmente deshabilitado
               >
                 <div className="p-4 flex">
@@ -273,6 +292,27 @@ const PromotionsManagement = () => {
         isOpen={showInactiveServiceModal}
         onClose={() => setShowInactiveServiceModal(false)}
         serviceName={selectedService?.name || ''}
+      />
+
+      {/* Tour guiado para gestión de servicios */}
+      <Joyride
+        callback={handleJoyrideCallback}
+        continuous
+        hideCloseButton
+        run={run}
+        scrollToFirstStep
+        showProgress
+        showSkipButton
+        steps={steps}
+        styles={joyrideTheme}
+        locale={{
+          back: 'Atrás',
+          close: 'Cerrar',
+          last: 'Finalizar',
+          next: 'Siguiente',
+          nextLabelWithProgress: `Siguiente {step} de {steps}`,
+          skip: 'Saltar tour',
+        }}
       />
     </div>;
 };

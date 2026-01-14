@@ -355,7 +355,6 @@ const PepperPage: React.FC = () => {
                   <div
                     className={`mx-auto rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-emerald-400 shadow-lg flex items-center justify-center overflow-hidden
                       w-16 h-16 mb-4 sm:w-20 sm:h-20 sm:mb-5 md:w-24 md:h-24 md:mb-6`}
-                    data-tour="pepper-logo"
                   >
                     <video
                       src="/video-icon-pepper.webm"

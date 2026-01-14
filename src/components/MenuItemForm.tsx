@@ -17,7 +17,7 @@ interface CustomField {
   name: string;
   type: "dropdown" | "checkboxes" | "dropdown-quantity";
   required: boolean;
-  maxSelections?: number; // Para checkboxes: cantidad máxima seleccionable (1-4)
+  maxSelections?: number; // Para checkboxes: cantidad máxima seleccionable (1-10)
   options: Array<{
     id: string;
     name: string;
@@ -33,7 +33,8 @@ interface MenuItemFormProps {
     price: number;
     base_price?: number;
     discount?: number;
-    category: string;
+    category: string; // Mantenemos para compatibilidad
+    section_id?: number; // Agregamos section_id como primary
     image: string;
     customFields?: CustomField[];
     availableBranches?: string[]; // Array de branch IDs donde está disponible
@@ -41,6 +42,7 @@ interface MenuItemFormProps {
   onSubmit: (values: any) => void;
   onCancel: () => void;
   preselectedCategory?: string;
+  preselectedSectionId?: number; // Agregamos para manejar section_id
 }
 const MenuItemForm: React.FC<MenuItemFormProps> = ({
   initialValues = {
@@ -51,23 +53,26 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     category: "",
     image: "",
     customFields: [],
+    availableBranches: [],
   },
   onSubmit,
   onCancel,
   preselectedCategory,
+  preselectedSectionId,
 }) => {
   const { user } = useUser();
   // Si estamos editando (tiene id y base_price), usar base_price directamente
   // Si no tiene base_price (datos antiguos), calcular dividiendo entre 1.16
   // Si es nuevo, usar el precio tal cual
   const displayPrice = initialValues.id
-    ? (initialValues.base_price ?? initialValues.price / 1.16)
+    ? (initialValues.base_price ?? Math.round((initialValues.price / 1.16) * 100) / 100)
     : initialValues.price;
 
   const [values, setValues] = useState({
     ...initialValues,
     price: displayPrice,
-    category: preselectedCategory || initialValues.category,
+    category: initialValues.id ? initialValues.category : (preselectedCategory || initialValues.category),
+    section_id: initialValues.id ? initialValues.section_id : (preselectedSectionId || initialValues.section_id),
   });
 
   // Branch availability state
@@ -138,19 +143,29 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     >
   ) => {
     const { name, value } = e.target;
-    setValues({
-      ...values,
-      [name]:
-        name === "price" || name === "discount"
-          ? parseFloat(value) || 0
-          : value,
-    });
+
+    if (name === "price" || name === "discount") {
+      if (value === "") {
+        setValues({ ...values, [name]: "" });
+        return;
+      }
+
+      // Validar que solo tenga máximo 2 decimales
+      const decimalRegex = /^\d*\.?\d{0,2}$/;
+      if (!decimalRegex.test(value)) {
+        return; // No actualizar si tiene más de 2 decimales
+      }
+
+      // Mantener como string para preservar la edición natural
+      setValues({ ...values, [name]: value });
+    } else {
+      setValues({ ...values, [name]: value });
+    }
   };
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!user) {
       toast.error("Debes estar autenticado para subir imágenes", {
         duration: 3000,
-        icon: "🔐",
       });
       return;
     }
@@ -193,13 +208,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
         console.log("✅ Item image uploaded successfully:", publicUrl);
         toast.success("Imagen subida correctamente", {
           duration: 2000,
-          icon: "📷",
+          icon: "",
         });
       } catch (error) {
         console.error("❌ Error uploading item image:", error);
         toast.error("Error al subir la imagen. Por favor intenta de nuevo.", {
           duration: 4000,
-          icon: "⚠️",
         });
 
         // Reset on error
@@ -354,18 +368,17 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     if (initialValues.id) {
       toast.success(`Actualizando "${values.name}"`, {
         duration: 2000,
-        icon: "✏️",
       });
     } else {
       toast.success(`Guardando platillo "${values.name}"`, {
         duration: 2000,
-        icon: "💾",
       });
     }
 
     // Siempre aplicar el 16% de IVA al precio antes de guardar en BD
-    const priceWithTax = values.price * 1.16;
-    const basePrice = values.price; // Precio sin IVA
+    const numericPrice = parseFloat(values.price) || 0;
+    const priceWithTax = numericPrice * 1.16;
+    const basePrice = numericPrice; // Precio sin IVA
     onSubmit({
       ...values,
       price: priceWithTax,
@@ -560,7 +573,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                   {selectedBranches.length === 0 && (
                     <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
                       <p className="text-xs text-yellow-800">
-                        ⚠️ Este producto no estará disponible en ninguna sucursal.
+                        Este producto no estará disponible en ninguna sucursal.
                       </p>
                     </div>
                   )}
@@ -851,22 +864,18 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                   required
                   min="0"
                   step="0.01"
-                  value={values.price ?
-                    // Limpiar errores de punto flotante pero mantener edición natural
-                    (parseFloat(values.price) % 1 === 0 ?
-                      parseFloat(values.price).toString() :
-                      parseFloat(values.price).toFixed(2).replace(/\.?0+$/, ''))
-                    : ""}
+                  value={values.price || ""}
                   onChange={handleChange}
+                  placeholder="0.00"
                   className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
                 />
               </div>
-              {values.price > 0 && (
+              {parseFloat(values.price) > 0 && (
                 <div className="mt-2 flex justify-between items-center">
                   <p className="text-sm text-gray-700">
                     <span className="font-medium">Precio mas IVA (16%):</span>
                     <span className="ml-2 font-semibold">
-                      ${(values.price * 1.16).toFixed(2)}
+                      ${(parseFloat(values.price) * 1.16).toFixed(2)}
                     </span>
                   </p>
                   <p className="text-sm text-gray-700">
@@ -874,9 +883,9 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                     <span className="ml-2 font-semibold text-custom-green-600">
                       $
                       {(
-                        values.price *
+                        parseFloat(values.price) *
                         1.16 *
-                        (1 - (values.discount || 0) / 100)
+                        (1 - (parseFloat(values.discount) || 0) / 100)
                       ).toFixed(2)}
                     </span>
                   </p>

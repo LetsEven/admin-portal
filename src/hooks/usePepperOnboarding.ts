@@ -60,7 +60,7 @@ export const pepperJoyrideTheme = {
   }
 };
 
-// Definición de los pasos del tour para Pepper (3 pasos)
+// Definición de los pasos del tour para Pepper (2 pasos)
 const pepperOnboardingSteps: Step[] = [
   {
     target: 'body',
@@ -70,14 +70,8 @@ const pepperOnboardingSteps: Step[] = [
     disableBeacon: true,
   },
   {
-    target: '[data-tour="pepper-logo"]',
-    content: 'Este es Pepper, tu asistente inteligente. Puede ayudarte con análisis de ventas, optimización de precios, sugerencias de promociones y mucho más.',
-    title: 'Tu Asistente AI 🎯',
-    placement: 'bottom',
-  },
-  {
     target: '[data-tour="chat-input"]',
-    content: 'Escribe cualquier pregunta sobre tu restaurante aquí. Por ejemplo: "¿Qué platillos son los más consumidos?" o "¿Cómo optimizo mi menú?" y presiona enviar.',
+    content: 'Escribe cualquier pregunta sobre tu restaurante aquí. Por ejemplo: "¿Qué platillos son los más consumidos?".',
     title: 'Haz tus preguntas 💬',
     placement: 'top',
     spotlightPadding: 10,

@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { PlusIcon, FilterIcon } from 'lucide-react';
-import { useUser } from '@clerk/nextjs';
-import toast from 'react-hot-toast';
-import { useRestaurant } from '../contexts/RestaurantContext';
-import MenuItemCard from '../components/MenuItemCard';
-import MenuItemForm from '../components/MenuItemForm';
-import SectionHeader from '../components/SectionHeader';
-import SectionForm from '../components/SectionForm';
-import MobileMenuPreview from '../components/MobileMenuPreview';
-import RestaurantHeader from '../components/RestaurantHeader';
-import { useMenuAdminPortalApi } from '../services/menuAdminPortalApi';
-import { MenuSection, MenuItem } from '../services/menuAdminPortalApi';
+import React, { useEffect, useState } from "react";
+import { PlusIcon, FilterIcon } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import toast from "react-hot-toast";
+import Joyride from "react-joyride";
+import { useRestaurant } from "../contexts/RestaurantContext";
+import MenuItemCard from "../components/MenuItemCard";
+import MenuItemForm from "../components/MenuItemForm";
+import SectionHeader from "../components/SectionHeader";
+import SectionForm from "../components/SectionForm";
+import MobileMenuPreview from "../components/MobileMenuPreview";
+import RestaurantHeader from "../components/RestaurantHeader";
+import { useMenuAdminPortalApi } from "../services/menuAdminPortalApi";
+import { MenuSection, MenuItem } from "../services/adminPortalApi";
+import { useMenuOnboarding, joyrideTheme } from "../hooks/useMenuOnboarding";
 
 interface Branch {
   id: string;
@@ -22,8 +24,17 @@ interface Branch {
 const MenuManagement = () => {
   const [isHydrated, setIsHydrated] = useState(false);
   const { user } = useUser();
-  const { restaurant, loading: restaurantLoading, updateRestaurant, createRestaurant } = useRestaurant();
+  const {
+    restaurant,
+    loading: restaurantLoading,
+    updateRestaurant,
+    createRestaurant,
+  } = useRestaurant();
   const menuApi = useMenuAdminPortalApi();
+
+  // Menu onboarding tour
+  const { run, steps, handleJoyrideCallback, startOnboarding } =
+    useMenuOnboarding();
 
   // State for API data
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -36,7 +47,7 @@ const MenuManagement = () => {
 
   const loadData = async () => {
     if (!user || !restaurant) {
-      console.log('⏳ Waiting for user and restaurant data...');
+      console.log("⏳ Waiting for user and restaurant data...");
       return;
     }
 
@@ -53,10 +64,11 @@ const MenuManagement = () => {
           : await menuApi.items.getAll();
 
         // Sort sections by display_order to ensure proper ordering
-        const sortedSections = sectionsData.sort((a, b) => a.display_order - b.display_order);
+        const sortedSections = sectionsData.sort(
+          (a, b) => a.display_order - b.display_order
+        );
         setSections(sortedSections);
         setMenuItems(itemsData);
-
       } catch (apiError) {
         const userSectionsKey = `sections_${user.id}`;
         const userItemsKey = `items_${user.id}`;
@@ -68,27 +80,26 @@ const MenuManagement = () => {
           const sectionsData = JSON.parse(savedSections);
           const itemsData = JSON.parse(savedItems);
 
-          const sortedSections = sectionsData.sort((a: MenuSection, b: MenuSection) => a.display_order - b.display_order);
+          const sortedSections = sectionsData.sort(
+            (a, b) => a.display_order - b.display_order
+          );
           setSections(sortedSections);
           setMenuItems(itemsData);
-
         } else {
           setSections([]);
           setMenuItems([]);
-
         }
       }
-
     } catch (error) {
-      console.error('❌ Error loading data:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load data');
+      console.error("❌ Error loading data:", error);
+      setError(error instanceof Error ? error.message : "Failed to load data");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       setIsHydrated(true);
     }
   }, []);
@@ -99,38 +110,70 @@ const MenuManagement = () => {
     }
   }, [isHydrated, user, restaurant, restaurantLoading, selectedBranch]);
 
+  // Iniciar tour cuando la página esté completamente cargada
+  useEffect(() => {
+    // Tour se muestra siempre para explicar funcionalidad, sin importar estado de datos
+    if (!loading && isHydrated && user && restaurant && !restaurantLoading) {
+      // Pequeño delay para asegurar que todos los elementos están renderizados
+      const timer = setTimeout(() => {
+        startOnboarding();
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [
+    loading,
+    isHydrated,
+    user,
+    restaurant,
+    restaurantLoading,
+    startOnboarding,
+  ]);
+
   const [showItemForm, setShowItemForm] = useState(false);
   const [showSectionForm, setShowSectionForm] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
-  const [filterCategory, setFilterCategory] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [filterCategory, setFilterCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSectionId, setSelectedSectionId] = useState<number | null>(
+    null
+  );
 
-  const allCategories = sections.map(s => s.name);
+  const allCategories = sections.map((s) => s.name);
+
   const handleAddItemClick = (category: string) => {
+    // Buscar section_id por nombre para robustez
+    const section = sections.find((s) => s.name === category);
+
     toast.success(`Agregando producto a la sección "${category}"`, {
       duration: 2000,
-      icon: '🍽️'
     });
     setCurrentItem(null);
     setSelectedCategory(category);
+    setSelectedSectionId(section?.id || null); // Establecer section_id
     setShowItemForm(true);
   };
+
   const handleAddSectionClick = () => {
     setShowSectionForm(true);
   };
+
   const handleEditClick = (id: number) => {
-    const itemToEdit = menuItems.find(item => item.id === id);
+    const itemToEdit = menuItems.find((item) => item.id === id);
     if (itemToEdit) {
-      const section = sections.find(s => s.id === itemToEdit.section_id);
+      const section = sections.find((s) => s.id === itemToEdit.section_id);
 
       let customFields = [];
       try {
         if (Array.isArray(itemToEdit.custom_fields)) {
           customFields = itemToEdit.custom_fields;
-        } else if (typeof itemToEdit.custom_fields === 'string') {
+        } else if (typeof itemToEdit.custom_fields === "string") {
           customFields = JSON.parse(itemToEdit.custom_fields);
-        } else if (itemToEdit.custom_fields === null || itemToEdit.custom_fields === undefined) {
+        } else if (
+          itemToEdit.custom_fields === null ||
+          itemToEdit.custom_fields === undefined
+        ) {
           customFields = [];
         }
       } catch (error) {
@@ -139,20 +182,23 @@ const MenuManagement = () => {
 
       const adaptedItem = {
         ...itemToEdit,
-        category: section?.name || '',
-        image: itemToEdit.image_url || '',
-        customFields: customFields
+        category: section?.name || "", // Mantenemos para compatibilidad visual
+        section_id: itemToEdit.section_id, // Agregamos section_id primario
+        image: itemToEdit.image_url || "",
+        customFields: customFields,
       };
 
       setCurrentItem(adaptedItem);
+      setSelectedCategory(""); // Reset selectedCategory cuando se edita
+      setSelectedSectionId(null); // Reset selectedSectionId cuando se edita
       setShowItemForm(true);
     }
   };
   const handleDeleteClick = async (id: number) => {
-    const itemToDelete = menuItems.find(item => item.id === id);
-    const itemName = itemToDelete?.name || 'platillo';
+    const itemToDelete = menuItems.find((item) => item.id === id);
+    const itemName = itemToDelete?.name || "platillo";
 
-    if (window.confirm('¿Estás seguro de que deseas eliminar este platillo?')) {
+    if (window.confirm("¿Estás seguro de que deseas eliminar este platillo?")) {
       const loadingToast = toast.loading(`Eliminando "${itemName}"...`);
 
       try {
@@ -162,42 +208,50 @@ const MenuManagement = () => {
         toast.dismiss(loadingToast);
         toast.success(`"${itemName}" eliminado correctamente`, {
           duration: 3000,
-          icon: '🗑️'
         });
       } catch (error) {
-        console.error('❌ Error deleting item:', error);
+        console.error("❌ Error deleting item:", error);
 
         toast.dismiss(loadingToast);
-        toast.error(`Error al eliminar "${itemName}". Por favor intenta de nuevo.`, {
-          duration: 4000,
-          icon: '❌'
-        });
+        toast.error(
+          `Error al eliminar "${itemName}". Por favor intenta de nuevo.`,
+          {
+            duration: 4000,
+            icon: "❌",
+          }
+        );
 
-        setError(error instanceof Error ? error.message : 'Failed to delete item');
+        setError(
+          error instanceof Error ? error.message : "Failed to delete item"
+        );
       }
     }
   };
   const handleItemFormSubmit = async (values: any) => {
     try {
-
       let sectionId: number;
 
-      if (values.id) {
-        const currentItem = menuItems.find(item => item.id === values.id);
-        const currentSection = sections.find(s => s.id === currentItem?.section_id);
-
-        if (currentSection && currentSection.name === values.category) {
-          sectionId = currentSection.id;
+      console.log({ values });
+      // NUEVA LÓGICA: Priorizar section_id sobre category name
+      if (values.section_id) {
+        // Si tenemos section_id, usarlo directamente (más robusto)
+        sectionId = values.section_id;
+      } else if (values.id) {
+        // Si estamos editando pero no tenemos section_id, buscar por item actual
+        const currentItem = menuItems.find((item) => item.id === values.id);
+        if (currentItem?.section_id) {
+          sectionId = currentItem.section_id;
         } else {
-          const newSection = sections.find(s => s.name === values.category);
-          if (!newSection) {
+          // Fallback: buscar por nombre de categoría (lógica antigua)
+          const section = sections.find((s) => s.name === values.category);
+          if (!section) {
             throw new Error(`Section "${values.category}" not found`);
           }
-          sectionId = newSection.id;
+          sectionId = section.id;
         }
       } else {
-        // For new items: find section by name
-        const section = sections.find(s => s.name === values.category);
+        // Para items nuevos: buscar por nombre si no hay section_id
+        const section = sections.find((s) => s.name === values.category);
         if (!section) {
           throw new Error(`Section "${values.category}" not found`);
         }
@@ -208,13 +262,16 @@ const MenuManagement = () => {
       try {
         if (Array.isArray(values.customFields)) {
           customFields = values.customFields;
-        } else if (typeof values.customFields === 'string') {
+        } else if (typeof values.customFields === "string") {
           customFields = JSON.parse(values.customFields);
-        } else if (values.customFields === null || values.customFields === undefined) {
+        } else if (
+          values.customFields === null ||
+          values.customFields === undefined
+        ) {
           customFields = [];
         }
       } catch (error) {
-        console.warn('Error parsing customFields in form submission:', error);
+        console.warn("Error parsing customFields in form submission:", error);
         customFields = [];
       }
 
@@ -228,7 +285,7 @@ const MenuManagement = () => {
         discount: values.discount || 0,
         custom_fields: customFields,
         display_order: 0,
-        availableBranches: values.availableBranches || []
+        availableBranches: values.availableBranches || [],
       };
 
       if (values.id) {
@@ -240,32 +297,50 @@ const MenuManagement = () => {
       await loadData();
 
       setShowItemForm(false);
-
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to save item');
+      setError(error instanceof Error ? error.message : "Failed to save item");
     }
   };
-  const handleSectionFormSubmit = async (reorderedSections: MenuSection[], newSectionNames: string[]) => {
-    const loadingToast = toast.loading('Guardando cambios...');
+  const handleSectionFormSubmit = async (
+    reorderedSections: MenuSection[],
+    newSectionNames: string[]
+  ) => {
+    const loadingToast = toast.loading("Guardando cambios...");
 
     try {
       // 1. Handle reordering of existing sections
-      const orderChanged = reorderedSections.some((section, index) => section.display_order !== index);
+      const orderChanged = reorderedSections.some(
+        (section, index) => section.display_order !== index
+      );
 
       if (orderChanged) {
         // Filter out sections with invalid IDs and wrong restaurant_id
-        const validSections = reorderedSections.filter(section => {
+        const validSections = reorderedSections.filter((section) => {
           const id = Number(section.id);
           const hasValidId = id && !isNaN(id) && id > 0 && id < 1000000000; // Real DB IDs are usually small numbers
           const belongsToRestaurant = section.restaurant_id === restaurant?.id;
 
           if (!hasValidId) {
-            console.warn('⚠️ Skipping section with invalid/temporary ID:', section.id, 'Name:', section.name);
+            console.warn(
+              "⚠️ Skipping section with invalid/temporary ID:",
+              section.id,
+              "Name:",
+              section.name
+            );
             return false;
           }
 
           if (!belongsToRestaurant) {
-            console.warn('⚠️ Skipping section that doesn\'t belong to current restaurant:', section.id, 'Name:', section.name, 'Section restaurant_id:', section.restaurant_id, 'Current restaurant_id:', restaurant?.id);
+            console.warn(
+              "⚠️ Skipping section that doesn't belong to current restaurant:",
+              section.id,
+              "Name:",
+              section.name,
+              "Section restaurant_id:",
+              section.restaurant_id,
+              "Current restaurant_id:",
+              restaurant?.id
+            );
             return false;
           }
 
@@ -273,27 +348,29 @@ const MenuManagement = () => {
         });
 
         if (validSections.length === 0) {
-          console.warn('⚠️ No valid sections to reorder (all have temporary IDs)');
+          console.warn(
+            "⚠️ No valid sections to reorder (all have temporary IDs)"
+          );
           toast.dismiss(loadingToast);
-          toast.success('Cambios guardados correctamente');
+          toast.success("Cambios guardados correctamente");
           return;
         }
 
         const reorderData = validSections.map((section, index) => ({
           id: Number(section.id), // Ensure it's a number
-          display_order: index
+          display_order: index,
         }));
 
         try {
           await menuApi.sections.reorder(reorderData);
         } catch (apiError) {
-          console.error('❌ Failed to reorder sections:', apiError);
+          console.error("❌ Failed to reorder sections:", apiError);
           toast.dismiss(loadingToast);
-          toast.error('Error al reordenar secciones');
+          toast.error("Error al reordenar secciones");
           // Update local state anyway for better UX
           const updatedSections = reorderedSections.map((section, index) => ({
             ...section,
-            display_order: index
+            display_order: index,
           }));
           setSections(updatedSections);
           return;
@@ -301,22 +378,27 @@ const MenuManagement = () => {
       }
 
       // 2. Handle section deletions
-      const reorderedSectionNames = reorderedSections.map(s => s.name);
-      const sectionsToDelete = sections.filter(section => !reorderedSectionNames.includes(section.name));
+      const reorderedSectionNames = reorderedSections.map((s) => s.name);
+      const sectionsToDelete = sections.filter(
+        (section) => !reorderedSectionNames.includes(section.name)
+      );
 
       for (const section of sectionsToDelete) {
         try {
-          console.log('🗑️ Deleting section:', section.name);
+          console.log("🗑️ Deleting section:", section.name);
           await menuApi.sections.delete(section.id);
         } catch (apiError) {
-          console.error('❌ Failed to delete section:', apiError);
+          console.error("❌ Failed to delete section:", apiError);
           toast.dismiss(loadingToast);
           toast.error(`Error al eliminar la sección "${section.name}"`);
-          const updatedSections = sections.filter(s => s.id !== section.id);
+          const updatedSections = sections.filter((s) => s.id !== section.id);
           setSections(updatedSections);
 
           if (user) {
-            localStorage.setItem(`sections_${user.id}`, JSON.stringify(updatedSections));
+            localStorage.setItem(
+              `sections_${user.id}`,
+              JSON.stringify(updatedSections)
+            );
           }
           return;
         }
@@ -327,10 +409,11 @@ const MenuManagement = () => {
         try {
           await menuApi.sections.create({
             name,
-            display_order: reorderedSections.length + newSectionNames.indexOf(name)
+            display_order:
+              reorderedSections.length + newSectionNames.indexOf(name),
           });
         } catch (apiError) {
-          console.error('❌ Failed to create section:', apiError);
+          console.error("❌ Failed to create section:", apiError);
           toast.dismiss(loadingToast);
           toast.error(`Error al crear la sección "${name}"`);
           // Fallback to localStorage if API fails
@@ -339,16 +422,20 @@ const MenuManagement = () => {
             restaurant_id: restaurant?.id || 0,
             name,
             is_active: true,
-            display_order: reorderedSections.length + newSectionNames.indexOf(name),
+            display_order:
+              reorderedSections.length + newSectionNames.indexOf(name),
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           };
 
           const updatedSections = [...reorderedSections, newSection];
           setSections(updatedSections);
 
           if (user) {
-            localStorage.setItem(`sections_${user.id}`, JSON.stringify(updatedSections));
+            localStorage.setItem(
+              `sections_${user.id}`,
+              JSON.stringify(updatedSections)
+            );
           }
           return;
         }
@@ -357,15 +444,16 @@ const MenuManagement = () => {
       await loadData();
 
       toast.dismiss(loadingToast);
-      toast.success('Cambios guardados correctamente');
+      toast.success("Cambios guardados correctamente");
 
       setShowSectionForm(false);
-
     } catch (error) {
-      console.error('❌ Error updating sections:', error);
+      console.error("❌ Error updating sections:", error);
       toast.dismiss(loadingToast);
-      toast.error('Error al guardar los cambios');
-      setError(error instanceof Error ? error.message : 'Failed to update sections');
+      toast.error("Error al guardar los cambios");
+      setError(
+        error instanceof Error ? error.message : "Failed to update sections"
+      );
     }
   };
 
@@ -384,78 +472,95 @@ const MenuManagement = () => {
   const handleUpdateLogo = (logo_url: string) => {
     updateRestaurant({ logo_url });
   };
-  const filteredItems = filterCategory ? menuItems.filter(item => {
-    const section = sections.find(s => s.id === item.section_id);
-    return section?.name === filterCategory;
-  }) : menuItems;
+  const filteredItems = filterCategory
+    ? menuItems.filter((item) => {
+        const section = sections.find((s) => s.id === item.section_id);
+        return section?.name === filterCategory;
+      })
+    : menuItems;
 
   // Group items by category - use section names from the database
-  const itemsByCategory = sections.reduce((acc, section) => {
-    const items = filteredItems.filter(item => item.section_id === section.id);
-    acc[section.name] = items;
-    return acc;
-  }, {} as Record<string, MenuItem[]>);
+  const itemsByCategory = sections.reduce(
+    (acc, section) => {
+      const items = filteredItems.filter(
+        (item) => item.section_id === section.id
+      );
+      acc[section.name] = items;
+      return acc;
+    },
+    {} as Record<string, MenuItem[]>
+  );
 
   if (!isHydrated || loading || restaurantLoading || !restaurant) {
-    return <div className="w-full">
-      <RestaurantHeader
-        restaurantName={restaurant?.name || ''}
-        bannerImage={restaurant?.banner_url || ''}
-        logoImage={restaurant?.logo_url || ''}
-        onUpdateName={() => {}}
-        onUpdateBanner={() => {}}
-        onUpdateLogo={() => {}}
-        onAddSectionClick={() => {}}
-        onViewMenuClick={() => {}}
-        selectedBranch={selectedBranch}
-        onBranchChange={setSelectedBranch}
-      />
-      <div className="mt-6">
-        <div className="text-center py-12">
-          <p className="text-gray-500">
-            {!isHydrated ? 'Iniciando...' : restaurantLoading ? 'Cargando restaurante...' : 'Cargando datos del menú...'}
-          </p>
-        </div>
-      </div>
-    </div>;
-  }
-
-  if (error) {
-    return <div className="w-full">
-      <RestaurantHeader
-        restaurantName={restaurant?.name || ''}
-        bannerImage={restaurant?.banner_url || ''}
-        logoImage={restaurant?.logo_url || ''}
-        onUpdateName={() => {}}
-        onUpdateBanner={() => {}}
-        onUpdateLogo={() => {}}
-        onAddSectionClick={() => {}}
-        onViewMenuClick={() => {}}
-        selectedBranch={selectedBranch}
-        onBranchChange={setSelectedBranch}
-      />
-      <div className="mt-6">
-        <div className="text-center py-12">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
-            <p className="text-red-600 font-medium">Error al cargar datos</p>
-            <p className="text-red-500 text-sm mt-1">{error}</p>
-            <button
-              onClick={loadData}
-              className="mt-3 px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
-            >
-              Reintentar
-            </button>
+    return (
+      <div className="w-full">
+        <RestaurantHeader
+          restaurantName={restaurant?.name || ""}
+          bannerImage={restaurant?.banner_url || ""}
+          logoImage={restaurant?.logo_url || ""}
+          onUpdateName={() => {}}
+          onUpdateBanner={() => {}}
+          onUpdateLogo={() => {}}
+          onAddSectionClick={() => {}}
+          onViewMenuClick={() => {}}
+          selectedBranch={selectedBranch}
+          onBranchChange={setSelectedBranch}
+        />
+        <div className="mt-6">
+          <div className="text-center py-12">
+            <p className="text-gray-500">
+              {!isHydrated
+                ? "Iniciando..."
+                : restaurantLoading
+                  ? "Cargando restaurante..."
+                  : "Cargando datos del menú..."}
+            </p>
           </div>
         </div>
       </div>
-    </div>;
+    );
   }
 
-  return <div className="w-full">
+  if (error) {
+    return (
+      <div className="w-full">
+        <RestaurantHeader
+          restaurantName={restaurant?.name || ""}
+          bannerImage={restaurant?.banner_url || ""}
+          logoImage={restaurant?.logo_url || ""}
+          onUpdateName={() => {}}
+          onUpdateBanner={() => {}}
+          onUpdateLogo={() => {}}
+          onAddSectionClick={() => {}}
+          onViewMenuClick={() => {}}
+          selectedBranch={selectedBranch}
+          onBranchChange={setSelectedBranch}
+        />
+        <div className="mt-6">
+          <div className="text-center py-12">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
+              <p className="text-red-600 font-medium">Error al cargar datos</p>
+              <p className="text-red-500 text-sm mt-1">{error}</p>
+              <button
+                onClick={loadData}
+                className="mt-3 px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
       <RestaurantHeader
-        restaurantName={restaurant?.name || ''}
-        bannerImage={restaurant?.banner_url || ''}
-        logoImage={restaurant?.logo_url || ''}
+        data-tour="restaurant-header"
+        restaurantName={restaurant?.name || ""}
+        bannerImage={restaurant?.banner_url || ""}
+        logoImage={restaurant?.logo_url || ""}
         onUpdateName={handleUpdateRestaurantName}
         onUpdateBanner={handleUpdateBanner}
         onUpdateLogo={handleUpdateLogo}
@@ -487,54 +592,172 @@ const MenuManagement = () => {
           </div>
         )} */}
 
-        {Object.keys(itemsByCategory).length === 0 ? <div className="text-center py-12">
-          <p className="text-gray-500">
-            No hay platillos en esta categoría. Agrega una sección y platillos
-            para comenzar.
-          </p>
-          </div> : Object.entries(itemsByCategory).map(([category, items]) => <div key={category} className="mb-8">
-
-            <SectionHeader title={category} />
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-
-              {items.map( item =>
-                <MenuItemCard
-                  key={item.id}
-                  id={item.id}
-                  name={item.name}
-                  description={item.description || ''}
-                  price={item.price}
-                  discount={item.discount}
-                  category={sections.find(s => s.id === item.section_id)?.name || ''}
-                  image={item.image_url || ''}
-                  onEdit={handleEditClick}
-                  onDelete={handleDeleteClick}
-                />)
-              }
-
-              <button onClick={() => handleAddItemClick(category)} className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-48 hover:bg-gray-50 transition-colors">
-                <div className="text-center">
-                  <PlusIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <span className="mt-2 block text-sm font-medium text-gray-500">
-                    Agregar platillo
+        {Object.keys(itemsByCategory).length === 0 ? (
+          run ? (
+            // Mostrar placeholders demo durante el tour
+            <div className="mb-8">
+              <div className="bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-4 mb-4">
+                <div className="flex items-center mb-2">
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                    Ejemplo para tour guiado
                   </span>
                 </div>
-              </button>
-              {items.length === 0 && 
-                <div className="col-span-full py-4 text-center text-gray-500">
-                  No hay platillos en esta sección. Haz clic en "Agregar
-                  platillo" para comenzar.
-                </div>
-              }
-            </div>
+                <SectionHeader
+                  title="Platos Principales"
+                  data-tour="section-header"
+                />
 
-          </div>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+                  <div
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                    data-tour="menu-item-card"
+                  >
+                    <div className="aspect-w-16 aspect-h-9 mb-3">
+                      <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-400 text-sm">
+                          Imagen ejemplo
+                        </span>
+                      </div>
+                    </div>
+                    <h3 className="font-medium text-gray-900 mb-1">
+                      Pasta Alfredo
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-2">
+                      Deliciosa pasta con salsa cremosa alfredo y pollo
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-bold text-gray-900">
+                        $185.00
+                      </span>
+                      <span className="text-xs text-blue-600">Ejemplo</span>
+                    </div>
+                  </div>
+
+                  <button
+                    className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-48 hover:bg-gray-50 transition-colors"
+                    data-tour="add-item-btn"
+                  >
+                    <div className="text-center">
+                      <PlusIcon className="mx-auto h-12 w-12 text-gray-400" />
+                      <span className="mt-2 block text-sm font-medium text-gray-500">
+                        Agregar platillo
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Estado normal sin tour - mantener funcionalidad existente
+            <div className="text-center py-12">
+              <p className="text-gray-500">
+                No hay platillos en esta categoría. Agrega una sección y
+                platillos para comenzar.
+              </p>
+            </div>
+          )
+        ) : (
+          Object.entries(itemsByCategory).map(
+            ([category, items], categoryIndex) => (
+              <div key={category} className="mb-8">
+                <SectionHeader
+                  title={category}
+                  data-tour={categoryIndex === 0 ? "section-header" : undefined}
+                />
+
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {items.map((item, itemIndex) => (
+                    <MenuItemCard
+                      key={item.id}
+                      id={item.id}
+                      name={item.name}
+                      description={item.description}
+                      price={item.price}
+                      discount={item.discount}
+                      category={
+                        sections.find((s) => s.id === item.section_id)?.name ||
+                        ""
+                      }
+                      image={item.image_url || ""}
+                      onEdit={handleEditClick}
+                      onDelete={handleDeleteClick}
+                      data-tour={
+                        categoryIndex === 0 && itemIndex === 0
+                          ? "menu-item-card"
+                          : undefined
+                      }
+                    />
+                  ))}
+
+                  <button
+                    onClick={() => handleAddItemClick(category)}
+                    data-tour={categoryIndex === 0 ? "add-item-btn" : undefined}
+                    className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-48 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="text-center">
+                      <PlusIcon className="mx-auto h-12 w-12 text-gray-400" />
+                      <span className="mt-2 block text-sm font-medium text-gray-500">
+                        Agregar platillo
+                      </span>
+                    </div>
+                  </button>
+                  {items.length === 0 && (
+                    <div className="col-span-full py-4 text-center text-gray-500">
+                      No hay platillos en esta sección. Haz clic en "Agregar
+                      platillo" para comenzar.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          )
         )}
       </div>
-      {showItemForm && <MenuItemForm initialValues={currentItem || undefined} onSubmit={handleItemFormSubmit} onCancel={() => setShowItemForm(false)} preselectedCategory={selectedCategory} />}
-      {showSectionForm && <SectionForm sections={sections} onSubmit={handleSectionFormSubmit} onCancel={() => setShowSectionForm(false)} />}
-      {showMobilePreview && <MobileMenuPreview menuItems={menuItems} sections={sections} onClose={() => setShowMobilePreview(false)} />}
-    </div>;
+      {showItemForm && (
+        <MenuItemForm
+          initialValues={currentItem || undefined}
+          onSubmit={handleItemFormSubmit}
+          onCancel={() => setShowItemForm(false)}
+          preselectedCategory={selectedCategory}
+          preselectedSectionId={selectedSectionId || undefined}
+        />
+      )}
+      {showSectionForm && (
+        <SectionForm
+          sections={sections}
+          onSubmit={handleSectionFormSubmit}
+          onCancel={() => setShowSectionForm(false)}
+        />
+      )}
+      {showMobilePreview && (
+        <MobileMenuPreview
+          menuItems={menuItems}
+          sections={sections}
+          onClose={() => setShowMobilePreview(false)}
+        />
+      )}
+
+      {/* Tour guiado para gestión de menú */}
+      <Joyride
+        callback={handleJoyrideCallback}
+        continuous
+        hideCloseButton
+        run={run}
+        scrollToFirstStep
+        showProgress
+        showSkipButton
+        steps={steps}
+        styles={joyrideTheme}
+        locale={{
+          back: "Atrás",
+          close: "Cerrar",
+          last: "Finalizar",
+          next: "Siguiente",
+          nextLabelWithProgress: `Siguiente {step} de {steps}`,
+          skip: "Saltar tour",
+        }}
+      />
+    </div>
+  );
 };
 export default MenuManagement;
