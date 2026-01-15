@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { XIcon, UploadIcon, PlusIcon, TrashIcon, MapPin, CheckIcon } from "lucide-react";
 import { ImageUploadService } from "../services/imageUploadService";
 import { useUser } from "@clerk/nextjs";
-import { useAdminPortalApi } from "../services/adminPortalApi";
+import { useAdminPortalApi, MenuSection } from "../services/adminPortalApi";
+import { useMenuAdminPortalApi } from "../services/menuAdminPortalApi";
 import toast from "react-hot-toast";
 
 interface Branch {
@@ -80,6 +81,11 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   const [selectedBranches, setSelectedBranches] = useState<string[]>(initialValues.availableBranches || []);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const adminPortalApi = useAdminPortalApi();
+  const menuApi = useMenuAdminPortalApi();
+
+  // Sections state
+  const [sections, setSections] = useState<MenuSection[]>([]);
+  const [sectionsLoading, setSectionsLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [customFields, setCustomFields] = useState<CustomField[]>(
@@ -87,9 +93,10 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   );
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  // Load branches when component mounts
+  // Load branches and sections when component mounts
   useEffect(() => {
     loadBranches();
+    loadSections();
   }, []);
 
   const loadBranches = async () => {
@@ -97,17 +104,26 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
       setBranchesLoading(true);
       const branchesData = await adminPortalApi.getBranches();
       setBranches(branchesData.branches || []);
-
-      // If no branches were initially selected and we have branches, select all by default
-      if (selectedBranches.length === 0 && branchesData.branches?.length > 0) {
-        const allBranchIds = branchesData.branches.map(branch => branch.id);
-        setSelectedBranches(allBranchIds);
-      }
+      // Las sucursales seleccionadas vienen de initialValues.availableBranches
+      // No preseleccionamos nada automáticamente - el usuario debe elegir manualmente
     } catch (error) {
       console.error('Error loading branches:', error);
       toast.error('Error al cargar sucursales');
     } finally {
       setBranchesLoading(false);
+    }
+  };
+
+  const loadSections = async () => {
+    try {
+      setSectionsLoading(true);
+      const sectionsData = await menuApi.sections.getAll();
+      setSections(sectionsData || []);
+    } catch (error) {
+      console.error('Error loading sections:', error);
+      toast.error('Error al cargar categorías');
+    } finally {
+      setSectionsLoading(false);
     }
   };
 
@@ -131,12 +147,31 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
       setSelectedBranches(branches.map(branch => branch.id));
     }
   };
+
+  const handleSectionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const sectionId = parseInt(e.target.value) || undefined;
+    const selectedSection = sections.find(section => section.id === sectionId);
+
+    setValues({
+      ...values,
+      section_id: sectionId,
+      category: selectedSection?.name || ''
+    });
+  };
+
   // Set initial image preview if an image URL exists
   useEffect(() => {
     if (initialValues.image && initialValues.image.startsWith("http")) {
       setImagePreview(initialValues.image);
     }
   }, [initialValues.image]);
+
+  // Sincronizar selectedBranches cuando cambian los initialValues (al editar un producto)
+  useEffect(() => {
+    if (initialValues.availableBranches && initialValues.availableBranches.length > 0) {
+      setSelectedBranches(initialValues.availableBranches);
+    }
+  }, [initialValues.id]);
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -205,7 +240,6 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
         // Update preview to the final URL
         setImagePreview(publicUrl);
 
-        console.log("✅ Item image uploaded successfully:", publicUrl);
         toast.success("Imagen subida correctamente", {
           duration: 2000,
           icon: "",
@@ -470,6 +504,32 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                   )}
                 </div>
               </div>
+            </div>
+            <div>
+              <label
+                htmlFor="section_id"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Categoría *
+              </label>
+              <select
+                name="section_id"
+                id="section_id"
+                required
+                value={values.section_id || ''}
+                onChange={handleSectionChange}
+                disabled={sectionsLoading}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
+              >
+                <option value="">
+                  {sectionsLoading ? 'Cargando categorías...' : 'Seleccionar categoría'}
+                </option>
+                {sections.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label

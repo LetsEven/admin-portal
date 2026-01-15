@@ -67,6 +67,7 @@ export interface MenuItem {
   display_order: number;
   created_at: string;
   updated_at: string;
+  availableBranches?: string[]; // Array de branch IDs donde el item está disponible
 }
 
 export interface CustomField {

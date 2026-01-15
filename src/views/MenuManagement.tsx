@@ -182,10 +182,11 @@ const MenuManagement = () => {
 
       const adaptedItem = {
         ...itemToEdit,
-        category: section?.name || "", // Mantenemos para compatibilidad visual
-        section_id: itemToEdit.section_id, // Agregamos section_id primario
+        category: section?.name || "",
+        section_id: itemToEdit.section_id,
         image: itemToEdit.image_url || "",
         customFields: customFields,
+        availableBranches: itemToEdit.availableBranches || [],
       };
 
       setCurrentItem(adaptedItem);

@@ -208,9 +208,12 @@ const MobileMenuPreview: React.FC<MobileMenuPreviewProps> = ({
                                         <p className="text-gray-600 text-xs mt-1 line-clamp-2">{item.description}</p>
                                         <div className="flex items-center mt-1">
                                           <span className="text-sm font-bold text-black">
-                                            ${item.price}
+                                            ${(item.discount > 0
+                                              ? item.price * (1 - item.discount / 100)
+                                              : item.price
+                                            ).toFixed(2)}
                                           </span>
-                                          {item.discount && item.discount > 0 && (
+                                          {item.discount > 0 && (
                                             <span className="ml-2 text-xs text-red-600 font-medium">
                                               {item.discount}% OFF
                                             </span>
