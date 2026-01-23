@@ -274,23 +274,23 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
         />
 
         {/* Modal */}
-        <div className="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+        <div className="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all w-full max-w-[95vw] sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
           {/* Header */}
-          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
+          <div className="bg-white px-3 pt-4 pb-3 sm:px-6 sm:pt-5 sm:pb-4">
+            <div className="flex items-center justify-between  mb-3 sm:mb-4">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900">
                 {title}
               </h3>
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             </div>
 
-            {/* Cropper Container - Larger for bigger circle */}
-            <div className="relative bg-gray-50 rounded-lg overflow-hidden" style={{ height: '400px' }}>
+            {/* Cropper Container - Responsive height */}
+            <div className="relative bg-gray-50 rounded-lg overflow-hidden h-64 sm:h-[400px]">
               {imageSrc ? (
                 <Cropper
                   image={imageSrc}
@@ -319,32 +319,32 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                    <Upload className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                    <p className="text-lg font-medium">No hay imagen seleccionada</p>
-                    <p className="text-sm mt-2">Usa el botón "Subir imagen" para comenzar</p>
+                  <div className="text-center text-gray-500 px-4">
+                    <Upload className="h-10 w-10 sm:h-16 sm:w-16 mx-auto mb-3 sm:mb-4 text-gray-400" />
+                    <p className="text-base sm:text-lg font-medium">No hay imagen seleccionada</p>
+                    <p className="text-xs sm:text-sm mt-1 sm:mt-2">Usa el botón "Subir imagen" para comenzar</p>
                   </div>
                 </div>
               )}
 
               {/* Zoom Control Buttons - Discrete and minimal */}
               {imageSrc && (
-                <div className="absolute bottom-6 right-6 flex flex-col space-y-2">
+                <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 flex flex-col space-y-1.5 sm:space-y-2">
                   <button
                     onClick={handleZoomIn}
                     disabled={zoomPercent >= 300}
-                    className="w-6 h-6 bg-white bg-opacity-95 backdrop-blur-sm hover:bg-opacity-100 text-gray-600 hover:text-gray-800 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-7 h-7 sm:w-6 sm:h-6 bg-white bg-opacity-95 backdrop-blur-sm hover:bg-opacity-100 text-gray-600 hover:text-gray-800 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Acercar"
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
                   </button>
                   <button
                     onClick={handleZoomOut}
                     disabled={zoomPercent <= -300}
-                    className="w-6 h-6 bg-white bg-opacity-95 backdrop-blur-sm hover:bg-opacity-100 text-gray-600 hover:text-gray-800 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-7 h-7 sm:w-6 sm:h-6 bg-white bg-opacity-95 backdrop-blur-sm hover:bg-opacity-100 text-gray-600 hover:text-gray-800 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Alejar"
                   >
-                    <Minus className="h-3 w-3" />
+                    <Minus className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
                   </button>
                 </div>
               )}
@@ -352,10 +352,10 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
             {/* Controls */}
             {imageSrc && (
-              <div className="mt-4 space-y-4">
+              <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4">
                 {/* Zoom Control */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                     Zoom: {Math.round(zoomPercent)}%
                   </label>
                   <input
@@ -365,7 +365,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
                     max={300}
                     step={20}
                     onChange={(e) => handlePercentChange(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                    className="w-full h-1.5 sm:h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                     style={{
                       background: `linear-gradient(to right, #173E44 0%, #173E44 ${((zoomPercent + 300) / 600) * 100}%, #d1d5db ${((zoomPercent + 300) / 600) * 100}%, #d1d5db 100%)`
                     }}
@@ -374,7 +374,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
                 {/* Rotation Control */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                     Rotación: {rotation}°
                   </label>
                   <input
@@ -384,7 +384,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
                     max={180}
                     step={1}
                     onChange={(e) => setRotation(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                    className="w-full h-1.5 sm:h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                     style={{
                       background: `linear-gradient(to right, #173E44 0%, #173E44 ${((rotation + 180) / 360) * 100}%, #d1d5db ${((rotation + 180) / 360) * 100}%, #d1d5db 100%)`
                     }}
@@ -395,9 +395,9 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
                 <div className="flex justify-center">
                   <button
                     onClick={handleReset}
-                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44]"
+                    className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44]"
                   >
-                    <RotateCcw className="h-4 w-4 mr-2" />
+                    <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                     Restablecer
                   </button>
                 </div>
@@ -406,46 +406,45 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+          <div className="bg-gray-50 px-3 py-2.5 sm:px-6 sm:py-3 flex flex-row flex-wrap gap-2 justify-end">
             <button
               type="button"
-              onClick={handleSave}
-              disabled={isProcessing || !imageSrc}
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#173E44] text-base font-medium text-white hover:bg-[#0f2c31] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44] sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={onClose}
+              disabled={isProcessing}
+              className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-3 sm:px-4 py-1.5 sm:py-2 bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isProcessing ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Procesando...
-                </>
-              ) : (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Guardar
-                </>
-              )}
+              Cancelar
             </button>
             {onImageUpload && (
               <button
                 type="button"
                 onClick={handleUploadImage}
                 disabled={isProcessing}
-                className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44] sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-3 sm:px-4 py-1.5 sm:py-2 bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Upload className="h-4 w-4 mr-2" />
-                Subir imagen
+                <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                <span className="hidden sm:inline">Subir imagen</span>
+                <span className="sm:hidden">Subir</span>
               </button>
             )}
             <button
               type="button"
-              onClick={onClose}
-              disabled={isProcessing}
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44] sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleSave}
+              disabled={isProcessing || !imageSrc}
+              className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 sm:px-4 py-1.5 sm:py-2 bg-[#173E44] text-xs sm:text-sm font-medium text-white hover:bg-[#0f2c31] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Cancelar
+              {isProcessing ? (
+                <>
+                  <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5 sm:mr-2"></div>
+                  <span className="hidden sm:inline">Procesando...</span>
+                  <span className="sm:hidden">...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                  Guardar
+                </>
+              )}
             </button>
           </div>
         </div>

@@ -386,7 +386,7 @@ const MenuManagement = () => {
 
       for (const section of sectionsToDelete) {
         try {
-          console.log("🗑️ Deleting section:", section.name);
+          console.log("Deleting section:", section.name);
           await menuApi.sections.delete(section.id);
         } catch (apiError) {
           console.error("❌ Failed to delete section:", apiError);
@@ -507,9 +507,9 @@ const MenuManagement = () => {
           selectedBranch={selectedBranch}
           onBranchChange={setSelectedBranch}
         />
-        <div className="mt-6">
-          <div className="text-center py-12">
-            <p className="text-gray-500">
+        <div className="mt-4 sm:mt-6">
+          <div className="text-center py-8 sm:py-12">
+            <p className="text-sm sm:text-base text-gray-500">
               {!isHydrated
                 ? "Iniciando..."
                 : restaurantLoading
@@ -537,14 +537,14 @@ const MenuManagement = () => {
           selectedBranch={selectedBranch}
           onBranchChange={setSelectedBranch}
         />
-        <div className="mt-6">
-          <div className="text-center py-12">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
-              <p className="text-red-600 font-medium">Error al cargar datos</p>
-              <p className="text-red-500 text-sm mt-1">{error}</p>
+        <div className="mt-4 sm:mt-6">
+          <div className="text-center py-8 sm:py-12 px-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 max-w-md mx-auto">
+              <p className="text-sm sm:text-base text-red-600 font-medium">Error al cargar datos</p>
+              <p className="text-red-500 text-xs sm:text-sm mt-1">{error}</p>
               <button
                 onClick={loadData}
-                className="mt-3 px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
+                className="mt-2 sm:mt-3 px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 text-white text-xs sm:text-sm rounded-md hover:bg-red-700"
               >
                 Reintentar
               </button>
@@ -571,7 +571,7 @@ const MenuManagement = () => {
         onBranchChange={setSelectedBranch}
       />
 
-      <div className="mt-6">
+      <div className="mt-4 sm:mt-6">
         {/* Branch filter info */}
         {/* {selectedBranch && (
           <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -596,10 +596,10 @@ const MenuManagement = () => {
         {Object.keys(itemsByCategory).length === 0 ? (
           run ? (
             // Mostrar placeholders demo durante el tour
-            <div className="mb-8">
-              <div className="bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-4 mb-4">
+            <div className="mb-6 sm:mb-8">
+              <div className="bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
                 <div className="flex items-center mb-2">
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                  <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium">
                     Ejemplo para tour guiado
                   </span>
                 </div>
@@ -608,39 +608,39 @@ const MenuManagement = () => {
                   data-tour="section-header"
                 />
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+                <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-3 sm:mt-4">
                   <div
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4"
                     data-tour="menu-item-card"
                   >
-                    <div className="aspect-w-16 aspect-h-9 mb-3">
-                      <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <span className="text-gray-400 text-sm">
+                    <div className="aspect-w-16 aspect-h-9 mb-2 sm:mb-3">
+                      <div className="w-full h-24 sm:h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-400 text-xs sm:text-sm">
                           Imagen ejemplo
                         </span>
                       </div>
                     </div>
-                    <h3 className="font-medium text-gray-900 mb-1">
+                    <h3 className="text-sm sm:text-base font-medium text-gray-900 mb-1">
                       Pasta Alfredo
                     </h3>
-                    <p className="text-sm text-gray-500 mb-2">
+                    <p className="text-xs sm:text-sm text-gray-500 mb-2">
                       Deliciosa pasta con salsa cremosa alfredo y pollo
                     </p>
                     <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold text-gray-900">
+                      <span className="text-base sm:text-lg font-bold text-gray-900">
                         $185.00
                       </span>
-                      <span className="text-xs text-blue-600">Ejemplo</span>
+                      <span className="text-[10px] sm:text-xs text-blue-600">Ejemplo</span>
                     </div>
                   </div>
 
                   <button
-                    className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-48 hover:bg-gray-50 transition-colors"
+                    className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-36 sm:h-48 hover:bg-gray-50 transition-colors"
                     data-tour="add-item-btn"
                   >
                     <div className="text-center">
-                      <PlusIcon className="mx-auto h-12 w-12 text-gray-400" />
-                      <span className="mt-2 block text-sm font-medium text-gray-500">
+                      <PlusIcon className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
+                      <span className="mt-1 sm:mt-2 block text-xs sm:text-sm font-medium text-gray-500">
                         Agregar platillo
                       </span>
                     </div>
@@ -650,8 +650,8 @@ const MenuManagement = () => {
             </div>
           ) : (
             // Estado normal sin tour - mantener funcionalidad existente
-            <div className="text-center py-12">
-              <p className="text-gray-500">
+            <div className="text-center py-8 sm:py-12 px-4">
+              <p className="text-sm sm:text-base text-gray-500">
                 No hay platillos en esta categoría. Agrega una sección y
                 platillos para comenzar.
               </p>
@@ -660,13 +660,13 @@ const MenuManagement = () => {
         ) : (
           Object.entries(itemsByCategory).map(
             ([category, items], categoryIndex) => (
-              <div key={category} className="mb-8">
+              <div key={category} className="mb-6 sm:mb-8">
                 <SectionHeader
                   title={category}
                   data-tour={categoryIndex === 0 ? "section-header" : undefined}
                 />
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {items.map((item, itemIndex) => (
                     <MenuItemCard
                       key={item.id}
@@ -693,17 +693,17 @@ const MenuManagement = () => {
                   <button
                     onClick={() => handleAddItemClick(category)}
                     data-tour={categoryIndex === 0 ? "add-item-btn" : undefined}
-                    className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-48 hover:bg-gray-50 transition-colors"
+                    className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-36 sm:h-48 hover:bg-gray-50 transition-colors"
                   >
                     <div className="text-center">
-                      <PlusIcon className="mx-auto h-12 w-12 text-gray-400" />
-                      <span className="mt-2 block text-sm font-medium text-gray-500">
+                      <PlusIcon className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
+                      <span className="mt-1 sm:mt-2 block text-xs sm:text-sm font-medium text-gray-500">
                         Agregar platillo
                       </span>
                     </div>
                   </button>
                   {items.length === 0 && (
-                    <div className="col-span-full py-4 text-center text-gray-500">
+                    <div className="col-span-full py-3 sm:py-4 text-center text-xs sm:text-sm text-gray-500">
                       No hay platillos en esta sección. Haz clic en "Agregar
                       platillo" para comenzar.
                     </div>

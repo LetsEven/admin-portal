@@ -914,22 +914,22 @@ const Dashboard = () => {
       ` }} />
 
       {/* Filtros superiores y header del restaurante */}
-      <div className="flex items-start justify-between mb-6 gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-6">
         {/* Filtros superiores  */}
-        <div className="flex flex-wrap gap-4" data-tour="filtros-avanzados">
+        <div className="flex flex-wrap gap-2 sm:gap-4" data-tour="filtros-avanzados">
           {/* Filtro Género */}
           <div className="relative">
             <button
               onClick={() => setDropdownGeneroAbierto(!dropdownGeneroAbierto)}
-              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
             >
-              <UsersIcon className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Género:</span>
-              <span className="text-sm font-medium text-gray-800">
+              <UsersIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+              <span className="text-xs sm:text-sm text-gray-600 hidden xs:inline">Género:</span>
+              <span className="text-xs sm:text-sm font-medium text-gray-800">
                 {generoSeleccionado.label}
               </span>
               <ChevronDownIcon
-                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownGeneroAbierto ? "transform rotate-180" : ""}`}
+                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${dropdownGeneroAbierto ? "transform rotate-180" : ""}`}
               />
             </button>
             {dropdownGeneroAbierto && (
@@ -964,15 +964,15 @@ const Dashboard = () => {
           <div className="relative">
             <button
               onClick={() => setDropdownEdadAbierto(!dropdownEdadAbierto)}
-              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
             >
-              <UserIcon className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Edad:</span>
-              <span className="text-sm font-medium text-gray-800">
+              <UserIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+              <span className="text-xs sm:text-sm text-gray-600 hidden xs:inline">Edad:</span>
+              <span className="text-xs sm:text-sm font-medium text-gray-800">
                 {edadSeleccionada.label}
               </span>
               <ChevronDownIcon
-                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownEdadAbierto ? "transform rotate-180" : ""}`}
+                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${dropdownEdadAbierto ? "transform rotate-180" : ""}`}
               />
             </button>
             {dropdownEdadAbierto && (
@@ -1007,15 +1007,15 @@ const Dashboard = () => {
           <div className="relative">
             <button
               onClick={() => setDropdownAbierto(!dropdownAbierto)}
-              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
             >
-              <MapPinIcon className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Sucursal:</span>
-              <span className="text-sm font-medium text-gray-800">
+              <MapPinIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+              <span className="text-xs sm:text-sm text-gray-600 hidden xs:inline">Sucursal:</span>
+              <span className="text-xs sm:text-sm font-medium text-gray-800 truncate max-w-[80px] sm:max-w-none">
                 {sucursalSeleccionada.name}
               </span>
               <ChevronDownIcon
-                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownAbierto ? "transform rotate-180" : ""}`}
+                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${dropdownAbierto ? "transform rotate-180" : ""}`}
               />
             </button>
             {dropdownAbierto && (
@@ -1063,16 +1063,16 @@ const Dashboard = () => {
         </div>
 
         {/* Header del restaurante */}
-        <div className="flex items-center mr-8">
+        <div className="hidden sm:flex items-center mr-4 sm:mr-8">
           {restaurant?.logo_url ? (
             <img
               src={restaurant.logo_url}
               alt={`Logo de ${restaurant.name}`}
-              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 mr-4"
+              className="w-10 h-10 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-200 mr-2 sm:mr-4"
             />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-custom-green-100 flex items-center justify-center mr-4">
-              <span className="text-custom-green-600 text-xl font-bold">
+            <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-custom-green-100 flex items-center justify-center mr-2 sm:mr-4">
+              <span className="text-custom-green-600 text-base sm:text-xl font-bold">
                 {restaurant?.name?.charAt(0) ||
                   sucursalSeleccionada?.name?.charAt(0) ||
                   "R"}
@@ -1088,23 +1088,23 @@ const Dashboard = () => {
       </div>
 
       {/* Selector de granularidad y controles específicos */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
+      <div className="mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 mb-3 sm:mb-4">
           {/* Selector de Granularidad a la izquierda */}
           <div className="relative">
             <button
               onClick={() =>
                 setDropdownGranularidadAbierto(!dropdownGranularidadAbierto)
               }
-              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
             >
-              <ClockIcon className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Granularidad:</span>
-              <span className="text-sm font-medium text-gray-800">
+              <ClockIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+              <span className="text-xs sm:text-sm text-gray-600">Granularidad:</span>
+              <span className="text-xs sm:text-sm font-medium text-gray-800">
                 {granularidadSeleccionada.label}
               </span>
               <ChevronDownIcon
-                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownGranularidadAbierto ? "transform rotate-180" : ""}`}
+                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${dropdownGranularidadAbierto ? "transform rotate-180" : ""}`}
               />
             </button>
             {dropdownGranularidadAbierto && (
@@ -1136,7 +1136,7 @@ const Dashboard = () => {
           </div>
 
           {/* Botón de actualizar y selector de mes/año a la derecha */}
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             {/* Botón de actualizar */}
             <button
               onClick={() => {
@@ -1145,13 +1145,14 @@ const Dashboard = () => {
                 cargarDatosDashboard(restaurantId);
               }}
               disabled={isLoading}
-              className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
+              className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
               data-tour="actualizar-datos"
             >
               <RotateCcwIcon
-                className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${isLoading ? "animate-spin" : ""}`}
               />
-              {isLoading ? "Actualizando..." : "Actualizar"}
+              <span className="hidden xs:inline">{isLoading ? "Actualizando..." : "Actualizar"}</span>
+              <span className="xs:hidden">{isLoading ? "..." : ""}</span>
             </button>
 
             {/* Selector de mes (para granularidad Día) */}
@@ -1159,17 +1160,17 @@ const Dashboard = () => {
             <div className="relative">
               <button
                 onClick={() => setSelectorMesAbierto(!selectorMesAbierto)}
-                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+                className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
               >
-                <span className="text-sm text-gray-600">Mes:</span>
-                <span className="text-sm font-medium text-gray-800">
+                <span className="text-xs sm:text-sm text-gray-600">Mes:</span>
+                <span className="text-xs sm:text-sm font-medium text-gray-800">
                   {(mesSeleccionadoParaGrafico.getMonth() + 1)
                     .toString()
                     .padStart(2, "0")}
                   /{mesSeleccionadoParaGrafico.getFullYear()}
                 </span>
                 <ChevronDownIcon
-                  className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${selectorMesAbierto ? "transform rotate-180" : ""}`}
+                  className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${selectorMesAbierto ? "transform rotate-180" : ""}`}
                 />
               </button>
 
@@ -1217,14 +1218,14 @@ const Dashboard = () => {
             <div className="relative">
               <button
                 onClick={() => setSelectorAnoAbierto(!selectorAnoAbierto)}
-                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+                className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
               >
-                <span className="text-sm text-gray-600">Año:</span>
-                <span className="text-sm font-medium text-gray-800">
+                <span className="text-xs sm:text-sm text-gray-600">Año:</span>
+                <span className="text-xs sm:text-sm font-medium text-gray-800">
                   {anoSeleccionado}
                 </span>
                 <ChevronDownIcon
-                  className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${selectorAnoAbierto ? "transform rotate-180" : ""}`}
+                  className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${selectorAnoAbierto ? "transform rotate-180" : ""}`}
                 />
               </button>
 
@@ -1278,19 +1279,19 @@ const Dashboard = () => {
 
         {/* Controles específicos para granularidad Hora */}
         {granularidadSeleccionada.id === "hora" && (
-          <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 gap-3 sm:gap-4">
             {/* Selector de día con calendario */}
             <div className="relative">
               <button
                 onClick={() => setCalendarioAbierto(!calendarioAbierto)}
-                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+                className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
               >
-                <span className="text-sm text-gray-600">Día:</span>
-                <span className="text-sm font-medium text-gray-800">
+                <span className="text-xs sm:text-sm text-gray-600">Día:</span>
+                <span className="text-xs sm:text-sm font-medium text-gray-800">
                   {diaSeleccionado}
                 </span>
                 <ChevronDownIcon
-                  className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${calendarioAbierto ? "transform rotate-180" : ""}`}
+                  className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${calendarioAbierto ? "transform rotate-180" : ""}`}
                 />
               </button>
 
@@ -1364,10 +1365,10 @@ const Dashboard = () => {
             </div>
 
             {/* Range slider para horas */}
-            <div className="flex-1 mx-6">
+            <div className="flex-1 sm:mx-6">
               <div className="text-center mb-2">
-                <span className="text-sm font-medium text-gray-700">
-                  Rango de horas: {rangoHoras[0].toString().padStart(2, "0")}:00
+                <span className="text-xs sm:text-sm font-medium text-gray-700">
+                  Rango: {rangoHoras[0].toString().padStart(2, "0")}:00
                   - {rangoHoras[1].toString().padStart(2, "0")}:00
                 </span>
               </div>
@@ -1450,21 +1451,21 @@ const Dashboard = () => {
       </div>
 
       {/* Gráfico de Ingresos Totales */}
-      <div className="bg-white rounded-lg shadow-md border border-gray-100 p-6 mb-6" data-tour="consumo-activity">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
+      <div className="bg-white rounded-lg shadow-md border border-gray-100 p-3 sm:p-6 mb-4 sm:mb-6" data-tour="consumo-activity">
+        <h3 className="text-sm sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
           {obtenerTituloGrafico()}
         </h3>
 
         {/* Gráfico de líneas con Recharts */}
-        <div className="h-80 w-full">
+        <div className="h-48 sm:h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={obtenerDatosGrafico()}
               margin={{
-                top: 20,
-                right: 30,
-                left: 20,
-                bottom: 20,
+                top: 10,
+                right: 10,
+                left: 15,
+                bottom: 10,
               }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -1520,23 +1521,23 @@ const Dashboard = () => {
 
       {/* Tarjetas de métricas */}
       <div data-tour="indicadores-clave">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6" >
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 mb-4 sm:mb-6" >
           {/* Ventas totales */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-8">
+            <div className="p-3 sm:p-8">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-custom-green-100 p-3 rounded-full">
-                  <BarChart2Icon className="h-6 w-6 text-custom-green-600" />
+                <div className="flex-shrink-0 bg-custom-green-100 p-2 sm:p-3 rounded-full">
+                  <BarChart2Icon className="h-4 w-4 sm:h-6 sm:w-6 text-custom-green-600" />
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-2 sm:ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                       Ventas totales
                     </dt>
                     <dd>
-                      <div className="text-lg font-medium text-gray-900">
+                      <div className="text-sm sm:text-lg font-medium text-gray-900">
                         {isLoading
-                          ? "Cargando..."
+                          ? "..."
                           : `$${dashboardData?.metricas?.ventasTotales?.toLocaleString() || "0"}`}
                       </div>
                     </dd>
@@ -1558,20 +1559,20 @@ const Dashboard = () => {
 
           {/* Órdenes Activas */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-8">
+            <div className="p-3 sm:p-8">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-blue-100 p-3 rounded-full">
-                  <ShoppingCartIcon className="h-6 w-6 text-blue-600" />
+                <div className="flex-shrink-0 bg-blue-100 p-2 sm:p-3 rounded-full">
+                  <ShoppingCartIcon className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-2 sm:ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                       Órdenes Activas
                     </dt>
                     <dd>
-                      <div className="text-lg font-medium text-gray-900">
+                      <div className="text-sm sm:text-lg font-medium text-gray-900">
                         {isLoading
-                          ? "Cargando..."
+                          ? "..."
                           : dashboardData?.metricas?.ordenesActivas || "0"}
                       </div>
                     </dd>
@@ -1593,20 +1594,20 @@ const Dashboard = () => {
 
           {/* Pedidos */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-8">
+            <div className="p-3 sm:p-8">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-amber-100 p-3 rounded-full">
-                  <ShoppingBagIcon className="h-6 w-6 text-amber-600" />
+                <div className="flex-shrink-0 bg-amber-100 p-2 sm:p-3 rounded-full">
+                  <ShoppingBagIcon className="h-4 w-4 sm:h-6 sm:w-6 text-amber-600" />
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-2 sm:ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                       Pedidos
                     </dt>
                     <dd>
-                      <div className="text-lg font-medium text-gray-900">
+                      <div className="text-sm sm:text-lg font-medium text-gray-900">
                         {isLoading
-                          ? "Cargando..."
+                          ? "..."
                           : dashboardData?.metricas?.pedidos || "0"}
                       </div>
                     </dd>
@@ -1628,20 +1629,20 @@ const Dashboard = () => {
 
           {/* Ticket Promedio */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-8">
+            <div className="p-3 sm:p-8">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-purple-100 p-3 rounded-full">
-                  <DollarSignIcon className="h-6 w-6 text-purple-600" />
+                <div className="flex-shrink-0 bg-purple-100 p-2 sm:p-3 rounded-full">
+                  <DollarSignIcon className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600" />
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-2 sm:ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                       Ticket Promedio
                     </dt>
                     <dd>
-                      <div className="text-lg font-medium text-gray-900">
+                      <div className="text-sm sm:text-lg font-medium text-gray-900">
                         {isLoading
-                          ? "Cargando..."
+                          ? "..."
                           : `$${dashboardData?.metricas?.ticketPromedio?.toLocaleString() || "0"}`}
                       </div>
                     </dd>
@@ -1664,7 +1665,7 @@ const Dashboard = () => {
 
         {/* Secciones adicionales */}
         <div
-          className={`grid grid-cols-1 gap-6 mb-6 ${
+          className={`grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 mb-4 sm:mb-6 ${
             servicesLoaded
               ? isFlexBillEnabled
                 ? "lg:grid-cols-3"
@@ -1674,20 +1675,20 @@ const Dashboard = () => {
         >
           {/* Órdenes Totales */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-8">
+            <div className="p-3 sm:p-8">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-custom-green-100 p-2 rounded-full">
-                  <CheckIcon className="h-5 w-5 text-custom-green-600" />
+                <div className="flex-shrink-0 bg-custom-green-100 p-1.5 sm:p-2 rounded-full">
+                  <CheckIcon className="h-4 w-4 sm:h-5 sm:w-5 text-custom-green-600" />
                 </div>
-                <div className="ml-4 w-0 flex-1">
+                <div className="ml-2 sm:ml-4 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                       Órdenes Totales
                     </dt>
                     <dd>
-                      <div className="text-base font-medium text-gray-900">
+                      <div className="text-sm sm:text-base font-medium text-gray-900">
                         {isLoading
-                          ? "Cargando..."
+                          ? "..."
                           : dashboardData?.metricas?.pedidos || "0"}
                       </div>
                     </dd>
@@ -1707,25 +1708,25 @@ const Dashboard = () => {
 
           {/* Artículo más vendido */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-6">
+            <div className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-amber-100 p-2 rounded-full">
-                  <CrownIcon className="h-5 w-5 text-amber-600" />
+                <div className="flex-shrink-0 bg-amber-100 p-1.5 sm:p-2 rounded-full">
+                  <CrownIcon className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
                 </div>
-                <div className="ml-4 w-0 flex-1">
+                <div className="ml-2 sm:ml-4 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Artículo más vendido
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                      Más vendido
                     </dt>
                     <dd>
-                      <div className="text-base font-medium text-gray-900">
+                      <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
                         {isLoadingTopItem
-                          ? "Cargando..."
+                          ? "..."
                           : dashboardData?.articulo_mas_vendido?.nombre ||
                             topSellingItem?.nombre ||
                             "Sin datos"}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">
                         {isLoadingTopItem
                           ? ""
                           : `${dashboardData?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
@@ -1748,21 +1749,21 @@ const Dashboard = () => {
           {/* Tiempo Promedio x cuenta - Solo mostrar si FlexBill está habilitado */}
           {servicesLoaded && isFlexBillEnabled && (
             <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-              <div className="p-6">
+              <div className="p-3 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center flex-1">
-                    <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
-                      <ClockIcon className="h-5 w-5 text-red-600" />
+                    <div className="flex-shrink-0 bg-red-100 p-1.5 sm:p-2 rounded-full">
+                      <ClockIcon className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                     </div>
-                    <div className="ml-4 flex-1">
+                    <div className="ml-2 sm:ml-4 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Tiempo Promedio x cuenta
+                        <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                          Tiempo Prom.
                         </dt>
                         <dd>
-                          <div className="text-base font-medium text-gray-900">
+                          <div className="text-sm sm:text-base font-medium text-gray-900">
                             {isLoading
-                              ? "Cargando..."
+                              ? "..."
                               : dashboardData?.tiempo_promedio_mesa
                                   ?.tiempo_promedio_formateado || "Sin datos"}
                           </div>
@@ -1770,7 +1771,7 @@ const Dashboard = () => {
                       </dl>
                     </div>
                   </div>
-                  <span className="bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded ml-3">
+                  <span className="bg-gray-800 text-white text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded ml-2 sm:ml-3">
                     Flex Bill
                   </span>
                 </div>
@@ -1781,7 +1782,7 @@ const Dashboard = () => {
       </div>
       {/* Recent Activity */}
       <div className="mt-7" data-tour="actividad-reciente">
-        <h2 className="text-lg font-medium text-gray-900 flex items-center mb-4">
+        <h2 className="text-base sm:text-lg font-medium text-gray-900 flex items-center flex-wrap gap-2 mb-4 truncate">
           Actividad reciente
           <span className="ml-2 bg-custom-green-100 text-custom-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
             Hoy
@@ -1800,7 +1801,7 @@ const Dashboard = () => {
                   className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                   onClick={() => abrirDetallesPedido(order)}
                 >
-                  <div className="px-4 py-4 sm:px-6">
+                  <div className="px-4 py-4 sm:px-6 rounded-lg">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-custom-green-600 truncate">
                         Mesa #{order.table_number}
@@ -1827,9 +1828,10 @@ const Dashboard = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="mt-2 sm:flex sm:justify-between">
+                    <div className="mt-2 flex flex-col sm:flex-row sm:justify-between gap-2">
+
                       <div className="sm:flex sm:flex-col sm:space-y-1">
-                        <p className="flex items-center text-sm text-gray-500">
+                        <p className="flex items-center text-xs sm:text-sm text-gray-500">
                           <DollarSignIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
                           Total: ${order.total_amount} | Pagado: $
                           {order.paid_amount}
@@ -1839,7 +1841,7 @@ const Dashboard = () => {
                           {order.items_count} items
                         </p>
                       </div>
-                      <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                      <div className="mt-2 flex items-center gap-1 text-xs sm:text-sm text-gray-500 sm:mt-0">
                         <svg
                           className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400"
                           fill="none"
@@ -1874,7 +1876,7 @@ const Dashboard = () => {
               <button
                 onClick={() => loadMoreOrders(sucursalSeleccionada?.id)}
                 disabled={isLoadingMoreOrders}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-custom-green-600 bg-white border border-custom-green-300 rounded-md hover:bg-custom-green-50 hover:text-custom-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className=" inline-flex items-center px-4 py-2 text-sm font-medium text-custom-green-600 bg-white border border-custom-green-300 rounded-md hover:bg-custom-green-50 hover:text-custom-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoadingMoreOrders ? (
                   <>
@@ -2107,10 +2109,10 @@ const Dashboard = () => {
                 Cerrar
               </button>
             </div>
+            
           </div>
         </div>
       )}
-
     </div>
   );
 };

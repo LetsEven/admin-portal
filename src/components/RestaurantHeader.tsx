@@ -298,22 +298,22 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
     <div data-tour={dataTour}>
       {/* New Restaurant Setup Banner */}
       {isNewRestaurant && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6">
-          <div className="flex items-start space-x-4">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="flex items-start space-x-3 sm:space-x-4">
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Camera className="h-6 w-6 text-blue-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Camera className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               </div>
             </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-1 sm:mb-2">
                 ¡Configura tu restaurante!
               </h3>
-              <p className="text-blue-700 text-sm mb-4">
+              <p className="text-blue-700 text-xs sm:text-sm mb-3 sm:mb-4">
                 Personaliza la información de tu restaurante para crear una experiencia única.
                 Comienza editando el nombre haciendo clic en "Mi Restaurante" más abajo.
               </p>
-              <div className="flex flex-wrap gap-3 text-sm">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm">
                 <div className="flex items-center text-blue-600">
                   <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></div>
                   Edita el nombre del restaurante
@@ -332,14 +332,13 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-8 relative" style={{ height:"500px"}}>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 sm:mb-8 relative h-[320px] sm:h-[500px]">
       {/* Banner Section */}
-      <div className="relative h-40 group">
+      <div className="relative h-32 sm:h-40 group">
         {bannerImage ? (
           <div
-            className="w-full h-full"
+            className="w-full h-[200px] sm:h-[350px]"
             style={{
-              height: "350px",
               backgroundImage: `url(${bannerImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
@@ -350,17 +349,17 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
             aria-label="Banner del restaurante"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center">
+          <div className="w-full h-[200px] sm:h-[350px] bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center">
             <div className="text-center text-gray-500">
-              <Camera className="h-12 w-12 mx-auto mb-2" />
-              <p className="text-sm">Agregar imagen de portada</p>
+              <Camera className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-1 sm:mb-2" />
+              <p className="text-xs sm:text-sm">Agregar imagen de portada</p>
             </div>
           </div>
         )}
 
         {/* Banner Edit Controls */}
-        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="flex space-x-2">
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="flex space-x-1.5 sm:space-x-2">
             <button
               onClick={() => handleImageUpload('banner')}
               disabled={isUploadingBanner}
@@ -390,11 +389,11 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
       </div>
 
       {/* Profile Section */}
-      <div className="relative px-6 pb-6" style={{marginTop:"10rem"}}>
+      <div className="relative px-4 sm:px-6 pb-4 sm:pb-6 mt-[6rem] sm:mt-[10rem]">
         {/* Logo/Profile Image */}
-        <div className="relative -mt-16 mb-4">
+        <div className="relative -mt-12 sm:-mt-16 mb-3 sm:mb-4">
           <div className="relative inline-block group/logo">
-            <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white">
+            <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-2 sm:border-4 border-white shadow-lg overflow-hidden bg-white">
               {logoImage ? (
                 <img
                   src={logoImage}
@@ -403,7 +402,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
                 />
               ) : (
                 <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                  <Camera className="h-8 w-8 text-gray-400" />
+                  <Camera className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
                 </div>
               )}
             </div>
@@ -471,41 +470,43 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
         </div>
 
         {/* Restaurant Info */}
-        <div className="space-y-2">
+        <div className="space-y-1 sm:space-y-2">
           {/* Restaurant Name */}
           <div className="group">
             {isEditingName ? (
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:space-x-2">
                 <input
                   type="text"
                   value={tempName}
                   onChange={(e) => setTempName(e.target.value)}
-                  className="text-2xl font-bold text-gray-900 bg-transparent border-b-2 border-blue-500 focus:outline-none flex-1"
+                  className="text-lg sm:text-2xl font-bold text-gray-900 bg-transparent border-b-2 border-blue-500 focus:outline-none flex-1"
                   autoFocus
                   onKeyPress={(e) => e.key === 'Enter' && handleNameSave()}
                 />
-                <button
-                  onClick={handleNameSave}
-                  className="text-blue-600 hover:text-blue-800 px-2 py-1 text-sm font-medium"
-                >
-                  Guardar
-                </button>
-                <button
-                  onClick={handleNameCancel}
-                  className="text-gray-600 hover:text-gray-800 px-2 py-1 text-sm font-medium"
-                >
-                  Cancelar
-                </button>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={handleNameSave}
+                    className="text-blue-600 hover:text-blue-800 px-2 py-1 text-xs sm:text-sm font-medium"
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    onClick={handleNameCancel}
+                    className="text-gray-600 hover:text-gray-800 px-2 py-1 text-xs sm:text-sm font-medium"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex items-center space-x-2">
-                <h2 className="text-2xl font-bold text-gray-900">{restaurantName}</h2>
+                <h2 className="text-lg sm:text-2xl font-bold text-gray-900">{restaurantName}</h2>
                 <button
                   onClick={() => setIsEditingName(true)}
                   className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-gray-700 p-1 rounded transition-all duration-200"
                   title="Editar nombre"
                 >
-                  <Edit3 className="h-4 w-4" />
+                  <Edit3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </button>
               </div>
             )}
@@ -515,23 +516,23 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
       </div>
 
       {/* Action Buttons - Positioned freely relative to entire header */}
-      <div className="absolute top-52 right-6" style={{top:"23rem"}}>
-        <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+      <div className="absolute right-3 sm:right-6 top-[13rem] sm:top-[23rem]">
+        <div className="flex flex-col space-y-1.5 sm:flex-row sm:space-y-0 sm:space-x-2">
           {/* Branch Selector */}
           {branches.length > 0 && (
-            <div className="mr-3">
+            <div className="sm:mr-3">
               <button
                 ref={branchButtonRef}
                 onClick={() => setShowBranchDropdown(!showBranchDropdown)}
-                className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm bg-[#173E44] text-sm font-medium text-white hover:bg-[#0f2c31] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44] transition-all duration-200 ${
+                className={`inline-flex items-center px-2.5 sm:px-4 py-1.5 sm:py-2 border border-transparent rounded-md shadow-sm bg-[#173E44] text-xs sm:text-sm font-medium text-white hover:bg-[#0f2c31] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#173E44] transition-all duration-200 w-full sm:w-auto justify-center ${
                   showBranchDropdown ? 'ring-2 ring-[#173E44] ring-offset-2' : ''
                 }`}
               >
-                <MapPin className="h-4 w-4 mr-2 text-gray-300" />
-                <span className="truncate max-w-32">
-                  {selectedBranch ? selectedBranch.name : 'Todas las sucursales'}
+                <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-gray-300" />
+                <span className="truncate max-w-[100px] sm:max-w-32">
+                  {selectedBranch ? selectedBranch.name : 'Todas'}
                 </span>
-                <ChevronDown className={`ml-2 h-4 w-4 text-gray-300 transition-transform duration-200 ${
+                <ChevronDown className={`ml-1.5 sm:ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-300 transition-transform duration-200 ${
                   showBranchDropdown ? 'rotate-180' : ''
                 }`} />
               </button>
@@ -543,7 +544,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
             data-tour="add-section-btn"
             onClick={onAddSectionClick}
             disabled={!restaurantName || restaurantName.trim() === '' || restaurantName === "Mi Restaurante"}
-            className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm transition-all duration-200 ${
+            className={`inline-flex items-center justify-center px-2.5 sm:px-4 py-1.5 sm:py-2 border text-xs sm:text-sm font-medium rounded-md shadow-sm transition-all duration-200 ${
               !restaurantName || restaurantName.trim() === '' || restaurantName === "Mi Restaurante"
                 ? 'text-gray-400 bg-gray-300 border-gray-300 cursor-not-allowed'
                 : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
@@ -554,14 +555,15 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
                 : 'Administrar sección'
             }
           >
-            <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-            Administrar sección
+            <PlusIcon className="-ml-0.5 sm:-ml-1 mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="hidden sm:inline">Administrar sección</span>
+            <span className="sm:hidden">Secciones</span>
           </button>
           <button
             type="button"
             data-tour="mobile-preview-btn"
             onClick={onViewMenuClick}
-            className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+            className="inline-flex items-center justify-center px-2.5 sm:px-4 py-1.5 sm:py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
           >
             Ver menú
           </button>

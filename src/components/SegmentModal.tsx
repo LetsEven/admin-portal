@@ -268,20 +268,6 @@ const SegmentModal: React.FC<SegmentModalProps> = ({
         </div>
         {/* Filters Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Tags - TODO: Implementar en futuro */}
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <TagIcon className="h-4 w-4 inline mr-1" />
-              Etiquetas
-            </label>
-            <select value={filters.tags} onChange={e => handleFilterChange('tags', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C896]">
-              <option value="all">Todas las etiquetas</option>
-              <option value="vip">VIP</option>
-              <option value="frequent">Frecuente</option>
-              <option value="new">Nuevo cliente</option>
-              <option value="inactive">Inactivo</option>
-            </select>
-          </div> */}
           {/* Gender */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -310,21 +296,6 @@ const SegmentModal: React.FC<SegmentModalProps> = ({
               <option value="56+">56+ años</option>
             </select>
           </div>
-          {/* Location - TODO: Implementar en futuro */}
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <MapPinIcon className="h-4 w-4 inline mr-1" />
-              Ubicación
-            </label>
-            <select value={filters.location} onChange={e => handleFilterChange('location', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C896]">
-              <option value="all">Todas las ubicaciones</option>
-              <option value="cdmx">Ciudad de México</option>
-              <option value="guadalajara">Guadalajara</option>
-              <option value="monterrey">Monterrey</option>
-              <option value="puebla">Puebla</option>
-              <option value="other">Otras ciudades</option>
-            </select>
-          </div> */}
           {/* Number of visits */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -367,48 +338,6 @@ const SegmentModal: React.FC<SegmentModalProps> = ({
               <option value="greater_than_1000">Más de $1,000</option>
             </select>
           </div>
-          {/* Total spent - TODO: Implementar en futuro */}
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <DollarSignIcon className="h-4 w-4 inline mr-1" />
-              Total gastado
-            </label>
-            <select value={filters.total_spent} onChange={e => handleFilterChange('total_spent', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C896]">
-              <option value="all">Cualquier monto</option>
-              <option value="less_than_1000">Menos de $1,000</option>
-              <option value="1000-5000">$1,000 - $5,000</option>
-              <option value="greater_than_5000">Más de $5,000</option>
-              <option value="greater_than_10000">Más de $10,000</option>
-            </select>
-          </div> */}
-          {/* Favorite category - TODO: Implementar en futuro */}
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <HeartIcon className="h-4 w-4 inline mr-1" />
-              Categoría favorita
-            </label>
-            <select value={filters.favorite_category} onChange={e => handleFilterChange('favorite_category', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C896]">
-              <option value="all">Todas las categorías</option>
-              <option value="beverages">Bebidas</option>
-              <option value="food">Comida</option>
-              <option value="desserts">Postres</option>
-              <option value="snacks">Snacks</option>
-            </select>
-          </div> */}
-          {/* Registration date - TODO: Implementar en futuro */}
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <CalendarIcon className="h-4 w-4 inline mr-1" />
-              Fecha de registro
-            </label>
-            <select value={filters.registration_date} onChange={e => handleFilterChange('registration_date', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C896]">
-              <option value="all">Cualquier fecha</option>
-              <option value="last_30_days">Últimos 30 días</option>
-              <option value="last_90_days">Últimos 90 días</option>
-              <option value="last_year">Último año</option>
-              <option value="more_than_year">Más de un año</option>
-            </select>
-          </div> */}
         </div>
         {/* Preview section - always visible */}
         <div className="mb-6 p-4 bg-custom-green-50 rounded-lg border border-custom-green-200">
