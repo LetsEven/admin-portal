@@ -12,6 +12,46 @@ export interface AnalyticsFilters {
   granularity?: 'hora' | 'dia' | 'mes' | 'ano';
 }
 
+// Tipos para filtros de todos los servicios
+export interface AllServicesFilters {
+  restaurant_id?: number | null;
+  branch_id?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  granularity?: 'hora' | 'dia' | 'mes' | 'ano';
+  service_type?: 'flex-bill' | 'pick-n-go' | 'tap-order-pay' | 'tap-pay' | 'room-service' | null;
+  gender?: 'todos' | 'hombre' | 'mujer' | 'otro';
+  age_range?: 'todos' | '14-17' | '18-25' | '26-35' | '36-45' | '46+';
+}
+
+// Tipos para métricas de todos los servicios
+export interface AllServicesMetrics {
+  ventasTotales: number;
+  propinasTotales: number;
+  ingresosTotales: number;
+  totalTransacciones: number;
+  ticketPromedio: number;
+}
+
+// Desglose por servicio
+export interface ServiceBreakdown {
+  [serviceName: string]: {
+    ventas: number;
+    transacciones: number;
+  };
+}
+
+// Respuesta completa de todos los servicios
+export interface AllServicesDashboardData {
+  metricas: AllServicesMetrics;
+  grafico: ChartDataPoint[];
+  desglose_por_servicio: ServiceBreakdown;
+  articulo_mas_vendido: TopSellingItem;
+  filtros_aplicados: AllServicesFilters;
+  servicios_disponibles: string[];
+  success: boolean;
+}
+
 // Tipos para las métricas del dashboard
 export interface DashboardMetrics {
   ventasTotales: number;
@@ -106,12 +146,14 @@ interface ApiResponse<T> {
 interface UseAnalyticsReturn {
   // Datos
   dashboardData: DashboardData | null;
+  allServicesData: AllServicesDashboardData | null;
   activeOrders: ActiveOrder[];
   topSellingItem: TopSellingItem | null;
   userRestaurants: Restaurant[];
 
   // Estados de carga
   isLoading: boolean;
+  isLoadingAllServices: boolean;
   isLoadingOrders: boolean;
   isLoadingMoreOrders: boolean;
   isLoadingTopItem: boolean;
@@ -130,6 +172,7 @@ interface UseAnalyticsReturn {
   // Funciones
   getDashboardMetrics: (filters: AnalyticsFilters) => Promise<void>;
   getCompleteDashboardData: (filters: AnalyticsFilters) => Promise<void>;
+  getDashboardMetricsAllServices: (filters: AllServicesFilters) => Promise<void>;
   getActiveOrders: (restaurantId: number, reset?: boolean) => Promise<void>;
   loadMoreOrders: (restaurantId: number) => Promise<void>;
   getTopSellingItem: (filters: Omit<AnalyticsFilters, 'gender' | 'age_range' | 'granularity'>) => Promise<void>;
@@ -148,12 +191,14 @@ export function useAnalytics(): UseAnalyticsReturn {
 
   // Estados para datos
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [allServicesData, setAllServicesData] = useState<AllServicesDashboardData | null>(null);
   const [activeOrders, setActiveOrders] = useState<ActiveOrder[]>([]);
   const [topSellingItem, setTopSellingItem] = useState<TopSellingItem | null>(null);
   const [userRestaurants, setUserRestaurants] = useState<Restaurant[]>([]);
 
   // Estados de carga
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingAllServices, setIsLoadingAllServices] = useState(false);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isLoadingMoreOrders, setIsLoadingMoreOrders] = useState(false);
   const [isLoadingTopItem, setIsLoadingTopItem] = useState(false);
@@ -267,6 +312,33 @@ export function useAnalytics(): UseAnalyticsReturn {
       setError(error instanceof Error ? error.message : 'Error desconocido');
     } finally {
       setIsLoading(false);
+    }
+  }, [getAuthToken]);
+
+  // Obtener métricas de TODOS los servicios (FlexBill, Pick&Go, Room Service, Tap Order, Tap Pay)
+  const getDashboardMetricsAllServices = useCallback(async (filters: AllServicesFilters) => {
+    try {
+      setIsLoadingAllServices(true);
+      setError(null);
+
+      const token = await getAuthToken();
+      const queryParams = buildQueryParams(filters);
+
+      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/metrics-all-services?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await handleApiResponse<AllServicesDashboardData>(response);
+      setAllServicesData(data);
+
+    } catch (error) {
+      console.error('❌ Error obteniendo métricas de todos los servicios:', error);
+      setError(error instanceof Error ? error.message : 'Error desconocido');
+    } finally {
+      setIsLoadingAllServices(false);
     }
   }, [getAuthToken]);
 
@@ -439,12 +511,14 @@ export function useAnalytics(): UseAnalyticsReturn {
   return {
     // Datos
     dashboardData,
+    allServicesData,
     activeOrders,
     topSellingItem,
     userRestaurants,
 
     // Estados de carga
     isLoading,
+    isLoadingAllServices,
     isLoadingOrders,
     isLoadingMoreOrders,
     isLoadingTopItem,
@@ -459,6 +533,7 @@ export function useAnalytics(): UseAnalyticsReturn {
     // Funciones
     getDashboardMetrics,
     getCompleteDashboardData,
+    getDashboardMetricsAllServices,
     getActiveOrders,
     loadMoreOrders,
     getTopSellingItem,

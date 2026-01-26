@@ -88,6 +88,16 @@ const opcionesGranularidad = [
   { id: "ano", label: "Año" },
 ];
 
+// Opciones de servicios para el filtro
+const opcionesServicio = [
+  { id: "todos", label: "Todos" },
+  { id: "flex-bill", label: "Flex Bill" },
+  { id: "pick-n-go", label: "Pick & Go" },
+  { id: "tap-order-pay", label: "Tap Order & Pay" },
+  { id: "tap-pay", label: "Tap & Pay" },
+  { id: "room-service", label: "Room Service" },
+];
+
 // Esta será reemplazada por datos reales del hook
 const sucursalesDefault = [
   {
@@ -175,10 +185,12 @@ const Dashboard = () => {
   // Hook para analytics
   const {
     dashboardData,
+    allServicesData,
     activeOrders,
     topSellingItem,
     userRestaurants,
     isLoading,
+    isLoadingAllServices,
     isLoadingOrders,
     isLoadingMoreOrders,
     isLoadingTopItem,
@@ -187,6 +199,7 @@ const Dashboard = () => {
     error,
     getDashboardMetrics,
     getCompleteDashboardData,
+    getDashboardMetricsAllServices,
     getActiveOrders,
     loadMoreOrders,
     getTopSellingItem,
@@ -266,10 +279,28 @@ const Dashboard = () => {
   const [isFlexBillEnabled, setIsFlexBillEnabled] = useState(false);
   const [servicesLoaded, setServicesLoaded] = useState(false);
 
+  // Estados para filtro de servicios (todos los servicios)
+  const [servicioSeleccionado, setServicioSeleccionado] = useState(opcionesServicio[0]); // "todos" por defecto
+  const [dropdownServicioAbierto, setDropdownServicioAbierto] = useState(false);
+  const [enabledServices, setEnabledServices] = useState<string[]>([]); // Servicios habilitados del cliente
+
   // Hooks necesarios para verificar servicios
   const { user } = useUser();
   const { isSignedIn } = useAuth();
   const adminPortalApi = useAdminPortalApi();
+
+  const datosUnificados = allServicesData ? {
+    metricas: {
+      ventasTotales: allServicesData.metricas.ventasTotales,
+      ordenesActivas: dashboardData?.metricas?.ordenesActivas || 0, // No disponible en allServices
+      pedidos: allServicesData.metricas.totalTransacciones,
+      ticketPromedio: allServicesData.metricas.ticketPromedio,
+    },
+    grafico: allServicesData.grafico,
+    articulo_mas_vendido: allServicesData.articulo_mas_vendido,
+    tiempo_promedio_mesa: dashboardData?.tiempo_promedio_mesa || null, // No disponible en allServices
+    desglose_por_servicio: allServicesData.desglose_por_servicio,
+  } : dashboardData;
 
   const cambiarSucursal = (sucursal) => {
     setSucursalSeleccionada(sucursal);
@@ -296,10 +327,11 @@ const Dashboard = () => {
   // Función para cargar datos del dashboard
   const cargarDatosDashboard = (
     restaurantId: number | null = null,
-    customFilters = {},
+    customFilters: any = {},
     customRangoHoras: number[] | null = null,
     customDiaSeleccionado: string | null = null,
-    customSucursal: any = null
+    customSucursal: any = null,
+    customServicio: any = null
   ) => {
     const currentGranularity =
       customFilters.granularity || granularidadSeleccionada.id;
@@ -388,13 +420,31 @@ const Dashboard = () => {
     );
     console.log("🔍 [cargarDatosDashboard] filtros enviados:", filtros);
 
-    // Mostrar toast de carga
-    /*toast.loading("Cargando datos del dashboard...", {
-      id: "dashboard-loading",
-      duration: 3000,
-    });*/
+    // Determinar qué servicio usar
+    const servicioAUtilizar = customServicio || servicioSeleccionado;
+    const serviceType = servicioAUtilizar?.id === "todos" ? null : servicioAUtilizar?.id;
 
-    getCompleteDashboardData(filtros);
+    console.log("🔍 [cargarDatosDashboard] servicioAUtilizar:", servicioAUtilizar);
+    console.log("🔍 [cargarDatosDashboard] serviceType:", serviceType);
+
+    // Usar getDashboardMetricsAllServices para obtener datos de todos los servicios con filtro
+    // Incluir filtros de género y edad
+    const genderFilter = customFilters.gender || generoSeleccionado.id;
+    const ageFilter = customFilters.age_range || edadSeleccionada.id;
+
+    getDashboardMetricsAllServices({
+      restaurant_id: restaurantId,
+      branch_id: sucursalAUtilizar?.id || null,
+      start_date: startDate ? formatearFechaLocal(startDate) : null,
+      end_date: endDate ? formatearFechaLocal(endDate) : null,
+      granularity: currentGranularity as any,
+      service_type: serviceType,
+      gender: genderFilter as any,
+      age_range: ageFilter as any,
+    });
+
+    // Nota: Ya no llamamos a getCompleteDashboardData porque getDashboardMetricsAllServices
+    // ahora soporta todos los filtros (género, edad, servicio, sucursal, etc.)
 
     // Cargar órdenes activas si hay restaurante seleccionado
     if (restaurantId) {
@@ -428,6 +478,20 @@ const Dashboard = () => {
       userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
     cargarDatosDashboard(restaurantId, { granularity: granularidad.id });
   };
+
+  const cambiarServicio = (servicio: any) => {
+    setServicioSeleccionado(servicio);
+    setDropdownServicioAbierto(false);
+    const restaurantId =
+      userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+    // Pasar el servicio seleccionado para filtrar los datos
+    cargarDatosDashboard(restaurantId, {}, null, null, null, servicio);
+  };
+
+  // Filtrar opciones de servicio según los habilitados
+  const opcionesServicioFiltradas = opcionesServicio.filter(
+    (servicio) => servicio.id === "todos" || enabledServices.includes(servicio.id)
+  );
 
   const cambiarMesParaGrafico = (direccion: any) => {
     const nuevaFecha = new Date(mesSeleccionadoParaGrafico);
@@ -543,12 +607,12 @@ const Dashboard = () => {
   };
 
   const obtenerDatosGrafico = () => {
-    if (!dashboardData?.grafico) {
+    if (!datosUnificados?.grafico) {
       return [];
     }
 
     if (granularidadSeleccionada.id === "hora") {
-      const datosOriginales = dashboardData.grafico;
+      const datosOriginales = datosUnificados.grafico;
       const datosCompletos = [];
 
       for (let hora = rangoHoras[0]; hora <= rangoHoras[1]; hora++) {
@@ -570,7 +634,7 @@ const Dashboard = () => {
     }
 
     if (granularidadSeleccionada.id === "dia") {
-      const datosOriginales = dashboardData.grafico;
+      const datosOriginales = datosUnificados.grafico;
       const datosCompletos = [];
 
       const diasEnMes = new Date(
@@ -596,7 +660,7 @@ const Dashboard = () => {
     }
 
     if (granularidadSeleccionada.id === "mes") {
-      const datosOriginales = dashboardData.grafico;
+      const datosOriginales = datosUnificados.grafico;
       const datosCompletos = [];
 
       // Array con los nombres de los meses en español
@@ -634,7 +698,7 @@ const Dashboard = () => {
       return datosCompletos;
     }
 
-    return dashboardData.grafico;
+    return datosUnificados.grafico;
   };
 
   const obtenerTituloGrafico = () => {
@@ -831,7 +895,7 @@ const Dashboard = () => {
     granularidadSeleccionada.id,
   ]);
 
-  // Verificar si FlexBill está habilitado
+  // Verificar servicios habilitados
   useEffect(() => {
     const loadEnabledServices = async () => {
       if (!user || !isSignedIn || servicesLoaded) return;
@@ -839,6 +903,7 @@ const Dashboard = () => {
       try {
         const response = await adminPortalApi.getEnabledServices();
         const enabledServiceIds = response.enabled_services;
+        setEnabledServices(enabledServiceIds); // Guardar todos los servicios habilitados
         setIsFlexBillEnabled(enabledServiceIds.includes("flex-bill"));
         setServicesLoaded(true);
       } catch (error) {
@@ -1061,6 +1126,48 @@ const Dashboard = () => {
               </div>
             )}
           </div>
+
+          {/* Filtro Servicio - Solo mostrar si hay más de 1 servicio habilitado */}
+            <div className="relative">
+              <button
+                onClick={() => setDropdownServicioAbierto(!dropdownServicioAbierto)}
+                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              >
+                <span className="text-sm text-gray-600">Servicio:</span>
+                <span className="text-sm font-medium text-gray-800">
+                  {servicioSeleccionado.label}
+                </span>
+                <ChevronDownIcon
+                  className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownServicioAbierto ? "transform rotate-180" : ""}`}
+                />
+              </button>
+              {dropdownServicioAbierto && (
+                <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
+                  <div className="px-3 py-2 border-b border-gray-100">
+                    <p className="text-xs font-medium text-gray-500 uppercase">
+                      Filtrar por servicio
+                    </p>
+                  </div>
+                  <ul className="py-1">
+                    {opcionesServicioFiltradas.map((servicio) => (
+                      <li key={servicio.id}>
+                        <button
+                          onClick={() => cambiarServicio(servicio)}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
+                        >
+                          <span className="text-sm text-gray-800">
+                            {servicio.label}
+                          </span>
+                          {servicioSeleccionado.id === servicio.id && (
+                            <CheckIcon className="h-4 w-4 text-custom-green-600" />
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
         </div>
 
         {/* Header del restaurante */}
@@ -1536,9 +1643,9 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-lg font-medium text-gray-900">
-                        {isLoading
+                        {isLoading || isLoadingAllServices
                           ? "Cargando..."
-                          : `$${dashboardData?.metricas?.ventasTotales?.toLocaleString() || "0"}`}
+                          : `$${datosUnificados?.metricas?.ventasTotales?.toLocaleString() || "0"}`}
                       </div>
                     </dd>
                   </dl>
@@ -1571,9 +1678,9 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-lg font-medium text-gray-900">
-                        {isLoading
+                        {isLoading || isLoadingAllServices
                           ? "Cargando..."
-                          : dashboardData?.metricas?.ordenesActivas || "0"}
+                          : datosUnificados?.metricas?.ordenesActivas || "0"}
                       </div>
                     </dd>
                   </dl>
@@ -1606,9 +1713,9 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-lg font-medium text-gray-900">
-                        {isLoading
+                        {isLoading || isLoadingAllServices
                           ? "Cargando..."
-                          : dashboardData?.metricas?.pedidos || "0"}
+                          : datosUnificados?.metricas?.pedidos || "0"}
                       </div>
                     </dd>
                   </dl>
@@ -1641,9 +1748,9 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-lg font-medium text-gray-900">
-                        {isLoading
+                        {isLoading || isLoadingAllServices
                           ? "Cargando..."
-                          : `$${dashboardData?.metricas?.ticketPromedio?.toLocaleString() || "0"}`}
+                          : `$${datosUnificados?.metricas?.ticketPromedio?.toLocaleString() || "0"}`}
                       </div>
                     </dd>
                   </dl>
@@ -1687,9 +1794,9 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-base font-medium text-gray-900">
-                        {isLoading
+                        {isLoading || isLoadingAllServices
                           ? "Cargando..."
-                          : dashboardData?.metricas?.pedidos || "0"}
+                          : datosUnificados?.metricas?.pedidos || "0"}
                       </div>
                     </dd>
                   </dl>
@@ -1720,16 +1827,16 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-base font-medium text-gray-900">
-                        {isLoadingTopItem
+                        {isLoadingTopItem || isLoadingAllServices
                           ? "Cargando..."
-                          : dashboardData?.articulo_mas_vendido?.nombre ||
+                          : datosUnificados?.articulo_mas_vendido?.nombre ||
                             topSellingItem?.nombre ||
                             "Sin datos"}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {isLoadingTopItem
+                        {isLoadingTopItem || isLoadingAllServices
                           ? ""
-                          : `${dashboardData?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
+                          : `${datosUnificados?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
                       </div>
                     </dd>
                   </dl>
@@ -1762,9 +1869,9 @@ const Dashboard = () => {
                         </dt>
                         <dd>
                           <div className="text-base font-medium text-gray-900">
-                            {isLoading
+                            {isLoading || isLoadingAllServices
                               ? "Cargando..."
-                              : dashboardData?.tiempo_promedio_mesa
+                              : (dashboardData as any)?.tiempo_promedio_mesa
                                   ?.tiempo_promedio_formateado || "Sin datos"}
                           </div>
                         </dd>

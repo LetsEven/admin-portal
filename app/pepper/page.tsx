@@ -8,10 +8,44 @@ import { useRestaurant } from "../../src/contexts/RestaurantContext";
 import { useUser } from "@clerk/nextjs";
 import { usePepperOnboarding, pepperJoyrideTheme } from "../../src/hooks/usePepperOnboarding";
 
-// Función para comunicarse con el agente a través del backend
-async function chatWithAgent(message: string, sessionId: string | null = null) {
+// Tipo para los eventos del stream (basado en la API real de AI Spine)
+interface StreamEvent {
+  type: "token" | "done" | "error" | "conversation_start" | "thinking_start" | "thinking_end" | "node_start" | "node_end" | "final_response" | "tool_start" | "tool_end";
+  content?: string;
+  session_id?: string;
+  tool_name?: string;
+  node_name?: string;
+  node_type?: string;
+  phase?: string;
+}
+
+// Mapeo de nombres de herramientas a nombres amigables
+const toolDisplayNames: Record<string, string> = {
+  thinking: "Pensando...",
+  extracts_image_urls: "Obteniendo imagen",
+  retrieves_restaurant_information: "Obteniendo información del restaurante",
+  extract_restaurant_dish: "Obteniendo estadísticas del platillo",
+  herramienta_para_limpiar: "Limpiando datos",
+  extrae_datos_completos: "Obteniendo datos completos",
+  query_supabase_restaurant: "Consultando base de datos",
+  actualiza_la_cantidad: "Actualizando datos",
+  remove_item_from: "Eliminando elemento",
+  add_items_to: "Agregando elemento",
+  herramienta_de_supabase: "Consultando Supabase",
+};
+
+// Función para streaming con el agente
+async function streamFromAgent(
+  message: string,
+  sessionId: string | null = null,
+  onToken: (token: string) => void,
+  onSessionId: (sessionId: string) => void,
+  onToolStart: (toolName: string) => void,
+  onToolEnd: () => void,
+  onFinalResponse?: (content: string) => void
+): Promise<void> {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/ai-agent/chat`,
+    `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/ai-agent/chat/stream`,
     {
       method: "POST",
       headers: {
@@ -28,8 +62,62 @@ async function chatWithAgent(message: string, sessionId: string | null = null) {
     throw new Error(`Error del servidor: ${response.status}`);
   }
 
-  const data = await response.json();
-  return data;
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error("No se pudo obtener el reader del stream");
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (line.startsWith("data: ")) {
+        try {
+          const event: StreamEvent = JSON.parse(line.slice(6));
+
+          // Debug: mostrar todos los eventos recibidos
+          if (event.type !== "token") {
+            console.log("🔄 Evento recibido:", event);
+          }
+
+          if (event.type === "token" && event.content) {
+            onToken(event.content);
+          } else if (event.type === "conversation_start" && event.session_id) {
+            // Session ID viene en conversation_start
+            onSessionId(event.session_id);
+          } else if (event.type === "thinking_start") {
+            // Mostrar indicador de "pensando"
+            onToolStart("thinking");
+          } else if (event.type === "thinking_end") {
+            onToolEnd();
+          } else if (event.type === "tool_start" && event.tool_name) {
+            onToolStart(event.tool_name);
+          } else if (event.type === "tool_end") {
+            onToolEnd();
+          } else if (event.type === "final_response" && event.content) {
+            // La respuesta final viene completa - reemplazar, no agregar
+            if (onFinalResponse) {
+              onFinalResponse(event.content);
+            } else {
+              onToken(event.content);
+            }
+          } else if (event.type === "error") {
+            throw new Error(event.content || "Error del agente");
+          }
+        } catch (e) {
+          console.warn("Error parseando evento:", line);
+        }
+      }
+    }
+  }
 }
 
 // Custom hook for responsive screen size
@@ -74,11 +162,69 @@ interface Message {
   timestamp: Date;
 }
 
+// Componente de puntos de carga
+const LoadingDots = () => (
+  <div className="flex space-x-1">
+    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+    <div
+      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+      style={{ animationDelay: "0.1s" }}
+    ></div>
+    <div
+      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+      style={{ animationDelay: "0.2s" }}
+    ></div>
+  </div>
+);
+
+// Función para detectar URLs de imagen incompletas durante streaming
+function hasIncompleteImageUrl(content: string): boolean {
+  // Si el contenido termina con algo que parece una URL incompleta
+  const lastPart = content.split(/\s/).pop() || "";
+
+  // Verificar si parece una URL en construcción (tiene http pero no termina en espacio o formato conocido)
+  if (lastPart.startsWith("http") && !lastPart.match(/\.(jpg|jpeg|png|gif|webp|svg|avif)(\?[^\s]*)?\s*$/i)) {
+    return true;
+  }
+
+  return false;
+}
+
 // Componente para renderizar mensajes con imágenes
-function MessageContent({ content }: { content: string }) {
+function MessageContent({
+  content,
+  isStreaming = false,
+  activeTool = null
+}: {
+  content: string;
+  isStreaming?: boolean;
+  activeTool?: string | null;
+}) {
+  // Si no hay contenido, mostrar indicador apropiado
+  if (!content) {
+    if (activeTool) {
+      return (
+        <div className="flex items-center gap-2">
+          <Spinner />
+          <span className="text-gray-500">{toolDisplayNames[activeTool] || activeTool}</span>
+        </div>
+      );
+    }
+    return <LoadingDots />;
+  }
+
   // Regex para detectar URLs de imágenes (incluyendo avif)
   const imageUrlRegex =
     /(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg|avif)(?:\?[^\s]*)?)/gi;
+
+  // Durante streaming, si hay una URL de imagen incompleta, mostrar solo texto
+  if (isStreaming && hasIncompleteImageUrl(content)) {
+    return (
+      <div className="space-y-2">
+        <p>{content}</p>
+      </div>
+    );
+  }
 
   // Dividir el contenido en partes (texto e imágenes)
   const parts = content.split(imageUrlRegex);
@@ -110,10 +256,37 @@ function MessageContent({ content }: { content: string }) {
   );
 }
 
+// Spinner component para indicador de herramienta
+const Spinner = () => (
+  <svg
+    className="h-4 w-4 text-[#ebb2f4]"
+    style={{ animation: "spin 1s linear infinite" }}
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+    ></circle>
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+    ></path>
+  </svg>
+);
+
 const PepperPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [activeTool, setActiveTool] = useState<string | null>(null);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -144,7 +317,7 @@ const PepperPage: React.FC = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, activeTool]);
 
   // Iniciar onboarding cuando el componente esté listo
   useEffect(() => {
@@ -170,6 +343,17 @@ const PepperPage: React.FC = () => {
     const messageContent = inputValue.trim();
     setInputValue("");
     setIsLoading(true);
+    setIsStreaming(true);
+
+    // Crear mensaje vacío del asistente para ir llenándolo
+    const assistantMessageId = `assistant-${Date.now()}`;
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      content: "",
+      role: "assistant",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, assistantMessage]);
 
     try {
       // Determinar userId (en admin-portal solo hay usuarios autenticados)
@@ -187,37 +371,66 @@ const PepperPage: React.FC = () => {
         userId,
       });
 
-      // Llamar al agente con el mensaje que incluye el contexto
-      const result = await chatWithAgent(contextualMessage, sessionId);
-
-      // Guardar el session_id si es la primera vez
-      if (result.session_id && !sessionId) {
-        setSessionId(result.session_id);
-      }
-
-      // Agregar la respuesta de Pepper
-      const assistantMessage: Message = {
-        id: `assistant-${Date.now()}`,
-        content: result.response,
-        role: "assistant",
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
+      // Llamar al agente con streaming
+      await streamFromAgent(
+        contextualMessage,
+        sessionId,
+        // onToken - actualizar el mensaje con el nuevo token
+        (token: string) => {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId
+                ? { ...msg, content: msg.content + token }
+                : msg
+            )
+          );
+        },
+        // onSessionId - guardar el session_id
+        (newSessionId: string) => {
+          console.log("📥 Session ID recibido:", newSessionId);
+          if (!sessionId) {
+            setSessionId(newSessionId);
+            console.log("✅ Session ID guardado:", newSessionId);
+          }
+        },
+        // onToolStart - mostrar qué herramienta se está ejecutando
+        (toolName: string) => {
+          setActiveTool(toolName);
+        },
+        // onToolEnd - ocultar indicador de herramienta
+        () => {
+          setActiveTool(null);
+        },
+        // onFinalResponse - reemplazar contenido completo (no agregar)
+        (content: string) => {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId
+                ? { ...msg, content: content }
+                : msg
+            )
+          );
+        }
+      );
     } catch (error) {
       console.error("Error al comunicarse con Pepper:", error);
 
-      const errorMessage: Message = {
-        id: `assistant-${Date.now()}`,
-        content:
-          "Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.",
-        role: "assistant",
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, errorMessage]);
+      // Actualizar el mensaje del asistente con el error
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId
+            ? {
+                ...msg,
+                content:
+                  "Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.",
+              }
+            : msg
+        )
+      );
     } finally {
       setIsLoading(false);
+      setIsStreaming(false);
+      setActiveTool(null);
     }
   };
 
@@ -330,6 +543,16 @@ const PepperPage: React.FC = () => {
           top: auto !important;
           bottom: 120px !important;
         }
+
+        /* Animación para el spinner */
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
       `}</style>
 
       <Layout>
@@ -423,7 +646,11 @@ const PepperPage: React.FC = () => {
                         )}
 
                         <div className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
-                          <MessageContent content={message.content} />
+                          <MessageContent
+                            content={message.content}
+                            isStreaming={isStreaming && message.role === "assistant" && message === messages[messages.length - 1]}
+                            activeTool={isStreaming && message.role === "assistant" && message === messages[messages.length - 1] ? activeTool : null}
+                          />
                         </div>
                         <p
                           className={`text-xs mt-1 sm:mt-2 ${
@@ -440,29 +667,6 @@ const PepperPage: React.FC = () => {
                       </div>
                     </div>
                   ))}
-
-                  {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="bg-white text-gray-900 shadow-sm border border-gray-200 rounded-2xl px-3 py-2 sm:px-4 sm:py-3 max-w-[90%] sm:max-w-xs">
-                        <div className="flex items-center space-x-2">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                            <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "0.1s" }}
-                            ></div>
-                            <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "0.2s" }}
-                            ></div>
-                          </div>
-                          <span className="text-sm text-gray-500">
-                            Pepper está escribiendo...
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   <div ref={messagesEndRef} />
                 </div>
