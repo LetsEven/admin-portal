@@ -981,23 +981,23 @@ const Settings = () => {
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
         <div className="flex items-center space-x-6">
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-lg sm:text-2xl font-semibold text-gray-900">
             Configuración
           </h1>
         </div>
 
         <div className="flex items-center space-x-2">
           {/* Selector de Sucursal */}
-          <div className="flex items-center space-x-2 mr-8" data-tour="branches-tables">
-            <label className="text-sm font-medium text-gray-700">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 mr-4 sm:mr-8" data-tour="branches-tables">
+            <label className="text-xs sm:text-sm font-medium text-gray-700">
               Sucursal:
             </label>
             <select
               value={selectedBranch}
               onChange={(e) => handleBranchChange(e.target.value)}
-              className="text-sm border border-gray-300 rounded-md px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:border-transparent"
+              className="text-xs sm:text-sm border border-gray-300 rounded-md px-2 sm:px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:border-transparent max-w-[140px] sm:max-w-none"
               disabled={branchesLoading}
             >
               {branches.length === 0 && !branchesLoading && (
@@ -1011,7 +1011,7 @@ const Settings = () => {
             </select>
           </div>
 
-          <span className="text-sm text-gray-700">
+          <span className="text-xs sm:text-sm text-gray-700 hidden sm:inline">
             {user?.firstName || "Usuario"}
           </span>
           <div>
@@ -1024,10 +1024,10 @@ const Settings = () => {
         <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6" data-tour="restaurant-info">
           <div className="md:grid md:grid-cols-3 md:gap-6">
             <div className="md:col-span-1">
-              <h3 className="text-lg font-medium leading-6 text-gray-900">
+              <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
                 Información del restaurante
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
                 Información básica sobre tu restaurante que se mostrará a los
                 clientes.
               </p>
@@ -1044,11 +1044,11 @@ const Settings = () => {
               </div>
             </div>
             <div className="mt-5 md:mt-0 md:col-span-2">
-              <div className="grid grid-cols-6 gap-6">
+              <div className="grid grid-cols-6 gap-4">
                 <div className="col-span-6 sm:col-span-4">
                   <label
                     htmlFor="name"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
                   >
                     Nombre del restaurante
                   </label>
@@ -1058,13 +1058,13 @@ const Settings = () => {
                     id="name"
                     value={settings.name}
                     onChange={handleChange}
-                    className="mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                    className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
                   />
                 </div>
                 <div className="col-span-6">
                   <label
                     htmlFor="address"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
                   >
                     Dirección
                   </label>
@@ -1075,7 +1075,7 @@ const Settings = () => {
                       id="address"
                       value={settings.address}
                       onChange={handleAddressChange}
-                      className="mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm rounded-md border-blue-300 bg-blue-50"
+                      className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-blue-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500 bg-blue-50"
                       placeholder="Dirección de la sucursal seleccionada"
                     />
                     {selectedBranch && isAddressChanged && (
@@ -1107,7 +1107,7 @@ const Settings = () => {
                   {selectedBranch !== "all" && (
                     <p className="mt-1 text-xs text-gray-700">
                       {isAddressChanged
-                        ? "⚠️ Has modificado la dirección. Guarda los cambios para aplicarlos."
+                        ? "Has modificado la dirección. Guarda los cambios para aplicarlos."
                         : "Esta dirección corresponde a la sucursal seleccionada."}
                     </p>
                   )}
@@ -1115,7 +1115,7 @@ const Settings = () => {
                 <div className="col-span-6 sm:col-span-3">
                   <label
                     htmlFor="phone"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
                   >
                     Teléfono
                   </label>
@@ -1125,13 +1125,13 @@ const Settings = () => {
                     id="phone"
                     value={settings.phone}
                     onChange={handleChange}
-                    className="mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                    className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
                   />
                 </div>
                 <div className="col-span-6 sm:col-span-3">
                   <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
                   >
                     Correo electrónico
                   </label>
@@ -1141,13 +1141,13 @@ const Settings = () => {
                     id="email"
                     value={settings.email}
                     onChange={handleChange}
-                    className="mt-1 focus:ring-custom-green-500 focus:border-custom-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                    className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
                   />
                 </div>
                 <div className="col-span-6 sm:col-span-3">
                   <label
                     htmlFor="logo"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
                   >
                     Logo del restaurante
                   </label>
@@ -1157,7 +1157,7 @@ const Settings = () => {
                         type="button"
                         onClick={handleLogoUpload}
                         disabled={isUploadingLogo}
-                        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm sm:text-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isUploadingLogo ? (
                           <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
@@ -1173,13 +1173,13 @@ const Settings = () => {
                           type="button"
                           onClick={handleLogoDelete}
                           disabled={isUploadingLogo}
-                          className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm sm:text-sm text-sm font-medium rounded-md text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       )}
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="text-gray-500 text-[10px] sm:text-xs mt-1">
                       JPG, PNG o WEBP. Se redimensionará automáticamente.
                     </p>
                   </div>
@@ -1189,7 +1189,7 @@ const Settings = () => {
                 {!servicesLoading &&
                   (isFlexBillEnabled || isTapOrderPayEnabled) && (
                     <div className="col-span-6 sm:col-span-3">
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700">
                         Número de mesas
                       </label>
                       <div
@@ -1199,7 +1199,7 @@ const Settings = () => {
                             : " text-gray-800"
                         }`}
                       >
-                        <div className="text-sm font-medium">
+                        <div className="sm:text-sm text-sm font-medium">
                           {selectedBranch !== "all"
                             ? (() => {
                                 const selectedBranchData = branches.find(
@@ -1223,34 +1223,34 @@ const Settings = () => {
                 {/* Pick & Go URL Section - Solo mostrar si el servicio está habilitado */}
                 {!servicesLoading && isPickNGoEnabled && (
                   <div className="col-span-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       URL de Pick & Go
                     </label>
-                    <div className="flex items-center space-x-3">
-                      <div className="flex-1 bg-gray-50 border border-gray-300 rounded-md px-3 py-2">
-                        <code className="text-sm text-gray-700 break-all">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                      <div className="flex-1 bg-gray-50 border border-gray-300 rounded-md px-2.5 sm:px-3 py-1.5 sm:py-2 min-w-0">
+                        <code className="text-xs sm:text-sm text-gray-700 break-all">
                           {restaurant?.id ? getPickAndGoUrl() : "Cargando..."}
                         </code>
                       </div>
 
                       {restaurant?.id && (
-                        <>
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                           <button
                             type="button"
                             onClick={copyPickAndGoUrl}
-                            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
+                            className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
                             title="Copiar URL"
                           >
                             {copySuccess ? (
                               <>
-                                <Check className="h-4 w-4 text-green-500 mr-1" />
+                                <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 mr-1" />
                                 <span className="text-green-500">
                                   ¡Copiado!
                                 </span>
                               </>
                             ) : (
                               <>
-                                <Copy className="h-4 w-4 mr-1" />
+                                <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                                 Copiar
                               </>
                             )}
@@ -1259,18 +1259,21 @@ const Settings = () => {
                           <button
                             type="button"
                             onClick={openPickAndGoUrl}
-                            className="inline-flex items-center px-3 py-2 border border-custom-green-300 shadow-sm text-sm font-medium rounded-md text-custom-green-700 bg-custom-green-50 hover:bg-custom-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
+                            className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-custom-green-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-custom-green-700 bg-custom-green-50 hover:bg-custom-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
                             title="Abrir en nueva pestaña"
                           >
-                            <ExternalLink className="h-4 w-4 mr-1" />
+                            <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                             Abrir
                           </button>
-                        </>
+                        </div>
                       )}
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="hidden sm:inline mt-1 text-xs text-gray-500">
                       Esta es la URL pública de tu menú Pick & Go que los
                       clientes pueden usar para hacer pedidos.
+                    </p>
+                    <p className="sm:hidden mt-1 text-xs text-gray-500">
+                      Esta es tu URL pública.
                     </p>
                   </div>
                 )}
@@ -1279,43 +1282,47 @@ const Settings = () => {
           </div>
         </div>
         {/* Opening Hours */}
-        <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6" data-tour="opening-hours">
-          <div className="md:grid md:grid-cols-3 md:gap-6">
-            <div className="md:col-span-1">
-              <h3 className="text-lg font-medium leading-6 text-gray-900">
+        <div className="bg-white shadow px-3 sm:px-4 py-4 sm:py-5 sm:rounded-lg sm:p-6" data-tour="opening-hours">
+          <div className="sm:grid sm:grid-cols-3 sm:gap-6">
+            <div className="sm:col-span-1">
+              <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
                 Horario de atención
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
                 Establece los horarios en que tu restaurante está abierto.
               </p>
             </div>
-            <div className="mt-5 md:mt-0 md:col-span-2">
-              <div className="space-y-4">
+            <div className="mt-4 sm:mt-0 sm:col-span-2">
+              <div className="space-y-3 sm:space-y-4">
                 {Object.entries(days).map(([day, label]) => (
-                  <div key={day} className="flex items-center space-x-4">
-                    <div className="w-24">
-                      <span className="text-sm font-medium text-gray-700">
-                        {label}
-                      </span>
+                  <div key={day} className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 gap-x-4">
+                    {/* Línea 1 en móvil: Día + Checkbox */}
+                    <div className="flex items-center gap-3 sm:gap-0 sm:contents">
+                      <div className="w-16 sm:w-24">
+                        <span className="text-xs sm:text-sm font-medium text-gray-700">
+                          {label}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          id={`closed-${day}`}
+                          name={`closed-${day}`}
+                          type="checkbox"
+                          checked={settings.openingHours[day].closed}
+                          onChange={() => handleHoursChange(day, "closed", null)}
+                          className="h-4 w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
+                        />
+                        <label
+                          htmlFor={`closed-${day}`}
+                          className="ml-1.5 sm:ml-2 text-xs sm:text-sm text-gray-700"
+                        >
+                          Cerrado
+                        </label>
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <input
-                        id={`closed-${day}`}
-                        name={`closed-${day}`}
-                        type="checkbox"
-                        checked={settings.openingHours[day].closed}
-                        onChange={() => handleHoursChange(day, "closed", null)}
-                        className="h-4 w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
-                      />
-                      <label
-                        htmlFor={`closed-${day}`}
-                        className="ml-2 text-sm text-gray-700"
-                      >
-                        Cerrado
-                      </label>
-                    </div>
+                    {/* Línea 2 en móvil: Inputs de hora */}
                     {!settings.openingHours[day].closed && (
-                      <>
+                      <div className="flex items-center gap-2 sm:gap-0 sm:contents mt-1.5 sm:mt-0 pl-0 sm:pl-0">
                         <div className="flex items-center">
                           <label htmlFor={`open-${day}`} className="sr-only">
                             Abre
@@ -1327,10 +1334,10 @@ const Settings = () => {
                             onChange={(e) =>
                               handleHoursChange(day, "open", e.target.value)
                             }
-                            className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-custom-green-500 focus:border-custom-green-500"
+                            className="block w-full shadow-sm text-xs sm:text-sm border-gray-300 rounded-md focus:ring-custom-green-500 focus:border-custom-green-500"
                           />
                         </div>
-                        <span className="text-gray-500">a</span>
+                        <span className="text-xs sm:text-base text-gray-500">a</span>
                         <div className="flex items-center">
                           <label htmlFor={`close-${day}`} className="sr-only">
                             Cierra
@@ -1342,15 +1349,15 @@ const Settings = () => {
                             onChange={(e) =>
                               handleHoursChange(day, "close", e.target.value)
                             }
-                            className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-custom-green-500 focus:border-custom-green-500"
+                            className="block w-full shadow-sm text-xs sm:text-sm border-gray-300 rounded-md focus:ring-custom-green-500 focus:border-custom-green-500"
                           />
                         </div>
-                      </>
+                      </div>
                     )}
                     {/* Mostrar error de validación si existe */}
                     {validationErrors[`${day}_time`] && (
-                      <div className="col-span-full">
-                        <p className="text-sm text-red-600 mt-1">
+                      <div className="w-full sm:w-auto">
+                        <p className="text-xs sm:text-sm text-red-600 mt-1">
                           {validationErrors[`${day}_time`]}
                         </p>
                       </div>
@@ -1369,17 +1376,17 @@ const Settings = () => {
                 });
                 return shouldShowButtons;
               })() && (
-                <div className="flex gap-2 mt-4">
+                <div className="flex gap-2 mt-3 sm:mt-4">
                   <button
                     type="button"
                     onClick={handleSaveBranchHours}
                     disabled={isUpdatingHours}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2"
                   >
                     {isUpdatingHours ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     ) : (
-                      <SaveIcon className="w-4 h-4" />
+                      <SaveIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     )}
                     {isUpdatingHours ? "Guardando..." : "Guardar horarios"}
                   </button>
@@ -1388,7 +1395,7 @@ const Settings = () => {
                       type="button"
                       onClick={handleDiscardHoursChanges}
                       disabled={isUpdatingHours}
-                      className="px-4 py-2 bg-gray-500 text-white text-sm rounded-md hover:bg-gray-600 disabled:opacity-50"
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-500 text-white text-xs sm:text-sm rounded-md hover:bg-gray-600 disabled:opacity-50"
                     >
                       Descartar
                     </button>
@@ -1397,18 +1404,18 @@ const Settings = () => {
               )}
               {selectedBranch && areHoursChanged && !hideHoursButtons && (
                 <p className="mt-2 text-xs text-gray-700">
-                  ⚠️ Has modificado los horarios de esta sucursal. Guarda los
+                  Has modificado los horarios de esta sucursal. Guarda los
                   cambios para aplicarlos.
                 </p>
               )}
               {selectedBranch && areHoursChanged && hideHoursButtons && (
                 <p className="mt-2 text-xs text-green-600">
-                  ✅ Acción procesada correctamente.
+                  Acción procesada correctamente.
                 </p>
               )}
               {selectedBranch && !areHoursChanged && (
                 <p className="mt-2 text-xs text-gray-700">
-                  📅 Estos horarios corresponden a la sucursal seleccionada.
+                  Estos horarios corresponden a la sucursal seleccionada.
                 </p>
               )}
             </div>
@@ -1418,10 +1425,10 @@ const Settings = () => {
         <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6" data-tour="notifications">
           <div className="md:grid md:grid-cols-3 md:gap-6">
             <div className="md:col-span-1">
-              <h3 className="text-lg font-medium leading-6 text-gray-900">
+              <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
                 Notificaciones
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
                 Decide cómo quieres recibir notificaciones sobre pedidos y
                 clientes.
               </p>
@@ -1446,7 +1453,7 @@ const Settings = () => {
                     >
                       Notificaciones de pedidos
                     </label>
-                    <p className="text-gray-500">
+                    <p className="sm:ml-2 text-xs sm:text-sm text-gray-500">
                       Recibe notificaciones cuando lleguen nuevos pedidos.
                     </p>
                   </div>
@@ -1477,7 +1484,7 @@ const Settings = () => {
                       Notificaciones por correo
                     </label>
                     <p
-                      className={`${!settings.orderNotifications ? "text-gray-400" : "text-gray-500"}`}
+                      className={`${!settings.orderNotifications ? "text-gray-400" : "text-gray-500"} sm:ml-2 text-xs sm:text-sm`}
                     >
                       {!settings.orderNotifications
                         ? "Requiere que las notificaciones de pedidos estén habilitadas."
@@ -1511,7 +1518,7 @@ const Settings = () => {
                       Notificaciones por SMS
                     </label>
                     <p
-                      className={`${!settings.orderNotifications ? "text-gray-400" : "text-gray-500"}`}
+                      className={`${!settings.orderNotifications ? "text-gray-400" : "text-gray-500"} sm:ml-2 text-xs sm:text-sm`}
                     >
                       {!settings.orderNotifications
                         ? "Requiere que las notificaciones de pedidos estén habilitadas."
@@ -1527,10 +1534,10 @@ const Settings = () => {
         <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
           <div className="md:grid md:grid-cols-3 md:gap-6">
             <div className="md:col-span-1">
-              <h3 className="text-lg font-medium leading-6 text-gray-900">
+              <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
                 Configuración regional
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
                 Configura el idioma y moneda.
               </p>
             </div>
@@ -1539,7 +1546,7 @@ const Settings = () => {
                 <div className="col-span-6 sm:col-span-3">
                   <label
                     htmlFor="language"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-xs sm:text-sm font-medium text-gray-700"
                   >
                     Idioma
                   </label>
@@ -1548,7 +1555,7 @@ const Settings = () => {
                     name="language"
                     value={settings.language}
                     onChange={handleChange}
-                    className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
+                    className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
                   >
                     <option value="es">Español</option>
                     <option value="en">Inglés</option>
@@ -1557,7 +1564,7 @@ const Settings = () => {
                 <div className="col-span-6 sm:col-span-3">
                   <label
                     htmlFor="currency"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-xs sm:text-sm font-medium text-gray-700"
                   >
                     Moneda
                   </label>
@@ -1566,7 +1573,7 @@ const Settings = () => {
                     name="currency"
                     value={settings.currency}
                     onChange={handleChange}
-                    className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
+                    className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
                   >
                     <option value="MXN">Peso Mexicano (MXN)</option>
                     <option value="USD">Dólar Estadounidense (USD)</option>
@@ -1606,7 +1613,7 @@ const Settings = () => {
         <div className="flex justify-end">
           <button
             type="button"
-            className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500"
+            className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm sm:text-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500"
           >
             Cancelar
           </button>
@@ -1614,7 +1621,7 @@ const Settings = () => {
             type="submit"
             data-tour="save-button"
             disabled={isUpdating || saveStatus === "saving"}
-            className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm sm:text-sm text-sm font-medium rounded-md text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isUpdating || saveStatus === "saving" ? (
               <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
