@@ -331,46 +331,47 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="flex items-center space-x-4">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">{title}</h3>
 
             {/* Mode Toggle */}
             {imageSrc && (
-              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <div className="flex items-center bg-gray-100 rounded-lg p-0.5 sm:p-1">
                 <button
                   onClick={() => handleModeChange('desktop')}
-                  className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  className={`inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors ${
                     editMode === 'desktop'
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  <Monitor className="h-4 w-4 mr-1.5" />
-                  Desktop
+                  <Monitor className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Desktop</span>
+                  <span className="sm:hidden">PC</span>
                 </button>
                 <button
                   onClick={() => handleModeChange('mobile')}
-                  className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  className={`inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors ${
                     editMode === 'mobile'
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  <Smartphone className="h-4 w-4 mr-1.5" />
+                  <Smartphone className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
                   Móvil
                 </button>
               </div>
             )}
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center">
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 transition-colors p-1"
             >
               <X className="h-5 w-5" />
             </button>
@@ -378,20 +379,20 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-4">
+        <div className="p-3 sm:p-4 overflow-y-auto flex-1">
           {!imageSrc ? (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-8">
               <div className="text-center">
-                <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-lg font-medium text-gray-900 mb-2">
-                  Sube tu imagen completa para el banner
+                <Upload className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-gray-400" />
+                <p className="text-base sm:text-lg font-medium text-gray-900 mb-2">
+                  Sube tu imagen para el banner
                 </p>
-                <p className="text-sm text-gray-500 mb-4">
-                  Usa toda tu imagen - sin límites de grid. Vista previa móvil incluida.<br/>
-                  Formatos: JPG, PNG | Recomendado: 2100x900px+ (21:9)
+                <p className="text-xs sm:text-sm text-gray-500 mb-4">
+                  Usa toda tu imagen - sin límites de grid.<br className="hidden sm:block"/>
+                  <span className="hidden sm:inline">Formatos: JPG, PNG | </span>Recomendado: 2100x900px+ (21:9)
                 </p>
-                <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-custom-green-600 hover:bg-custom-green-700 transition-colors cursor-pointer">
-                  <Upload className="h-4 w-4 mr-2" />
+                <label className="inline-flex items-center px-3 sm:px-4 py-2 border border-transparent text-xs sm:text-sm font-medium rounded-md shadow-sm text-white bg-custom-green-600 hover:bg-custom-green-700 transition-colors cursor-pointer">
+                  <Upload className="h-4 w-4 mr-1.5 sm:mr-2" />
                   Seleccionar imagen
                   <input
                     type="file"
@@ -403,44 +404,44 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
               </div>
             </div>
           ) : (
-            <div className={`${showMobilePreview ? 'grid grid-cols-2 gap-6' : 'block'}`}>
+            <div className={`${showMobilePreview ? 'flex flex-col lg:grid lg:grid-cols-2 gap-4 sm:gap-6' : 'block'}`}>
               {/* Crop Section */}
               <div>
                 {/* Info Banner */}
-                <div className={`mb-4 border rounded-lg p-3 ${
+                <div className={`mb-3 sm:mb-4 border rounded-lg p-2 sm:p-3 ${
                   editMode === 'desktop'
                     ? 'bg-blue-50 border-blue-200'
                     : 'bg-green-50 border-green-200'
                 }`}>
-                  <div className="flex items-center">
+                  <div className="flex items-start sm:items-center">
                     <div className="flex-shrink-0">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
                         editMode === 'desktop'
                           ? 'bg-blue-100'
                           : 'bg-green-100'
                       }`}>
                         {editMode === 'desktop' ? (
-                          <Monitor className="h-4 w-4 text-blue-600" />
+                          <Monitor className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
                         ) : (
-                          <Smartphone className="h-4 w-4 text-green-600" />
+                          <Smartphone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600" />
                         )}
                       </div>
                     </div>
-                    <div className="ml-3">
-                      <p className={`text-sm font-medium ${
+                    <div className="ml-2 sm:ml-3">
+                      <p className={`text-xs sm:text-sm font-medium ${
                         editMode === 'desktop' ? 'text-blue-900' : 'text-green-900'
                       }`}>
                         {editMode === 'desktop'
-                          ? 'Modo Desktop - Vista amplia para escritorio'
-                          : 'Modo Móvil - Simula cómo se verá en dispositivos móviles'
+                          ? 'Modo Desktop - Vista amplia'
+                          : 'Modo Móvil - Vista en dispositivos'
                         }
                       </p>
-                      <p className={`text-sm ${
+                      <p className={`text-[10px] sm:text-sm hidden sm:block ${
                         editMode === 'desktop' ? 'text-blue-700' : 'text-green-700'
                       }`}>
                         {editMode === 'desktop'
-                          ? 'Ajusta tu banner para pantallas grandes (21:9). Bueno para mostrar toda la imagen.'
-                          : 'Ajusta cómo se verá en flexbill y otros servicios móviles. La vista previa simula el resultado final.'
+                          ? 'Ajusta tu banner para pantallas grandes (21:9).'
+                          : 'La vista previa simula el resultado final en móvil.'
                         }
                       </p>
                     </div>
@@ -448,8 +449,8 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                 </div>
 
                 {/* Crop Area */}
-                <div className="relative mb-4">
-                  <div className="w-full h-80 relative bg-gray-100 rounded-lg overflow-hidden">
+                <div className="relative mb-3 sm:mb-4">
+                  <div className="w-full h-52 sm:h-80 relative bg-gray-100 rounded-lg overflow-hidden">
                     <Cropper
                       image={imageSrc}
                       crop={currentCrop}
@@ -479,13 +480,13 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                 </div>
 
                 {/* Controls */}
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Zoom Control */}
-                  <div className="flex items-center space-x-4">
-                    <label className="text-sm font-medium text-gray-700 w-20">
+                  <div className="flex items-center space-x-2 sm:space-x-4">
+                    <label className="text-xs sm:text-sm font-medium text-gray-700 w-14 sm:w-20">
                       Zoom:
                     </label>
-                    <div className="flex items-center space-x-2 flex-1">
+                    <div className="flex items-center space-x-1.5 sm:space-x-2 flex-1">
                       <button
                         onClick={() => {
                           const newZoom = Math.max(1, currentZoom - 0.1);
@@ -494,7 +495,7 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                         }}
                         className="p-1 text-gray-500 hover:text-gray-700"
                       >
-                        <Minus className="h-4 w-4" />
+                        <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
                       <input
                         type="range"
@@ -507,7 +508,7 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                           if (editMode === 'desktop') setDesktopZoom(newZoom);
                           else setMobileZoom(newZoom);
                         }}
-                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        className="flex-1 h-1.5 sm:h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                       />
                       <button
                         onClick={() => {
@@ -517,20 +518,20 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                         }}
                         className="p-1 text-gray-500 hover:text-gray-700"
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
-                      <span className="text-sm text-gray-600 w-12">
+                      <span className="text-xs sm:text-sm text-gray-600 w-10 sm:w-12">
                         {currentZoom.toFixed(1)}x
                       </span>
                     </div>
                   </div>
 
                   {/* Rotation Control */}
-                  <div className="flex items-center space-x-4">
-                    <label className="text-sm font-medium text-gray-700 w-20">
+                  <div className="flex items-center space-x-2 sm:space-x-4">
+                    <label className="text-xs sm:text-sm font-medium text-gray-700 w-14 sm:w-20">
                       Rotación:
                     </label>
-                    <div className="flex items-center space-x-2 flex-1">
+                    <div className="flex items-center space-x-1.5 sm:space-x-2 flex-1">
                       <input
                         type="range"
                         value={currentRotation}
@@ -542,28 +543,29 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                           if (editMode === 'desktop') setDesktopRotation(newRotation);
                           else setMobileRotation(newRotation);
                         }}
-                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        className="flex-1 h-1.5 sm:h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                       />
-                      <span className="text-sm text-gray-600 w-12">
+                      <span className="text-xs sm:text-sm text-gray-600 w-10 sm:w-12">
                         {currentRotation}°
                       </span>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                    <div className="flex space-x-2">
+                  <div className="flex flex-row flex-wrap items-center justify-between gap-3 sm:gap-0 pt-3 sm:pt-4 border-t border-gray-200">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         onClick={resetCrop}
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                        className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                       >
-                        <RotateCcw className="h-4 w-4 mr-2" />
+                        <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                         Resetear
                       </button>
 
-                      <label className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Cambiar imagen
+                      <label className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer">
+                        <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Cambiar imagen</span>
+                        <span className="sm:hidden">Cambiar</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -573,30 +575,29 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                       </label>
                     </div>
 
-                    <div className="flex space-x-2">
+                    <div className="flex gap-2 justify-end">
                       <button
                         onClick={onClose}
-                        className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                        className="px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                       >
                         Cancelar
                       </button>
                       <button
                         onClick={handleSave}
                         disabled={isCropping || (!desktopCroppedAreaPixels && !mobileCroppedAreaPixels)}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-custom-green-600 hover:bg-custom-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 border border-transparent text-xs sm:text-sm font-medium rounded-md shadow-sm text-white bg-custom-green-600 hover:bg-custom-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         {isCropping ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            Procesando...
+                            <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5 sm:mr-2"></div>
+                            <span className="hidden sm:inline">Procesando...</span>
+                            <span className="sm:hidden">...</span>
                           </>
                         ) : (
                           <>
-                            <Check className="h-4 w-4 mr-2" />
-                            Guardar banner
-                            {desktopCroppedAreaPixels && mobileCroppedAreaPixels && (
-                              <span className="ml-1 text-xs">(Desktop + Móvil)</span>
-                            )}
+                            <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                            <span className="hidden sm:inline">Guardar banner</span>
+                            <span className="sm:hidden">Guardar</span>
                           </>
                         )}
                       </button>
@@ -607,9 +608,9 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
 
               {/* Mobile Preview Section */}
               {showMobilePreview && (
-                <div>
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">Vista previa móvil</h4>
-                  <div className="relative w-full max-w-[300px] mx-auto">
+                <div className="hidden lg:block">
+                  <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Vista previa móvil</h4>
+                  <div className="relative w-full max-w-[240px] lg:max-w-[300px] mx-auto">
                     {/* Mobile frame with preview */}
                     <div className="relative">
                       {/* Phone frame image */}
@@ -626,10 +627,10 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                         right: '4.5%',
                         bottom: '2.4%'
                       }}>
-                        <div className="bg-white rounded-[50px] overflow-hidden h-full">
-                          <div className="relative bg-white rounded-[30px] overflow-y-auto h-full scrollbar-hide">
+                        <div className="bg-white rounded-[40px] lg:rounded-[50px] overflow-hidden h-full">
+                          <div className="relative bg-white rounded-[24px] lg:rounded-[30px] overflow-y-auto h-full scrollbar-hide">
                             {/* Preview banner image - Simula exactamente flexbill móvil */}
-                            <div className="relative w-full h-48 overflow-hidden banner-preview-mobile">
+                            <div className="relative w-full h-36 lg:h-48 overflow-hidden banner-preview-mobile">
                               <div
                                 className="absolute top-0 left-0 w-full h-full z-0"
                                 style={{
@@ -646,22 +647,22 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                               {/* Loading indicator while generating mobile preview */}
                               {!mobilePreviewSrc && mobileCroppedAreaPixels && (
                                 <div className="absolute inset-0 bg-gray-100/50 flex items-center justify-center z-10">
-                                  <div className="bg-white rounded-lg p-2 shadow-sm">
-                                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                  <div className="bg-white rounded-lg p-1.5 lg:p-2 shadow-sm">
+                                    <div className="w-3 h-3 lg:w-4 lg:h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                                   </div>
                                 </div>
                               )}
                             </div>
 
-                            <main className="relative z-10 -mt-8">
-                              <div className="bg-white rounded-t-3xl flex flex-col items-center px-4 min-h-full pb-8">
-                                <div className="mt-6 flex items-start justify-between w-full">
+                            <main className="relative z-10 -mt-6 lg:-mt-8">
+                              <div className="bg-white rounded-t-2xl lg:rounded-t-3xl flex flex-col items-center px-3 lg:px-4 min-h-full pb-6 lg:pb-8">
+                                <div className="mt-4 lg:mt-6 flex items-start justify-between w-full">
                                   {/* Settings Icon */}
-                                  <div className="bg-white rounded-full p-1.5 border border-gray-300 shadow-md">
-                                    <Settings className="size-4 text-stone-800" strokeWidth={1.5} />
+                                  <div className="bg-white rounded-full p-1 lg:p-1.5 border border-gray-300 shadow-md">
+                                    <Settings className="w-3 h-3 lg:size-4 text-stone-800" strokeWidth={1.5} />
                                   </div>
                                   {/* Assistant Icon placeholder */}
-                                  <div className="bg-white rounded-full text-black border border-gray-300 size-9 shadow-md flex items-center justify-center overflow-hidden">
+                                  <div className="bg-white rounded-full text-black border border-gray-300 w-7 h-7 lg:size-9 shadow-md flex items-center justify-center overflow-hidden">
                                     <video
                                       src="/video-icon-pepper.webm"
                                       autoPlay
@@ -673,47 +674,45 @@ const BannerCropModal: React.FC<BannerCropModalProps> = ({
                                 </div>
 
                                 {/* Restaurant info */}
-                                <div className="mb-4 flex flex-col items-center -mt-2">
-                                  <div className="size-20 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-lg">
+                                <div className="mb-3 lg:mb-4 flex flex-col items-center -mt-1 lg:-mt-2">
+                                  <div className="w-14 h-14 lg:size-20 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-lg">
                                     <img
                                       src={logoImage || "https://t4.ftcdn.net/jpg/02/15/84/43/360_F_215844325_ttX9YiIIyeaR7Ne6EaLLjMAmy4GvPC69.jpg"}
                                       alt="Restaurant Logo"
                                       className="w-full h-full object-cover"
                                     />
                                   </div>
-                                  <h1 className="text-black text-lg font-semibold mt-3 mb-1 text-center">
+                                  <h1 className="text-black text-sm lg:text-lg font-semibold mt-2 lg:mt-3 mb-0.5 lg:mb-1 text-center truncate max-w-full">
                                     {restaurantName}
                                   </h1>
-                                  <p className="text-gray-600 text-xs">Vista en móvil</p>
+                                  <p className="text-gray-600 text-[10px] lg:text-xs">Vista en móvil</p>
                                 </div>
 
                                 {/* Preview content */}
-                                <div className="text-center text-gray-400 text-xs px-4">
-                                  <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                                    <p className="font-medium text-gray-700">
+                                <div className="text-center text-gray-400 text-[10px] lg:text-xs px-2 lg:px-4">
+                                  <div className="bg-gray-50 rounded-lg p-2 lg:p-3 mb-2 lg:mb-3">
+                                    <p className="font-medium text-gray-700 text-[10px] lg:text-xs">
                                       Simulación Móvil
                                     </p>
-                                    <p className="mt-1">
+                                    <p className="mt-0.5 lg:mt-1 text-[9px] lg:text-xs">
                                       {mobilePreviewSrc
-                                        ? "Así se verá en dispositivos de móviles"
-                                        : "Generando simulación móvil..."
+                                        ? "Vista actualizada"
+                                        : "Generando..."
                                       }
                                     </p>
                                   </div>
                                   {mobilePreviewSrc ? (
                                     <div className="space-y-1">
-                                      <div className="h-1.5 bg-green-200 rounded w-full"></div>
-                                      <div className="h-1.5 bg-green-200 rounded w-4/5 mx-auto"></div>
-                                      <div className="h-1.5 bg-green-200 rounded w-3/5 mx-auto"></div>
-                                      <p className="text-green-600 text-xs mt-2">
-                                        ✓ Vista móvil actualizada
+                                      <div className="h-1 lg:h-1.5 bg-green-200 rounded w-full"></div>
+                                      <div className="h-1 lg:h-1.5 bg-green-200 rounded w-4/5 mx-auto"></div>
+                                      <p className="text-green-600 text-[9px] lg:text-xs mt-1 lg:mt-2">
+                                        ✓ Listo
                                       </p>
                                     </div>
                                   ) : (
-                                    <div className="space-y-2">
-                                      <div className="h-2 bg-gray-200 rounded w-full animate-pulse"></div>
-                                      <div className="h-2 bg-gray-200 rounded w-3/4 mx-auto animate-pulse"></div>
-                                      <div className="h-2 bg-gray-200 rounded w-1/2 mx-auto animate-pulse"></div>
+                                    <div className="space-y-1 lg:space-y-2">
+                                      <div className="h-1.5 lg:h-2 bg-gray-200 rounded w-full animate-pulse"></div>
+                                      <div className="h-1.5 lg:h-2 bg-gray-200 rounded w-3/4 mx-auto animate-pulse"></div>
                                     </div>
                                   )}
                                 </div>

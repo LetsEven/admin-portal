@@ -137,36 +137,37 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
+    <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-3 sm:p-4">
       <div
         className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]"
         onClick={onClose}
       ></div>
-      <div className="relative bg-white rounded-2xl max-w-3xl w-full mx-auto p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-xl sm:rounded-2xl max-w-3xl w-full mx-auto p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold text-gray-900">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <h2 className="text-lg sm:text-2xl font-semibold text-gray-900">
             Crear nueva campaña
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-500 p-2 rounded-full hover:bg-gray-100"
+            className="text-gray-400 hover:text-gray-500 p-1.5 sm:p-2 rounded-full hover:bg-gray-100"
           >
-            <XIcon className="h-6 w-6" />
+            <XIcon className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
         </div>
-        <p className="text-gray-600 mb-6">
+        <p className="text-xs sm:text-base text-gray-600 mb-4 sm:mb-6">
           Selecciona segmento y template, y nombra tu campaña.
         </p>
 
         {/* Delivery Method Banner */}
         <div className="mb-6 p-4 bg-gradient-to-r from-custom-green-50 to-teal-50 border border-custom-green-200 rounded-xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Izquierda: método de envío + badges */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <span className="text-sm font-medium text-gray-700">
                 Método de envío:
               </span>
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {deliveryMethods.whatsapp && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-custom-green-100 text-custom-green-800">
                     <MessageCircleIcon className="h-4 w-4 mr-1.5" />
@@ -181,8 +182,9 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                 )}
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              {/* Add other delivery method button */}
+
+            {/* Derecha: botones */}
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
               {deliveryMethods.whatsapp &&
                 !deliveryMethods.sms &&
                 onAddDeliveryMethod && (
@@ -193,7 +195,8 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                     <PlusCircleIcon className="h-4 w-4 mr-1.5" />
                     Agregar SMS
                   </button>
-                )}
+                )
+              }
               {deliveryMethods.sms &&
                 !deliveryMethods.whatsapp &&
                 onAddDeliveryMethod && (
@@ -204,8 +207,8 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                     <PlusCircleIcon className="h-4 w-4 mr-1.5" />
                     Agregar WhatsApp
                   </button>
-                )}
-              {/* Change delivery method link */}
+                )
+              }
               {onChangeDeliveryMethod && (
                 <button
                   onClick={onChangeDeliveryMethod}
@@ -238,7 +241,7 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                 placeholder="Ej. VERANO2024"
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500 "
               />
             </div>
             <div>
@@ -428,38 +431,6 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
               </div>
             )}
           </div>
-          {/* Saved Templates */}
-          {/*<h3 className="text-md font-medium text-gray-900 mb-3">
-            Templates guardados
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {savedTemplates.map((template) => (
-              <div
-                key={template.id}
-                onClick={() => handleTemplateSelection(template)}
-                className={`border rounded-lg p-4 cursor-pointer transition-colors flex justify-between items-center ${selectedTemplate?.id === template.id ? "border-custom-green-600 bg-custom-green-50" : "border-gray-200 hover:bg-gray-50"}`}
-              >
-                <div className="flex items-center">
-                  <div className="p-2 bg-gray-100 rounded-full mr-3">
-                    <LayoutIcon className="h-5 w-5 text-gray-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-gray-900">
-                      {template.name}
-                    </h4>
-                    <p className="text-xs text-gray-500">
-                      {template.blocks.length} bloques
-                    </p>
-                  </div>
-                </div>
-                {selectedTemplate?.id === template.id && (
-                  <span className="text-xs bg-custom-green-100 text-custom-green-800 px-2 py-1 rounded-full">
-                    Seleccionado
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>*/}
         </div>
 
         {/* Campaign Name */}

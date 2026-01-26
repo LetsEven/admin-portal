@@ -1535,21 +1535,21 @@ const RewardsManagement = () => {
   };
   return (
     <div className="w-full bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
-        <div className="mb-8 -mt-8">
-          <div className="flex justify-between items-center">
+        <div className="mb-4 sm:mb-8 -mt-4 sm:-mt-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900 mt-5 mb-2">
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 mt-3 sm:mt-5 mb-1 sm:mb-2">
                 Gestión de Scala
               </h1>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs sm:text-sm text-gray-600">
                 Gestiona tus campañas de recompensas y fidelización
               </p>
               {/* Plan info */}
               {currentPlan && planLimits ? (
-                <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500" data-tour="plan-info">
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                <div className="mt-2 flex flex-wrap items-center gap-2 sm:space-x-4 text-[10px] sm:text-xs text-gray-500" data-tour="plan-info">
+                  <span className="bg-blue-100 text-blue-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium">
                     Plan {currentPlan.plan_type}
                   </span>
                   <span>
@@ -1567,14 +1567,14 @@ const RewardsManagement = () => {
                 </div>
               ) : run ? (
                 // Placeholder durante el tour cuando no hay plan
-                <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3">
+                  <div className="flex items-center space-x-2 mb-1.5 sm:mb-2">
+                    <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium">
                       Ejemplo para tour guiado
                     </span>
                   </div>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500" data-tour="plan-info">
-                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                  <div className="flex flex-wrap items-center gap-2 sm:space-x-4 text-[10px] sm:text-xs text-gray-500" data-tour="plan-info">
+                    <span className="bg-blue-100 text-blue-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium">
                       Plan Básico
                     </span>
                     <span>
@@ -1587,64 +1587,66 @@ const RewardsManagement = () => {
                 </div>
               ) : null}
             </div>
-            <div className="flex space-x-3">
+            <div className="flex space-x-2 sm:space-x-3">
               <button
                 onClick={() => setShowPricingModal(true)}
-                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+                className="bg-white border border-gray-300 text-gray-700 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-md hover:bg-gray-50 transition-colors"
               >
-                Ver Planes
+                <span className="hidden sm:inline">Ver Planes</span>
+                <span className="sm:hidden">Planes</span>
               </button>
               <button
                 data-tour="new-campaign-btn"
                 onClick={handleOpenNewCampaign}
                 disabled={!canCreateCampaign()}
-                className={`px-4 py-2 rounded-md transition-colors flex items-center ${
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-md transition-colors flex items-center ${
                   canCreateCampaign()
                     ? 'bg-custom-green-600 text-white hover:bg-custom-green-700'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Nueva Campaña
+                <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Nueva Campaña</span>
+                <span className="sm:hidden">Nueva</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* KPI Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" data-tour="kpi-filters">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-8" data-tour="kpi-filters">
           <KpiButton
             label="Todas"
             count={allCount}
             active={activeFilter === "all"}
             onClick={() => setActiveFilter("all")}
-            icon={<AwardIcon className="h-6 w-6" />}
+            icon={<AwardIcon className="h-5 w-5 sm:h-6 sm:w-6" />}
           />
           <KpiButton
             label="Activas"
             count={activeCount}
             active={activeFilter === "active"}
             onClick={() => setActiveFilter("active")}
-            icon={<CheckCircleIcon className="h-6 w-6 text-green-500" />}
+            icon={<CheckCircleIcon className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />}
           />
           <KpiButton
             label="Pausadas"
             count={pausedCount}
             active={activeFilter === "paused"}
             onClick={() => setActiveFilter("paused")}
-            icon={<ClockIcon className="h-6 w-6 text-yellow-500" />}
+            icon={<ClockIcon className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />}
           />
           <KpiButton
             label="Expiradas"
             count={expiredCount}
             active={activeFilter === "expired"}
             onClick={() => setActiveFilter("expired")}
-            icon={<AlertCircleIcon className="h-6 w-6 text-gray-500" />}
+            icon={<AlertCircleIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500" />}
           />
         </div>
 
         {/* Campaigns Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour="campaigns-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6" data-tour="campaigns-grid">
           {filteredCampaigns.map((campaign: any) => (
             <div
               key={campaign.id}
@@ -1669,12 +1671,12 @@ const RewardsManagement = () => {
 
         {/* Empty State */}
         {filteredCampaigns.length === 0 && (
-          <div className="text-center py-12">
-            <AwardIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
+          <div className="text-center py-8 sm:py-12 px-4">
+            <AwardIcon className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
+            <h3 className="mt-2 text-xs sm:text-sm font-medium text-gray-900">
               No hay campañas
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-xs sm:text-sm text-gray-500">
               No se encontraron campañas para el filtro seleccionado.
             </p>
           </div>

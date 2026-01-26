@@ -35,11 +35,19 @@ const BranchDropdown: React.FC<BranchDropdownProps> = ({
       const triggerRect = triggerRef.current.getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
       const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+      const viewportWidth = window.innerWidth;
+      const isMobile = viewportWidth < 640;
+
+      // En móvil, centrar el dropdown y limitar ancho
+      const dropdownWidth = isMobile ? Math.min(viewportWidth - 24, 280) : Math.max(triggerRect.width, 250);
+      const leftPosition = isMobile
+        ? (viewportWidth - dropdownWidth) / 2 + scrollLeft
+        : triggerRect.left + scrollLeft;
 
       setPosition({
-        top: triggerRect.bottom + scrollTop + 8, // 8px gap
-        left: triggerRect.left + scrollLeft,
-        width: triggerRect.width
+        top: triggerRect.bottom + scrollTop + 4, // 4px gap en móvil
+        left: leftPosition,
+        width: dropdownWidth
       });
     }
   }, [isOpen, triggerRef]);
@@ -88,27 +96,27 @@ const BranchDropdown: React.FC<BranchDropdownProps> = ({
     <Portal>
       <div
         ref={dropdownRef}
-        className="fixed bg-white border border-gray-200 rounded-md shadow-lg z-50"
+        className="fixed bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-[60vh] overflow-y-auto"
         style={{
           top: position.top,
           left: position.left,
-          minWidth: Math.max(position.width, 250), // Minimum width of 250px
-          pointerEvents: 'auto' // Enable pointer events for this dropdown
+          width: position.width,
+          pointerEvents: 'auto'
         }}
       >
         <div className="py-1">
           {/* All branches option */}
           <button
             onClick={() => onBranchSelect(null)}
-            className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-100 transition-colors ${
+            className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm hover:bg-gray-100 transition-colors ${
               !selectedBranch ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
             }`}
           >
             <div className="flex items-center">
-              <MapPin className="h-4 w-4 mr-3 text-gray-400" />
-              <div>
+              <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" />
+              <div className="min-w-0">
                 <div className="font-medium">Todas las sucursales</div>
-                <div className="text-xs text-gray-500">Ver información de todas</div>
+                <div className="text-[10px] sm:text-xs text-gray-500">Ver información de todas</div>
               </div>
             </div>
           </button>
@@ -123,15 +131,15 @@ const BranchDropdown: React.FC<BranchDropdownProps> = ({
             <button
               key={branch.id}
               onClick={() => onBranchSelect(branch)}
-              className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-100 transition-colors ${
+              className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm hover:bg-gray-100 transition-colors ${
                 selectedBranch?.id === branch.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
               }`}
             >
               <div className="flex items-center">
-                <MapPin className="h-4 w-4 mr-3 text-gray-400" />
+                <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium">{branch.name}</div>
-                  <div className="text-xs text-gray-500 truncate">{branch.address}</div>
+                  <div className="font-medium truncate">{branch.name}</div>
+                  <div className="text-[10px] sm:text-xs text-gray-500 truncate">{branch.address}</div>
                 </div>
               </div>
             </button>
@@ -139,7 +147,7 @@ const BranchDropdown: React.FC<BranchDropdownProps> = ({
 
           {/* No branches message */}
           {branches.length === 0 && (
-            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+            <div className="px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-500 text-center">
               No hay sucursales disponibles
             </div>
           )}

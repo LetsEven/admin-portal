@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Admin Portal - Xquisito',
-  description: 'Portal de Administración de Restaurantes Xquisito',
+  description: 'Portal de Administración Xquisito',
 }
 
 export default function RootLayout({

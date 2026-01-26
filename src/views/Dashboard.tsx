@@ -25,7 +25,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import Joyride, { STATUS } from 'react-joyride';
+import Joyride, { STATUS } from "react-joyride";
 import { useAnalytics, type AnalyticsFilters } from "../hooks/useAnalytics";
 import { useRestaurant } from "../hooks/useRestaurant";
 import { useAdminPortalApi } from "../services/adminPortalApi";
@@ -126,7 +126,7 @@ const CustomTooltip = ({
             const fechaSeleccionada = new Date(
               parseInt(año),
               parseInt(mes) - 1,
-              parseInt(dia)
+              parseInt(dia),
             );
             const fechaFormateada = fechaSeleccionada.toLocaleDateString(
               "es-ES",
@@ -134,7 +134,7 @@ const CustomTooltip = ({
                 day: "numeric",
                 month: "long",
                 year: "numeric",
-              }
+              },
             );
             return `${label.toString().padStart(2, "0")}:00 del ${fechaFormateada}`;
           } else {
@@ -216,12 +216,12 @@ const Dashboard = () => {
     handleJoyrideCallback,
     startOnboarding,
     skipOnboarding,
-    resetOnboarding
+    resetOnboarding,
   } = useOnboarding();
 
   const { restaurant } = useRestaurant();
   const [sucursalSeleccionada, setSucursalSeleccionada] = useState(
-    sucursalesDefault[0]
+    sucursalesDefault[0],
   );
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
 
@@ -230,11 +230,10 @@ const Dashboard = () => {
   const [branchesLoading, setBranchesLoading] = useState(true);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
-  const [mostrarModalPro, setMostrarModalPro] = useState(false);
 
   // Estados para filtros
   const [generoSeleccionado, setGeneroSeleccionado] = useState(
-    opcionesGenero[0]
+    opcionesGenero[0],
   );
   const [edadSeleccionada, setEdadSeleccionada] = useState(opcionesEdad[0]);
   const [dropdownGeneroAbierto, setDropdownGeneroAbierto] = useState(false);
@@ -242,7 +241,7 @@ const Dashboard = () => {
 
   // Estados para granularidad
   const [granularidadSeleccionada, setGranularidadSeleccionada] = useState(
-    opcionesGranularidad[1]
+    opcionesGranularidad[1],
   ); // Día por defecto
   const [dropdownGranularidadAbierto, setDropdownGranularidadAbierto] =
     useState(false);
@@ -255,23 +254,23 @@ const Dashboard = () => {
   const mesActualStr = (fechaActual.getMonth() + 1).toString().padStart(2, "0");
   const añoActual = fechaActual.getFullYear();
   const [diaSeleccionado, setDiaSeleccionado] = useState(
-    `${diaActual}/${mesActualStr}/${añoActual}`
+    `${diaActual}/${mesActualStr}/${añoActual}`,
   );
   const [rangoHoras, setRangoHoras] = useState([0, 23]);
 
   const [calendarioAbierto, setCalendarioAbierto] = useState(false);
   const [mesActual, setMesActual] = useState(new Date()); // Fecha actual del sistema
   const [diaSeleccionadoCalendario, setDiaSeleccionadoCalendario] = useState(
-    new Date().getDate()
+    new Date().getDate(),
   );
   const [mesSeleccionadoParaGrafico, setMesSeleccionadoParaGrafico] = useState(
-    new Date()
+    new Date(),
   ); // Para granularidades que no sean Hora - Usa fecha actual
   const [selectorMesAbierto, setSelectorMesAbierto] = useState(false);
 
   const [selectorAnoAbierto, setSelectorAnoAbierto] = useState(false);
   const [anoSeleccionado, setAnoSeleccionado] = useState(
-    new Date().getFullYear()
+    new Date().getFullYear(),
   );
   const [rangoAnosInicio, setRangoAnosInicio] = useState(2017);
 
@@ -280,7 +279,9 @@ const Dashboard = () => {
   const [servicesLoaded, setServicesLoaded] = useState(false);
 
   // Estados para filtro de servicios (todos los servicios)
-  const [servicioSeleccionado, setServicioSeleccionado] = useState(opcionesServicio[0]); // "todos" por defecto
+  const [servicioSeleccionado, setServicioSeleccionado] = useState(
+    opcionesServicio[0],
+  ); // "todos" por defecto
   const [dropdownServicioAbierto, setDropdownServicioAbierto] = useState(false);
   const [enabledServices, setEnabledServices] = useState<string[]>([]); // Servicios habilitados del cliente
 
@@ -289,18 +290,20 @@ const Dashboard = () => {
   const { isSignedIn } = useAuth();
   const adminPortalApi = useAdminPortalApi();
 
-  const datosUnificados = allServicesData ? {
-    metricas: {
-      ventasTotales: allServicesData.metricas.ventasTotales,
-      ordenesActivas: dashboardData?.metricas?.ordenesActivas || 0, // No disponible en allServices
-      pedidos: allServicesData.metricas.totalTransacciones,
-      ticketPromedio: allServicesData.metricas.ticketPromedio,
-    },
-    grafico: allServicesData.grafico,
-    articulo_mas_vendido: allServicesData.articulo_mas_vendido,
-    tiempo_promedio_mesa: dashboardData?.tiempo_promedio_mesa || null, // No disponible en allServices
-    desglose_por_servicio: allServicesData.desglose_por_servicio,
-  } : dashboardData;
+  const datosUnificados = allServicesData
+    ? {
+        metricas: {
+          ventasTotales: allServicesData.metricas.ventasTotales,
+          ordenesActivas: dashboardData?.metricas?.ordenesActivas || 0, // No disponible en allServices
+          pedidos: allServicesData.metricas.totalTransacciones,
+          ticketPromedio: allServicesData.metricas.ticketPromedio,
+        },
+        grafico: allServicesData.grafico,
+        articulo_mas_vendido: allServicesData.articulo_mas_vendido,
+        tiempo_promedio_mesa: dashboardData?.tiempo_promedio_mesa || null, // No disponible en allServices
+        desglose_por_servicio: allServicesData.desglose_por_servicio,
+      }
+    : dashboardData;
 
   const cambiarSucursal = (sucursal) => {
     setSucursalSeleccionada(sucursal);
@@ -331,7 +334,7 @@ const Dashboard = () => {
     customRangoHoras: number[] | null = null,
     customDiaSeleccionado: string | null = null,
     customSucursal: any = null,
-    customServicio: any = null
+    customServicio: any = null,
   ) => {
     const currentGranularity =
       customFilters.granularity || granularidadSeleccionada.id;
@@ -348,7 +351,7 @@ const Dashboard = () => {
       const fechaBase = new Date(
         parseInt(año),
         parseInt(mes) - 1,
-        parseInt(dia)
+        parseInt(dia),
       );
 
       const fechaBaseISO = `${año}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
@@ -371,7 +374,7 @@ const Dashboard = () => {
         0,
         0,
         0,
-        0
+        0,
       );
 
       // Último día del mes a las 23:59:59.999
@@ -382,7 +385,7 @@ const Dashboard = () => {
         23,
         59,
         59,
-        999
+        999,
       );
     }
     // Si la granularidad es "mes", usar todo el año seleccionado
@@ -411,20 +414,24 @@ const Dashboard = () => {
 
     console.log(
       "🔍 [cargarDatosDashboard] sucursalSeleccionada:",
-      sucursalSeleccionada
+      sucursalSeleccionada,
     );
     console.log("🔍 [cargarDatosDashboard] customSucursal:", customSucursal);
     console.log(
       "🔍 [cargarDatosDashboard] sucursalAUtilizar:",
-      sucursalAUtilizar
+      sucursalAUtilizar,
     );
     console.log("🔍 [cargarDatosDashboard] filtros enviados:", filtros);
 
     // Determinar qué servicio usar
     const servicioAUtilizar = customServicio || servicioSeleccionado;
-    const serviceType = servicioAUtilizar?.id === "todos" ? null : servicioAUtilizar?.id;
+    const serviceType =
+      servicioAUtilizar?.id === "todos" ? null : servicioAUtilizar?.id;
 
-    console.log("🔍 [cargarDatosDashboard] servicioAUtilizar:", servicioAUtilizar);
+    console.log(
+      "🔍 [cargarDatosDashboard] servicioAUtilizar:",
+      servicioAUtilizar,
+    );
     console.log("🔍 [cargarDatosDashboard] serviceType:", serviceType);
 
     // Usar getDashboardMetricsAllServices para obtener datos de todos los servicios con filtro
@@ -490,7 +497,8 @@ const Dashboard = () => {
 
   // Filtrar opciones de servicio según los habilitados
   const opcionesServicioFiltradas = opcionesServicio.filter(
-    (servicio) => servicio.id === "todos" || enabledServices.includes(servicio.id)
+    (servicio) =>
+      servicio.id === "todos" || enabledServices.includes(servicio.id),
   );
 
   const cambiarMesParaGrafico = (direccion: any) => {
@@ -617,7 +625,7 @@ const Dashboard = () => {
 
       for (let hora = rangoHoras[0]; hora <= rangoHoras[1]; hora++) {
         const datoExistente = datosOriginales.find(
-          (item) => item.hora === hora
+          (item) => item.hora === hora,
         );
 
         if (datoExistente) {
@@ -640,7 +648,7 @@ const Dashboard = () => {
       const diasEnMes = new Date(
         mesSeleccionadoParaGrafico.getFullYear(),
         mesSeleccionadoParaGrafico.getMonth() + 1,
-        0
+        0,
       ).getDate();
 
       for (let dia = 1; dia <= diasEnMes; dia++) {
@@ -707,7 +715,7 @@ const Dashboard = () => {
         const fechaSeleccionada = new Date(
           mesActual.getFullYear(),
           mesActual.getMonth(),
-          diaSeleccionadoCalendario
+          diaSeleccionadoCalendario,
         );
         const fechaFormateada = fechaSeleccionada.toLocaleDateString("es-ES", {
           day: "numeric",
@@ -747,7 +755,7 @@ const Dashboard = () => {
         const diasEnMes = new Date(
           mesSeleccionadoParaGrafico.getFullYear(),
           mesSeleccionadoParaGrafico.getMonth() + 1,
-          0
+          0,
         ).getDate();
         return {
           dataKey: "dia",
@@ -811,12 +819,12 @@ const Dashboard = () => {
             "🎯 [Dashboard] Auto-loading data with branch:",
             firstBranch.id,
             "and restaurant:",
-            restaurantId
+            restaurantId,
           );
           cargarDatosDashboard(restaurantId);
         } else {
           console.log(
-            "⏳ [Dashboard] Waiting for userRestaurants to load before calling dashboard..."
+            "⏳ [Dashboard] Waiting for userRestaurants to load before calling dashboard...",
           );
         }
       }
@@ -843,13 +851,13 @@ const Dashboard = () => {
     ) {
       const restaurantId = userRestaurants[0]?.id;
       console.log(
-        "🚀 [Dashboard] Both userRestaurants and branch ready, loading dashboard data..."
+        "🚀 [Dashboard] Both userRestaurants and branch ready, loading dashboard data...",
       );
       console.log(
         "🎯 [Dashboard] Using restaurant:",
         restaurantId,
         "and branch:",
-        sucursalSeleccionada.id
+        sucursalSeleccionada.id,
       );
       cargarDatosDashboard(restaurantId);
     }
@@ -942,21 +950,21 @@ const Dashboard = () => {
         disableScrollParentFix={true}
         styles={joyrideTheme}
         options={{
-          arrowColor: '#2A5A62',
-          backgroundColor: '#ffffff',
-          overlayColor: 'rgba(0, 0, 0, 0.5)',
-          primaryColor: '#2A5A62',
-          textColor: '#173E44',
+          arrowColor: "#2A5A62",
+          backgroundColor: "#ffffff",
+          overlayColor: "rgba(0, 0, 0, 0.5)",
+          primaryColor: "#2A5A62",
+          textColor: "#173E44",
           width: 400,
           zIndex: 10000,
         }}
         locale={{
-          back: 'Atrás',
-          close: 'Cerrar',
-          last: 'Finalizar',
-          next: 'Siguiente',
+          back: "Atrás",
+          close: "Cerrar",
+          last: "Finalizar",
+          next: "Siguiente",
           nextLabelWithProgress: `Siguiente {step} of {steps}`,
-          skip: 'Saltar',
+          skip: "Saltar",
         }}
       />
 
@@ -964,7 +972,9 @@ const Dashboard = () => {
       <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
 
       {/* Estilos para el onboarding step 2 */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         .__floater[x-placement="right"] {
           transform: translate3d(60px, 110px, 0px) !important;
           transition: none !important;
@@ -977,25 +987,32 @@ const Dashboard = () => {
           max-width: 400px !important;
           width: 400px !important;
         }
-      ` }} />
+      `,
+        }}
+      />
 
       {/* Filtros superiores y header del restaurante */}
-      <div className="flex items-start justify-between mb-6 gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-6">
         {/* Filtros superiores  */}
-        <div className="flex flex-wrap gap-4" data-tour="filtros-avanzados">
+        <div
+          className="flex flex-wrap gap-2 sm:gap-4"
+          data-tour="filtros-avanzados"
+        >
           {/* Filtro Género */}
           <div className="relative">
             <button
               onClick={() => setDropdownGeneroAbierto(!dropdownGeneroAbierto)}
-              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
             >
-              <UsersIcon className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Género:</span>
-              <span className="text-sm font-medium text-gray-800">
+              <UsersIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+              <span className="text-xs sm:text-sm text-gray-600 hidden xs:inline">
+                Género:
+              </span>
+              <span className="text-xs sm:text-sm font-medium text-gray-800">
                 {generoSeleccionado.label}
               </span>
               <ChevronDownIcon
-                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownGeneroAbierto ? "transform rotate-180" : ""}`}
+                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${dropdownGeneroAbierto ? "transform rotate-180" : ""}`}
               />
             </button>
             {dropdownGeneroAbierto && (
@@ -1030,15 +1047,17 @@ const Dashboard = () => {
           <div className="relative">
             <button
               onClick={() => setDropdownEdadAbierto(!dropdownEdadAbierto)}
-              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
             >
-              <UserIcon className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Edad:</span>
-              <span className="text-sm font-medium text-gray-800">
+              <UserIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+              <span className="text-xs sm:text-sm text-gray-600 hidden xs:inline">
+                Edad:
+              </span>
+              <span className="text-xs sm:text-sm font-medium text-gray-800">
                 {edadSeleccionada.label}
               </span>
               <ChevronDownIcon
-                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownEdadAbierto ? "transform rotate-180" : ""}`}
+                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${dropdownEdadAbierto ? "transform rotate-180" : ""}`}
               />
             </button>
             {dropdownEdadAbierto && (
@@ -1073,15 +1092,17 @@ const Dashboard = () => {
           <div className="relative">
             <button
               onClick={() => setDropdownAbierto(!dropdownAbierto)}
-              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
             >
-              <MapPinIcon className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Sucursal:</span>
-              <span className="text-sm font-medium text-gray-800">
+              <MapPinIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+              <span className="text-xs sm:text-sm text-gray-600 hidden xs:inline">
+                Sucursal:
+              </span>
+              <span className="text-xs sm:text-sm font-medium text-gray-800 truncate max-w-[80px] sm:max-w-none">
                 {sucursalSeleccionada.name}
               </span>
               <ChevronDownIcon
-                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownAbierto ? "transform rotate-180" : ""}`}
+                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${dropdownAbierto ? "transform rotate-180" : ""}`}
               />
             </button>
             {dropdownAbierto && (
@@ -1128,59 +1149,61 @@ const Dashboard = () => {
           </div>
 
           {/* Filtro Servicio - Solo mostrar si hay más de 1 servicio habilitado */}
-            <div className="relative">
-              <button
-                onClick={() => setDropdownServicioAbierto(!dropdownServicioAbierto)}
-                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
-              >
-                <span className="text-sm text-gray-600">Servicio:</span>
-                <span className="text-sm font-medium text-gray-800">
-                  {servicioSeleccionado.label}
-                </span>
-                <ChevronDownIcon
-                  className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownServicioAbierto ? "transform rotate-180" : ""}`}
-                />
-              </button>
-              {dropdownServicioAbierto && (
-                <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
-                  <div className="px-3 py-2 border-b border-gray-100">
-                    <p className="text-xs font-medium text-gray-500 uppercase">
-                      Filtrar por servicio
-                    </p>
-                  </div>
-                  <ul className="py-1">
-                    {opcionesServicioFiltradas.map((servicio) => (
-                      <li key={servicio.id}>
-                        <button
-                          onClick={() => cambiarServicio(servicio)}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
-                        >
-                          <span className="text-sm text-gray-800">
-                            {servicio.label}
-                          </span>
-                          {servicioSeleccionado.id === servicio.id && (
-                            <CheckIcon className="h-4 w-4 text-custom-green-600" />
-                          )}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+          <div className="relative">
+            <button
+              onClick={() =>
+                setDropdownServicioAbierto(!dropdownServicioAbierto)
+              }
+              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+            >
+              <span className="text-sm text-gray-600">Servicio:</span>
+              <span className="text-sm font-medium text-gray-800">
+                {servicioSeleccionado.label}
+              </span>
+              <ChevronDownIcon
+                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownServicioAbierto ? "transform rotate-180" : ""}`}
+              />
+            </button>
+            {dropdownServicioAbierto && (
+              <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
+                <div className="px-3 py-2 border-b border-gray-100">
+                  <p className="text-xs font-medium text-gray-500 uppercase">
+                    Filtrar por servicio
+                  </p>
                 </div>
-              )}
-            </div>
+                <ul className="py-1">
+                  {opcionesServicioFiltradas.map((servicio) => (
+                    <li key={servicio.id}>
+                      <button
+                        onClick={() => cambiarServicio(servicio)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
+                      >
+                        <span className="text-sm text-gray-800">
+                          {servicio.label}
+                        </span>
+                        {servicioSeleccionado.id === servicio.id && (
+                          <CheckIcon className="h-4 w-4 text-custom-green-600" />
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Header del restaurante */}
-        <div className="flex items-center mr-8">
+        <div className="hidden sm:flex items-center mr-4 sm:mr-8">
           {restaurant?.logo_url ? (
             <img
               src={restaurant.logo_url}
               alt={`Logo de ${restaurant.name}`}
-              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 mr-4"
+              className="w-10 h-10 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-200 mr-2 sm:mr-4"
             />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-custom-green-100 flex items-center justify-center mr-4">
-              <span className="text-custom-green-600 text-xl font-bold">
+            <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-custom-green-100 flex items-center justify-center mr-2 sm:mr-4">
+              <span className="text-custom-green-600 text-base sm:text-xl font-bold">
                 {restaurant?.name?.charAt(0) ||
                   sucursalSeleccionada?.name?.charAt(0) ||
                   "R"}
@@ -1196,23 +1219,25 @@ const Dashboard = () => {
       </div>
 
       {/* Selector de granularidad y controles específicos */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
+      <div className="mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 mb-3 sm:mb-4">
           {/* Selector de Granularidad a la izquierda */}
           <div className="relative">
             <button
               onClick={() =>
                 setDropdownGranularidadAbierto(!dropdownGranularidadAbierto)
               }
-              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
             >
-              <ClockIcon className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Granularidad:</span>
-              <span className="text-sm font-medium text-gray-800">
+              <ClockIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+              <span className="text-xs sm:text-sm text-gray-600">
+                Granularidad:
+              </span>
+              <span className="text-xs sm:text-sm font-medium text-gray-800">
                 {granularidadSeleccionada.label}
               </span>
               <ChevronDownIcon
-                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownGranularidadAbierto ? "transform rotate-180" : ""}`}
+                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${dropdownGranularidadAbierto ? "transform rotate-180" : ""}`}
               />
             </button>
             {dropdownGranularidadAbierto && (
@@ -1244,7 +1269,7 @@ const Dashboard = () => {
           </div>
 
           {/* Botón de actualizar y selector de mes/año a la derecha */}
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             {/* Botón de actualizar */}
             <button
               onClick={() => {
@@ -1253,118 +1278,124 @@ const Dashboard = () => {
                 cargarDatosDashboard(restaurantId);
               }}
               disabled={isLoading}
-              className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
+              className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
               data-tour="actualizar-datos"
             >
               <RotateCcwIcon
-                className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${isLoading ? "animate-spin" : ""}`}
               />
-              {isLoading ? "Actualizando..." : "Actualizar"}
+              <span className="hidden xs:inline">
+                {isLoading ? "Actualizando..." : "Actualizar"}
+              </span>
+              <span className="xs:hidden">{isLoading ? "..." : ""}</span>
             </button>
 
             {/* Selector de mes (para granularidad Día) */}
             {granularidadSeleccionada.id === "dia" && (
-            <div className="relative">
-              <button
-                onClick={() => setSelectorMesAbierto(!selectorMesAbierto)}
-                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
-              >
-                <span className="text-sm text-gray-600">Mes:</span>
-                <span className="text-sm font-medium text-gray-800">
-                  {(mesSeleccionadoParaGrafico.getMonth() + 1)
-                    .toString()
-                    .padStart(2, "0")}
-                  /{mesSeleccionadoParaGrafico.getFullYear()}
-                </span>
-                <ChevronDownIcon
-                  className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${selectorMesAbierto ? "transform rotate-180" : ""}`}
-                />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setSelectorMesAbierto(!selectorMesAbierto)}
+                  className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+                >
+                  <span className="text-xs sm:text-sm text-gray-600">Mes:</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-800">
+                    {(mesSeleccionadoParaGrafico.getMonth() + 1)
+                      .toString()
+                      .padStart(2, "0")}
+                    /{mesSeleccionadoParaGrafico.getFullYear()}
+                  </span>
+                  <ChevronDownIcon
+                    className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${selectorMesAbierto ? "transform rotate-180" : ""}`}
+                  />
+                </button>
 
-              {/* Dropdown para seleccionar mes/año */}
-              {selectorMesAbierto && (
-                <div className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-20 p-4 w-64">
-                  {/* Navegación de mes/año */}
-                  <div className="flex items-center justify-between mb-4">
-                    <button
-                      onClick={() => cambiarMesParaGrafico(-1)}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
-                    >
-                      <ChevronDownIcon className="h-4 w-4 transform rotate-90 text-gray-600" />
-                    </button>
-                    <h3 className="text-sm font-medium text-gray-900">
-                      {mesSeleccionadoParaGrafico.toLocaleDateString("es-ES", {
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </h3>
-                    <button
-                      onClick={() => cambiarMesParaGrafico(1)}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
-                    >
-                      <ChevronDownIcon className="h-4 w-4 transform -rotate-90 text-gray-600" />
-                    </button>
-                  </div>
-
-                  {/* Botón para cerrar */}
-                  <div className="text-center">
-                    <button
-                      onClick={() => setSelectorMesAbierto(false)}
-                      className="px-4 py-2 bg-custom-green-600 text-white rounded-lg hover:bg-custom-green-700 transition-colors text-sm"
-                    >
-                      Seleccionar
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Selector de año (para granularidad Mes) */}
-          {granularidadSeleccionada.id === "mes" && (
-            <div className="relative">
-              <button
-                onClick={() => setSelectorAnoAbierto(!selectorAnoAbierto)}
-                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
-              >
-                <span className="text-sm text-gray-600">Año:</span>
-                <span className="text-sm font-medium text-gray-800">
-                  {anoSeleccionado}
-                </span>
-                <ChevronDownIcon
-                  className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${selectorAnoAbierto ? "transform rotate-180" : ""}`}
-                />
-              </button>
-
-              {/* Dropdown para seleccionar año */}
-              {selectorAnoAbierto && (
-                <div className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-20 p-4 w-64">
-                  {/* Header del selector de años */}
-                  <div className="flex items-center justify-between mb-4">
-                    <button
-                      onClick={() => cambiarRangoAnos(-1)}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
-                    >
-                      <ChevronDownIcon className="h-4 w-4 transform rotate-90 text-gray-600" />
-                    </button>
-                    <h3 className="text-sm font-medium text-gray-900">
-                      {rangoAnosInicio} - {rangoAnosInicio + 11}
-                    </h3>
-                    <button
-                      onClick={() => cambiarRangoAnos(1)}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
-                    >
-                      <ChevronDownIcon className="h-4 w-4 transform -rotate-90 text-gray-600" />
-                    </button>
-                  </div>
-
-                  {/* Grid de años */}
-                  <div className="grid grid-cols-2 gap-2 mb-4">
-                    {obtenerAnosDelRango().map((ano) => (
+                {/* Dropdown para seleccionar mes/año */}
+                {selectorMesAbierto && (
+                  <div className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-20 p-4 w-64">
+                    {/* Navegación de mes/año */}
+                    <div className="flex items-center justify-between mb-4">
                       <button
-                        key={ano}
-                        onClick={() => seleccionarAno(ano)}
-                        className={`
+                        onClick={() => cambiarMesParaGrafico(-1)}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        <ChevronDownIcon className="h-4 w-4 transform rotate-90 text-gray-600" />
+                      </button>
+                      <h3 className="text-sm font-medium text-gray-900">
+                        {mesSeleccionadoParaGrafico.toLocaleDateString(
+                          "es-ES",
+                          {
+                            month: "long",
+                            year: "numeric",
+                          },
+                        )}
+                      </h3>
+                      <button
+                        onClick={() => cambiarMesParaGrafico(1)}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        <ChevronDownIcon className="h-4 w-4 transform -rotate-90 text-gray-600" />
+                      </button>
+                    </div>
+
+                    {/* Botón para cerrar */}
+                    <div className="text-center">
+                      <button
+                        onClick={() => setSelectorMesAbierto(false)}
+                        className="px-4 py-2 bg-custom-green-600 text-white rounded-lg hover:bg-custom-green-700 transition-colors text-sm"
+                      >
+                        Seleccionar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Selector de año (para granularidad Mes) */}
+            {granularidadSeleccionada.id === "mes" && (
+              <div className="relative">
+                <button
+                  onClick={() => setSelectorAnoAbierto(!selectorAnoAbierto)}
+                  className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+                >
+                  <span className="text-xs sm:text-sm text-gray-600">Año:</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-800">
+                    {anoSeleccionado}
+                  </span>
+                  <ChevronDownIcon
+                    className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${selectorAnoAbierto ? "transform rotate-180" : ""}`}
+                  />
+                </button>
+
+                {/* Dropdown para seleccionar año */}
+                {selectorAnoAbierto && (
+                  <div className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-20 p-4 w-64">
+                    {/* Header del selector de años */}
+                    <div className="flex items-center justify-between mb-4">
+                      <button
+                        onClick={() => cambiarRangoAnos(-1)}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        <ChevronDownIcon className="h-4 w-4 transform rotate-90 text-gray-600" />
+                      </button>
+                      <h3 className="text-sm font-medium text-gray-900">
+                        {rangoAnosInicio} - {rangoAnosInicio + 11}
+                      </h3>
+                      <button
+                        onClick={() => cambiarRangoAnos(1)}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        <ChevronDownIcon className="h-4 w-4 transform -rotate-90 text-gray-600" />
+                      </button>
+                    </div>
+
+                    {/* Grid de años */}
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      {obtenerAnosDelRango().map((ano) => (
+                        <button
+                          key={ano}
+                          onClick={() => seleccionarAno(ano)}
+                          className={`
                           p-2 text-sm rounded transition-colors text-center
                           ${
                             ano === anoSeleccionado
@@ -1372,33 +1403,33 @@ const Dashboard = () => {
                               : "text-gray-700 hover:bg-gray-100"
                           }
                         `}
-                      >
-                        {ano}
-                      </button>
-                    ))}
+                        >
+                          {ano}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Controles específicos para granularidad Hora */}
         {granularidadSeleccionada.id === "hora" && (
-          <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 gap-3 sm:gap-4">
             {/* Selector de día con calendario */}
             <div className="relative">
               <button
                 onClick={() => setCalendarioAbierto(!calendarioAbierto)}
-                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+                className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
               >
-                <span className="text-sm text-gray-600">Día:</span>
-                <span className="text-sm font-medium text-gray-800">
+                <span className="text-xs sm:text-sm text-gray-600">Día:</span>
+                <span className="text-xs sm:text-sm font-medium text-gray-800">
                   {diaSeleccionado}
                 </span>
                 <ChevronDownIcon
-                  className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${calendarioAbierto ? "transform rotate-180" : ""}`}
+                  className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${calendarioAbierto ? "transform rotate-180" : ""}`}
                 />
               </button>
 
@@ -1472,11 +1503,11 @@ const Dashboard = () => {
             </div>
 
             {/* Range slider para horas */}
-            <div className="flex-1 mx-6">
+            <div className="flex-1 sm:mx-6">
               <div className="text-center mb-2">
-                <span className="text-sm font-medium text-gray-700">
-                  Rango de horas: {rangoHoras[0].toString().padStart(2, "0")}:00
-                  - {rangoHoras[1].toString().padStart(2, "0")}:00
+                <span className="text-xs sm:text-sm font-medium text-gray-700">
+                  Rango: {rangoHoras[0].toString().padStart(2, "0")}:00 -{" "}
+                  {rangoHoras[1].toString().padStart(2, "0")}:00
                 </span>
               </div>
 
@@ -1558,21 +1589,24 @@ const Dashboard = () => {
       </div>
 
       {/* Gráfico de Ingresos Totales */}
-      <div className="bg-white rounded-lg shadow-md border border-gray-100 p-6 mb-6" data-tour="consumo-activity">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
+      <div
+        className="bg-white rounded-lg shadow-md border border-gray-100 p-3 sm:p-6 mb-4 sm:mb-6"
+        data-tour="consumo-activity"
+      >
+        <h3 className="text-sm sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
           {obtenerTituloGrafico()}
         </h3>
 
         {/* Gráfico de líneas con Recharts */}
-        <div className="h-80 w-full">
+        <div className="h-48 sm:h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={obtenerDatosGrafico()}
               margin={{
-                top: 20,
-                right: 30,
-                left: 20,
-                bottom: 20,
+                top: 10,
+                right: 10,
+                left: 15,
+                bottom: 10,
               }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -1628,23 +1662,23 @@ const Dashboard = () => {
 
       {/* Tarjetas de métricas */}
       <div data-tour="indicadores-clave">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6" >
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 mb-4 sm:mb-6">
           {/* Ventas totales */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-8">
+            <div className="p-3 sm:p-8">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-custom-green-100 p-3 rounded-full">
-                  <BarChart2Icon className="h-6 w-6 text-custom-green-600" />
+                <div className="flex-shrink-0 bg-custom-green-100 p-2 sm:p-3 rounded-full">
+                  <BarChart2Icon className="h-4 w-4 sm:h-6 sm:w-6 text-custom-green-600" />
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-2 sm:ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                       Ventas totales
                     </dt>
                     <dd>
-                      <div className="text-lg font-medium text-gray-900">
+                      <div className="text-sm sm:text-lg font-medium text-gray-900">
                         {isLoading || isLoadingAllServices
-                          ? "Cargando..."
+                          ? "..."
                           : `$${datosUnificados?.metricas?.ventasTotales?.toLocaleString() || "0"}`}
                       </div>
                     </dd>
@@ -1666,20 +1700,20 @@ const Dashboard = () => {
 
           {/* Órdenes Activas */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-8">
+            <div className="p-3 sm:p-8">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-blue-100 p-3 rounded-full">
-                  <ShoppingCartIcon className="h-6 w-6 text-blue-600" />
+                <div className="flex-shrink-0 bg-blue-100 p-2 sm:p-3 rounded-full">
+                  <ShoppingCartIcon className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-2 sm:ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                       Órdenes Activas
                     </dt>
                     <dd>
-                      <div className="text-lg font-medium text-gray-900">
+                      <div className="text-sm sm:text-lg font-medium text-gray-900">
                         {isLoading || isLoadingAllServices
-                          ? "Cargando..."
+                          ? "..."
                           : datosUnificados?.metricas?.ordenesActivas || "0"}
                       </div>
                     </dd>
@@ -1701,20 +1735,20 @@ const Dashboard = () => {
 
           {/* Pedidos */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-8">
+            <div className="p-3 sm:p-8">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-amber-100 p-3 rounded-full">
-                  <ShoppingBagIcon className="h-6 w-6 text-amber-600" />
+                <div className="flex-shrink-0 bg-amber-100 p-2 sm:p-3 rounded-full">
+                  <ShoppingBagIcon className="h-4 w-4 sm:h-6 sm:w-6 text-amber-600" />
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-2 sm:ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                       Pedidos
                     </dt>
                     <dd>
-                      <div className="text-lg font-medium text-gray-900">
+                      <div className="text-sm sm:text-lg font-medium text-gray-900">
                         {isLoading || isLoadingAllServices
-                          ? "Cargando..."
+                          ? "..."
                           : datosUnificados?.metricas?.pedidos || "0"}
                       </div>
                     </dd>
@@ -1736,20 +1770,20 @@ const Dashboard = () => {
 
           {/* Ticket Promedio */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-8">
+            <div className="p-3 sm:p-8">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-purple-100 p-3 rounded-full">
-                  <DollarSignIcon className="h-6 w-6 text-purple-600" />
+                <div className="flex-shrink-0 bg-purple-100 p-2 sm:p-3 rounded-full">
+                  <DollarSignIcon className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600" />
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-2 sm:ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                       Ticket Promedio
                     </dt>
                     <dd>
-                      <div className="text-lg font-medium text-gray-900">
+                      <div className="text-sm sm:text-lg font-medium text-gray-900">
                         {isLoading || isLoadingAllServices
-                          ? "Cargando..."
+                          ? "..."
                           : `$${datosUnificados?.metricas?.ticketPromedio?.toLocaleString() || "0"}`}
                       </div>
                     </dd>
@@ -1772,7 +1806,7 @@ const Dashboard = () => {
 
         {/* Secciones adicionales */}
         <div
-          className={`grid grid-cols-1 gap-6 mb-6 ${
+          className={`grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 mb-4 sm:mb-6 ${
             servicesLoaded
               ? isFlexBillEnabled
                 ? "lg:grid-cols-3"
@@ -1782,20 +1816,20 @@ const Dashboard = () => {
         >
           {/* Órdenes Totales */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-8">
+            <div className="p-3 sm:p-8">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-custom-green-100 p-2 rounded-full">
-                  <CheckIcon className="h-5 w-5 text-custom-green-600" />
+                <div className="flex-shrink-0 bg-custom-green-100 p-1.5 sm:p-2 rounded-full">
+                  <CheckIcon className="h-4 w-4 sm:h-5 sm:w-5 text-custom-green-600" />
                 </div>
-                <div className="ml-4 w-0 flex-1">
+                <div className="ml-2 sm:ml-4 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                       Órdenes Totales
                     </dt>
                     <dd>
-                      <div className="text-base font-medium text-gray-900">
+                      <div className="text-sm sm:text-base font-medium text-gray-900">
                         {isLoading || isLoadingAllServices
-                          ? "Cargando..."
+                          ? "..."
                           : datosUnificados?.metricas?.pedidos || "0"}
                       </div>
                     </dd>
@@ -1815,25 +1849,25 @@ const Dashboard = () => {
 
           {/* Artículo más vendido */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-6">
+            <div className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-amber-100 p-2 rounded-full">
-                  <CrownIcon className="h-5 w-5 text-amber-600" />
+                <div className="flex-shrink-0 bg-amber-100 p-1.5 sm:p-2 rounded-full">
+                  <CrownIcon className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
                 </div>
-                <div className="ml-4 w-0 flex-1">
+                <div className="ml-2 sm:ml-4 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Artículo más vendido
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                      Más vendido
                     </dt>
                     <dd>
-                      <div className="text-base font-medium text-gray-900">
+                      <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
                         {isLoadingTopItem || isLoadingAllServices
-                          ? "Cargando..."
+                          ? "..."
                           : datosUnificados?.articulo_mas_vendido?.nombre ||
                             topSellingItem?.nombre ||
                             "Sin datos"}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">
                         {isLoadingTopItem || isLoadingAllServices
                           ? ""
                           : `${datosUnificados?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
@@ -1856,21 +1890,21 @@ const Dashboard = () => {
           {/* Tiempo Promedio x cuenta - Solo mostrar si FlexBill está habilitado */}
           {servicesLoaded && isFlexBillEnabled && (
             <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-              <div className="p-6">
+              <div className="p-3 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center flex-1">
-                    <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
-                      <ClockIcon className="h-5 w-5 text-red-600" />
+                    <div className="flex-shrink-0 bg-red-100 p-1.5 sm:p-2 rounded-full">
+                      <ClockIcon className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                     </div>
-                    <div className="ml-4 flex-1">
+                    <div className="ml-2 sm:ml-4 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Tiempo Promedio x cuenta
+                        <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                          Tiempo Prom.
                         </dt>
                         <dd>
-                          <div className="text-base font-medium text-gray-900">
+                          <div className="text-sm sm:text-base font-medium text-gray-900">
                             {isLoading || isLoadingAllServices
-                              ? "Cargando..."
+                              ? "..."
                               : (dashboardData as any)?.tiempo_promedio_mesa
                                   ?.tiempo_promedio_formateado || "Sin datos"}
                           </div>
@@ -1878,7 +1912,7 @@ const Dashboard = () => {
                       </dl>
                     </div>
                   </div>
-                  <span className="bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded ml-3">
+                  <span className="bg-gray-800 text-white text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded ml-2 sm:ml-3">
                     Flex Bill
                   </span>
                 </div>
@@ -1889,7 +1923,7 @@ const Dashboard = () => {
       </div>
       {/* Recent Activity */}
       <div className="mt-7" data-tour="actividad-reciente">
-        <h2 className="text-lg font-medium text-gray-900 flex items-center mb-4">
+        <h2 className="text-base sm:text-lg font-medium text-gray-900 flex items-center flex-wrap gap-2 mb-4 truncate">
           Actividad reciente
           <span className="ml-2 bg-custom-green-100 text-custom-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
             Hoy
@@ -1908,7 +1942,7 @@ const Dashboard = () => {
                   className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                   onClick={() => abrirDetallesPedido(order)}
                 >
-                  <div className="px-4 py-4 sm:px-6">
+                  <div className="px-4 py-4 sm:px-6 rounded-lg">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-custom-green-600 truncate">
                         Mesa #{order.table_number}
@@ -1935,9 +1969,9 @@ const Dashboard = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="mt-2 sm:flex sm:justify-between">
+                    <div className="mt-2 flex flex-col sm:flex-row sm:justify-between gap-2">
                       <div className="sm:flex sm:flex-col sm:space-y-1">
-                        <p className="flex items-center text-sm text-gray-500">
+                        <p className="flex items-center text-xs sm:text-sm text-gray-500">
                           <DollarSignIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
                           Total: ${order.total_amount} | Pagado: $
                           {order.paid_amount}
@@ -1947,7 +1981,7 @@ const Dashboard = () => {
                           {order.items_count} items
                         </p>
                       </div>
-                      <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                      <div className="mt-2 flex items-center gap-1 text-xs sm:text-sm text-gray-500 sm:mt-0">
                         <svg
                           className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400"
                           fill="none"
@@ -1982,7 +2016,7 @@ const Dashboard = () => {
               <button
                 onClick={() => loadMoreOrders(sucursalSeleccionada?.id)}
                 disabled={isLoadingMoreOrders}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-custom-green-600 bg-white border border-custom-green-300 rounded-md hover:bg-custom-green-50 hover:text-custom-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className=" inline-flex items-center px-4 py-2 text-sm font-medium text-custom-green-600 bg-white border border-custom-green-300 rounded-md hover:bg-custom-green-50 hover:text-custom-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoadingMoreOrders ? (
                   <>
@@ -2086,7 +2120,7 @@ const Dashboard = () => {
                             year: "numeric",
                             hour: "2-digit",
                             minute: "2-digit",
-                          }
+                          },
                         )
                       : "Tiempo no disponible"}
                   </span>
@@ -2214,182 +2248,6 @@ const Dashboard = () => {
               >
                 Cerrar
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Planes Pro */}
-      {mostrarModalPro && (
-        <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]"
-            onClick={() => setMostrarModalPro(false)}
-          ></div>
-          <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl max-w-4xl w-full mx-4 shadow-2xl border border-white/20">
-            {/* Header del Modal */}
-            <div className="px-8 py-6 border-b border-white/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900">
-                    Xquisito Pro
-                  </h3>
-                  <p className="text-gray-600 mt-1">
-                    Desbloquea métricas avanzadas y funcionalidades exclusivas
-                  </p>
-                </div>
-                <button
-                  onClick={() => setMostrarModalPro(false)}
-                  className="text-gray-400 hover:text-gray-500 transition-colors p-2 rounded-full hover:bg-white/20"
-                >
-                  <XIcon className="h-6 w-6" />
-                </button>
-              </div>
-            </div>
-
-            {/* Contenido del Modal */}
-            <div className="px-8 py-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Plan Básico */}
-                <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg">
-                  <div className="text-center mb-6">
-                    <h4 className="text-xl font-semibold text-gray-900 mb-2">
-                      Básico
-                    </h4>
-                    <div className="flex items-center justify-center">
-                      <span className="text-3xl font-bold text-gray-900">
-                        Gratis
-                      </span>
-                    </div>
-                    <p className="text-gray-600 mt-2">Plan actual</p>
-                  </div>
-
-                  <ul className="space-y-3 mb-6">
-                    <li className="flex items-center">
-                      <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
-                      <span className="text-gray-700">Dashboard básico</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
-                      <span className="text-gray-700">Gestión de menús</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
-                      <span className="text-gray-700">Promociones básicas</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
-                      <span className="text-gray-700">Hasta 3 sucursales</span>
-                    </li>
-                    <li className="flex items-center opacity-50">
-                      <XIcon className="h-5 w-5 text-gray-400 mr-3" />
-                      <span className="text-gray-500">
-                        Métricas de ventas avanzadas
-                      </span>
-                    </li>
-                    <li className="flex items-center opacity-50">
-                      <XIcon className="h-5 w-5 text-gray-400 mr-3" />
-                      <span className="text-gray-500">Análisis predictivo</span>
-                    </li>
-                    <li className="flex items-center opacity-50">
-                      <XIcon className="h-5 w-5 text-gray-400 mr-3" />
-                      <span className="text-gray-500">
-                        Reportes personalizados
-                      </span>
-                    </li>
-                  </ul>
-
-                  <button className="w-full py-3 px-4 bg-gray-200 text-gray-600 rounded-lg font-medium cursor-not-allowed">
-                    Plan Actual
-                  </button>
-                </div>
-
-                {/* Plan Pro */}
-                <div className="bg-gradient-to-br from-purple-500/20 to-yellow-500/20 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg relative overflow-hidden">
-                  {/* Badge Pro */}
-                  <div className="absolute top-4 right-4">
-                    <div className="bg-gradient-to-r from-purple-600 to-yellow-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center">
-                      <CrownIcon className="h-3 w-3 mr-1" />
-                      POPULAR
-                    </div>
-                  </div>
-
-                  <div className="text-center mb-6">
-                    <h4 className="text-xl font-semibold text-gray-900 mb-2 flex items-center justify-center">
-                      <CrownIcon className="h-5 w-5 text-yellow-600 mr-2" />
-                      Pro
-                    </h4>
-                    <div className="flex items-center justify-center">
-                      <span className="text-3xl font-bold text-gray-900">
-                        $299
-                      </span>
-                      <span className="text-gray-600 ml-1">/mes</span>
-                    </div>
-                    <p className="text-gray-600 mt-2">Facturación mensual</p>
-                  </div>
-
-                  <ul className="space-y-3 mb-6">
-                    <li className="flex items-center">
-                      <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
-                      <span className="text-gray-700">
-                        Todo del plan Básico
-                      </span>
-                    </li>
-                    <li className="flex items-center">
-                      <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                      <span className="text-gray-700 font-medium">
-                        Métricas de ventas detalladas
-                      </span>
-                    </li>
-                    <li className="flex items-center">
-                      <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                      <span className="text-gray-700 font-medium">
-                        Análisis predictivo con IA
-                      </span>
-                    </li>
-                    <li className="flex items-center">
-                      <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                      <span className="text-gray-700 font-medium">
-                        Reportes personalizados
-                      </span>
-                    </li>
-                    <li className="flex items-center">
-                      <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                      <span className="text-gray-700 font-medium">
-                        Sucursales ilimitadas
-                      </span>
-                    </li>
-                    <li className="flex items-center">
-                      <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                      <span className="text-gray-700 font-medium">
-                        Pepper AI avanzado
-                      </span>
-                    </li>
-                    <li className="flex items-center">
-                      <StarIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                      <span className="text-gray-700 font-medium">
-                        Soporte prioritario 24/7
-                      </span>
-                    </li>
-                  </ul>
-
-                  <button className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-yellow-500 text-white rounded-lg font-medium hover:from-purple-700 hover:to-yellow-600 transition-all duration-200 shadow-lg">
-                    Actualizar a Pro
-                  </button>
-                </div>
-              </div>
-
-              {/* Nota informativa */}
-              <div className="mt-8 text-center">
-                <div className="bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-lg p-4">
-                  <p className="text-blue-800 text-sm">
-                    <strong>💡 Nota:</strong> Las métricas de ventas totales
-                    están disponibles exclusivamente en Xquisito Pro. Actualiza
-                    tu plan para acceder a análisis detallados de ingresos,
-                    tendencias de ventas y proyecciones de crecimiento.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
