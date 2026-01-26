@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   XIcon,
   MessageCircleIcon,
@@ -9,7 +10,7 @@ import {
 } from "lucide-react";
 import {
   WhatsAppTemplate,
-  PRE_APPROVED_TEMPLATES
+  PRE_APPROVED_TEMPLATES,
 } from "../utils/whatsappTemplates";
 import { ImageUploadService } from "../services/imageUploadService";
 
@@ -90,7 +91,7 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
 
       // Subir imagen a Supabase Storage
       console.log("📤 Uploading WhatsApp template image to Supabase...");
-      const uploadedUrl = await ImageUploadService.uploadImage(file, 'banner');
+      const uploadedUrl = await ImageUploadService.uploadImage(file, "banner");
 
       // Actualizar con la URL permanente de Supabase
       setHeaderImageUrl(uploadedUrl);
@@ -119,8 +120,11 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
         selectedVariables: {
           ...variables,
           // Agregar la imagen del header según el tipo de variable que espere el template
-          ...(selectedTemplate.header?.type === 'image' && headerImageUrl
-            ? { [selectedTemplate.header.variables?.[0] || 'image_url']: headerImageUrl }
+          ...(selectedTemplate.header?.type === "image" && headerImageUrl
+            ? {
+                [selectedTemplate.header.variables?.[0] || "image_url"]:
+                  headerImageUrl,
+              }
             : {}),
         },
       };
@@ -242,60 +246,60 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
     );
   };
 
-  return (
-    <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
+  const modalContent = (
+    <div className="fixed inset-0 overflow-y-auto z-[9999] flex items-center justify-center">
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]"
+        className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px] z-[9998]"
         onClick={onClose}
       ></div>
 
-      <div className="relative bg-white rounded-2xl max-w-3xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative bg-white rounded-2xl max-w-3xl w-full mx-2 sm:mx-4 shadow-2xl max-h-[90vh] overflow-hidden flex flex-col z-[9999]">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <div className="flex items-center">
-            <MessageCircleIcon className="h-6 w-6 text-custom-green-600 mr-3" />
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-900">
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200">
+          <div className="flex items-center min-w-0">
+            <MessageCircleIcon className="h-5 w-5 sm:h-6 sm:w-6 text-custom-green-600 mr-2 sm:mr-3 flex-shrink-0" />
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-2xl font-semibold text-gray-900 truncate">
                 Templates de WhatsApp
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">
                 Selecciona un template pre-aprobado y personaliza las variables
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-500 p-2 rounded-full hover:bg-gray-100"
+            className="text-gray-400 hover:text-gray-500 p-2 rounded-full hover:bg-gray-100 flex-shrink-0"
           >
-            <XIcon className="h-6 w-6" />
+            <XIcon className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
           {/* Templates List */}
-          <div className="w-1/2 border-r border-gray-200 overflow-y-auto p-6">
-            <div className="space-y-3">
+          <div className="w-full md:w-1/2 border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto p-4 sm:p-6 max-h-[40vh] md:max-h-none">
+            <div className="space-y-2 sm:space-y-3">
               {PRE_APPROVED_TEMPLATES.map((template) => (
                 <div
                   key={template.id}
                   onClick={() => handleTemplateSelect(template)}
-                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                  className={`p-3 sm:p-4 border rounded-lg cursor-pointer transition-all ${
                     selectedTemplate?.id === template.id
                       ? "border-custom-green-600 bg-custom-green-50 shadow-md"
                       : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                   }`}
                 >
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start justify-between mb-1 sm:mb-2">
                     <div className="flex items-center">
-                      <h4 className="font-medium text-gray-900">
+                      <h4 className="font-medium text-gray-900 text-sm sm:text-base">
                         {template.name}
                       </h4>
                       {template.status === "approved" && (
-                        <CheckCircleIcon className="h-4 w-4 text-green-600 ml-2" />
+                        <CheckCircleIcon className="h-4 w-4 text-green-600 ml-2 flex-shrink-0" />
                       )}
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">
                     {template.description}
                   </p>
                   <div className="flex items-center text-xs text-gray-500">
@@ -313,7 +317,7 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
           </div>
 
           {/* Template Preview */}
-          <div className="w-1/2 overflow-y-auto p-6 flex flex-col">
+          <div className="w-full md:w-1/2 overflow-y-auto p-4 sm:p-6 flex flex-col flex-1 max-h-[40vh]">
             {selectedTemplate ? (
               <>
                 {/* Preview */}
@@ -355,9 +359,9 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
                                       variables[varName] || `[${varName}]`;
                                     headerText = headerText.replace(
                                       placeholder,
-                                      value
+                                      value,
                                     );
-                                  }
+                                  },
                                 );
                                 return headerText;
                               })()}
@@ -372,7 +376,7 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
                                 const value =
                                   variables[varName] || `[${varName}]`;
                                 bodyText = bodyText.replace(placeholder, value);
-                              }
+                              },
                             );
                             return bodyText;
                           })()}
@@ -463,7 +467,7 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
                               .split("_")
                               .map(
                                 (word) =>
-                                  word.charAt(0).toUpperCase() + word.slice(1)
+                                  word.charAt(0).toUpperCase() + word.slice(1),
                               )
                               .join(" ")}
                             {isDisabled && (
@@ -504,32 +508,31 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200">
                   <button
                     onClick={onClose}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    className="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm sm:text-base"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleConfirm}
                     disabled={!areAllVariablesFilled()}
-                    className={`px-4 py-2 rounded-lg text-white ${
+                    className={`w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-lg text-white text-sm sm:text-base ${
                       !areAllVariablesFilled()
                         ? "bg-gray-300 cursor-not-allowed"
                         : "bg-custom-green-600 hover:bg-custom-green-700"
                     }`}
                   >
-                    Seleccionar este template
+                    Seleccionar template
                   </button>
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                <MessageCircleIcon className="h-16 w-16 mb-4" />
-                <p>
-                  Selecciona un template de la izquierda para ver la vista
-                  previa
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 py-8 md:py-0">
+                <MessageCircleIcon className="h-12 w-12 sm:h-16 sm:w-16 mb-3 sm:mb-4" />
+                <p className="text-center text-sm sm:text-base px-4">
+                  Selecciona un template para ver la vista previa
                 </p>
               </div>
             )}
@@ -547,6 +550,13 @@ const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
       />
     </div>
   );
+
+  // Usar portal para renderizar fuera del stacking context del Layout
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+
+  return modalContent;
 };
 
 export default WhatsAppTemplateModal;

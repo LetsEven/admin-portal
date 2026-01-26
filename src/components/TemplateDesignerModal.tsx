@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   XIcon,
   TypeIcon,
@@ -9,11 +10,10 @@ import {
   GripIcon,
   TrashIcon,
   LayoutIcon,
-  TagIcon,
-  BookmarkIcon,
-  RefreshCcwIcon,
   AlertCircleIcon,
   UploadIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import PredefinedTemplatesModal from "./PredefinedTemplatesModal";
@@ -41,7 +41,7 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
     if (initialTemplate?.blocks) {
       // Filter out old promo/discount blocks if they exist
       baseBlocks = initialTemplate.blocks.filter(
-        (b: any) => b.type !== "promo_code" && b.type !== "discount"
+        (b: any) => b.type !== "promo_code" && b.type !== "discount",
       );
     } else {
       // Default blocks
@@ -83,20 +83,21 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
   };
 
   const [templateName, setTemplateName] = useState(
-    initialTemplate?.name || "Nuevo Template"
+    initialTemplate?.name || "Nuevo Template",
   );
   const [blocks, setBlocks] = useState(getInitialBlocks());
   const [showPredefinedTemplates, setShowPredefinedTemplates] = useState(false);
   const [showConfirmReset, setShowConfirmReset] = useState(false);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState<string | null>(null);
+  const [showBlocksPanel, setShowBlocksPanel] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Helper function to get next sequential ID
   const getNextId = () => {
     const currentMax = Math.max(
       ...blocks.map((b: any) => parseInt(b.id) || 0),
-      0
+      0,
     );
     return (currentMax + 1).toString();
   };
@@ -146,8 +147,8 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
   const handleBlockContentChange = (id: string, newContent: string) => {
     setBlocks(
       blocks.map((block: any) =>
-        block.id === id ? { ...block, content: newContent } : block
-      )
+        block.id === id ? { ...block, content: newContent } : block,
+      ),
     );
   };
 
@@ -160,13 +161,13 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
         file,
         800,
         600,
-        0.85
+        0.85,
       );
 
       // Upload to server
       const imageUrl = await ImageUploadService.uploadImage(
         resizedFile,
-        "banner"
+        "banner",
       );
 
       // Update block content with uploaded image URL
@@ -199,7 +200,8 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
       // Filter out promo_code and discount blocks before saving
       // These are campaign-specific and shouldn't be saved with the template
       const blocksToSave = blocks.filter(
-        (block: any) => block.type !== "promo_code" && block.type !== "discount"
+        (block: any) =>
+          block.type !== "promo_code" && block.type !== "discount",
       );
 
       const template = {
@@ -327,30 +329,30 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
         return null;
     }
   };
-  return (
-    <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
+  const modalContent = (
+    <div className="fixed inset-0 overflow-y-auto z-[9999] flex items-center justify-center">
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]"
+        className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px] z-[9998]"
         onClick={onClose}
       ></div>
-      <div className="relative bg-white rounded-2xl max-w-5xl w-full mx-auto shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative bg-white rounded-2xl max-w-5xl w-full mx-2 sm:mx-4 shadow-2xl max-h-[90vh] overflow-hidden flex flex-col z-[9999]">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200">
-          <div className="flex items-center">
-            <LayoutIcon className="h-5 w-5 text-custom-green-600 mr-2" />
-            <h2 className="text-xl font-semibold text-gray-900">
+        <div className="flex justify-between items-center p-3 sm:p-4 border-b border-gray-200">
+          <div className="flex items-center min-w-0">
+            <LayoutIcon className="h-5 w-5 text-custom-green-600 mr-2 flex-shrink-0" />
+            <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
               {initialTemplate ? "Editar template" : "Diseñar template"}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-500 p-1 rounded-full hover:bg-gray-100"
+            className="text-gray-400 hover:text-gray-500 p-1 rounded-full hover:bg-gray-100 flex-shrink-0"
           >
             <XIcon className="h-5 w-5" />
           </button>
         </div>
         {/* Template Name */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-3 sm:p-4 border-b border-gray-200">
           <label
             htmlFor="template-name"
             className="block text-sm font-medium text-gray-700 mb-1"
@@ -362,13 +364,13 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
             id="template-name"
             value={templateName}
             onChange={(e) => setTemplateName(e.target.value)}
-            className="w-full px-3 py-2 border border-custom-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
+            className="w-full px-3 py-2 border border-custom-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500 text-sm sm:text-base"
           />
         </div>
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
           {/* Template Preview */}
-          <div className="flex-1 overflow-y-auto p-4 border-r border-gray-200">
-            <div className="bg-white rounded-lg border border-gray-200 p-6 max-w-md mx-auto">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:border-r border-gray-200 order-2 md:order-1">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 max-w-md mx-auto">
               <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable droppableId="blocks">
                   {(provided) => (
@@ -417,105 +419,151 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
               </DragDropContext>
             </div>
           </div>
-          {/* Block Options */}
-          <div className="w-64 bg-gray-50 p-4 overflow-y-auto">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Bloques de contenido
-            </h3>
-            <div className="space-y-2">
-              <div
-                onClick={() => handleAddBlock("title")}
-                className="p-3 bg-white rounded-lg border border-gray-200 flex items-center cursor-pointer hover:bg-gray-50"
-              >
-                <TypeIcon className="h-4 w-4 text-gray-600 mr-2" />
-                <span className="text-sm">Título</span>
-              </div>
-              <div
-                onClick={() => handleAddBlock("text")}
-                className="p-3 bg-white rounded-lg border border-gray-200 flex items-center cursor-pointer hover:bg-gray-50"
-              >
-                <AlignLeftIcon className="h-4 w-4 text-gray-600 mr-2" />
-                <span className="text-sm">Texto</span>
-              </div>
-              <div
-                onClick={() => handleAddBlock("image")}
-                className="p-3 bg-white rounded-lg border border-gray-200 flex items-center cursor-pointer hover:bg-gray-50"
-              >
-                <ImageIcon className="h-4 w-4 text-gray-600 mr-2" />
-                <span className="text-sm">Imagen</span>
-              </div>
-              <div
-                onClick={() => handleAddBlock("separator")}
-                className="p-3 bg-white rounded-lg border border-gray-200 flex items-center cursor-pointer hover:bg-gray-50"
-              >
-                <SeparatorHorizontalIcon className="h-4 w-4 text-gray-600 mr-2" />
-                <span className="text-sm">Separador</span>
-              </div>
-              <div
-                onClick={() => handleAddBlock("button")}
-                className="p-3 bg-white rounded-lg border border-gray-200 flex items-center cursor-pointer hover:bg-gray-50"
-              >
-                <MousePointerIcon className="h-4 w-4 text-gray-600 mr-2" />
-                <span className="text-sm">Botón</span>
-              </div>
-            </div>
+          {/* Block Options - Collapsible on mobile */}
+          <div className="w-full md:w-64 bg-gray-50 order-1 md:order-2 border-b md:border-b-0">
+            {/* Mobile toggle header */}
+            <button
+              onClick={() => setShowBlocksPanel(!showBlocksPanel)}
+              className="w-full p-3 flex items-center justify-between md:hidden bg-gray-100"
+            >
+              <span className="text-sm font-medium text-gray-700">
+                Bloques de contenido
+              </span>
+              {showBlocksPanel ? (
+                <ChevronUpIcon className="h-5 w-5 text-gray-500" />
+              ) : (
+                <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+              )}
+            </button>
 
-            {/* Botones de acciones especiales */}
-            <div className="mt-8 border-t border-gray-200 pt-6 space-y-4">
-              {/* Botón: Crear desde cero - Estilo actualizado */}
-              <button
-                onClick={handleResetTemplate}
-                className="w-full p-3 bg-white text-gray-800 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-custom-green-50 hover:border-custom-green-200 transition-colors"
-              >
-                <span className="text-sm font-medium">Crear desde cero</span>
-              </button>
-              {/* Botón: Ver templates prediseñados - Estilo actualizado */}
-              <button
-                onClick={() => setShowPredefinedTemplates(true)}
-                className="w-full p-3 bg-white text-gray-800 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-custom-green-50 hover:border-custom-green-200 transition-colors"
-              >
-                <span className="text-sm font-medium">
-                  Ver templates prediseñados
-                </span>
-              </button>
-              <p className="mt-2 text-xs text-gray-500 text-center">
-                Explora templates listos para usar como base para tu campaña
-              </p>
-            </div>
-            <div className="mt-8">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
-                Instrucciones
+            {/* Panel content - Always visible on desktop, toggleable on mobile */}
+            <div
+              className={`p-3 sm:p-4 overflow-y-auto max-h-[40vh] md:max-h-none ${showBlocksPanel ? "block" : "hidden"} md:block`}
+            >
+              <h3 className="text-sm font-medium text-gray-700 mb-3 hidden md:block">
+                Bloques de contenido
               </h3>
-              <ul className="text-xs text-gray-600 space-y-2">
-                <li className="flex items-start">
-                  <span className="text-gray-400 mr-2">•</span>
-                  <span>Haz clic en un bloque para editarlo</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-gray-400 mr-2">•</span>
-                  <span>Arrastra y suelta para reordenar</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-gray-400 mr-2">•</span>
-                  <span>Usa el ícono de papelera para eliminar</span>
-                </li>
-              </ul>
+
+              {/* Blocks grid - horizontal on mobile, vertical on desktop */}
+              <div className="grid grid-cols-5 md:grid-cols-1 gap-2">
+                <div
+                  onClick={() => {
+                    handleAddBlock("title");
+                    setShowBlocksPanel(false);
+                  }}
+                  className="p-2 sm:p-3 bg-white rounded-lg border border-gray-200 flex flex-col md:flex-row items-center cursor-pointer hover:bg-gray-50"
+                >
+                  <TypeIcon className="h-4 w-4 text-gray-600 md:mr-2" />
+                  <span className="text-xs md:text-sm mt-1 md:mt-0">
+                    Título
+                  </span>
+                </div>
+                <div
+                  onClick={() => {
+                    handleAddBlock("text");
+                    setShowBlocksPanel(false);
+                  }}
+                  className="p-2 sm:p-3 bg-white rounded-lg border border-gray-200 flex flex-col md:flex-row items-center cursor-pointer hover:bg-gray-50"
+                >
+                  <AlignLeftIcon className="h-4 w-4 text-gray-600 md:mr-2" />
+                  <span className="text-xs md:text-sm mt-1 md:mt-0">Texto</span>
+                </div>
+                <div
+                  onClick={() => {
+                    handleAddBlock("image");
+                    setShowBlocksPanel(false);
+                  }}
+                  className="p-2 sm:p-3 bg-white rounded-lg border border-gray-200 flex flex-col md:flex-row items-center cursor-pointer hover:bg-gray-50"
+                >
+                  <ImageIcon className="h-4 w-4 text-gray-600 md:mr-2" />
+                  <span className="text-xs md:text-sm mt-1 md:mt-0">
+                    Imagen
+                  </span>
+                </div>
+                <div
+                  onClick={() => {
+                    handleAddBlock("separator");
+                    setShowBlocksPanel(false);
+                  }}
+                  className="p-2 sm:p-3 bg-white rounded-lg border border-gray-200 flex flex-col md:flex-row items-center cursor-pointer hover:bg-gray-50"
+                >
+                  <SeparatorHorizontalIcon className="h-4 w-4 text-gray-600 md:mr-2" />
+                  <span className="text-xs md:text-sm mt-1 md:mt-0 hidden sm:block">
+                    Separador
+                  </span>
+                  <span className="text-xs mt-1 sm:hidden">Sep.</span>
+                </div>
+                <div
+                  onClick={() => {
+                    handleAddBlock("button");
+                    setShowBlocksPanel(false);
+                  }}
+                  className="p-2 sm:p-3 bg-white rounded-lg border border-gray-200 flex flex-col md:flex-row items-center cursor-pointer hover:bg-gray-50"
+                >
+                  <MousePointerIcon className="h-4 w-4 text-gray-600 md:mr-2" />
+                  <span className="text-xs md:text-sm mt-1 md:mt-0">Botón</span>
+                </div>
+              </div>
+
+              {/* Special action buttons - Hidden on mobile collapsed state */}
+              <div className="mt-4 md:mt-8 border-t border-gray-200 pt-4 md:pt-6 space-y-3 md:space-y-4">
+                <button
+                  onClick={handleResetTemplate}
+                  className="w-full p-2 sm:p-3 bg-white text-gray-800 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-custom-green-50 hover:border-custom-green-200 transition-colors"
+                >
+                  <span className="text-xs sm:text-sm font-medium">
+                    Crear desde cero
+                  </span>
+                </button>
+                <button
+                  onClick={() => setShowPredefinedTemplates(true)}
+                  className="w-full p-2 sm:p-3 bg-white text-gray-800 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-custom-green-50 hover:border-custom-green-200 transition-colors"
+                >
+                  <span className="text-xs sm:text-sm font-medium">
+                    Ver templates prediseñados
+                  </span>
+                </button>
+                <p className="text-xs text-gray-500 text-center hidden md:block">
+                  Explora templates listos para usar como base para tu campaña
+                </p>
+              </div>
+
+              {/* Instructions - Hidden on mobile */}
+              <div className="mt-8 hidden md:block">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">
+                  Instrucciones
+                </h3>
+                <ul className="text-xs text-gray-600 space-y-2">
+                  <li className="flex items-start">
+                    <span className="text-gray-400 mr-2">•</span>
+                    <span>Haz clic en un bloque para editarlo</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-gray-400 mr-2">•</span>
+                    <span>Arrastra y suelta para reordenar</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-gray-400 mr-2">•</span>
+                    <span>Usa el ícono de papelera para eliminar</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200 flex justify-end space-x-3">
+        <div className="p-3 sm:p-4 border-t border-gray-200 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm sm:text-base"
           >
             Cancelar
           </button>
           <button
             onClick={handleSaveTemplate}
-            className="px-4 py-2 bg-custom-green-600 text-white rounded-lg hover:bg-custom-green-700"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-custom-green-600 text-white rounded-lg hover:bg-custom-green-700 text-sm sm:text-base"
           >
-            {initialTemplate ? "Actualizar template" : "Guardar template"}
+            {initialTemplate ? "Actualizar" : "Guardar"}
           </button>
         </div>
       </div>
@@ -543,32 +591,34 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
       />
       {/* Confirmation Modal for Reset */}
       {showConfirmReset && (
-        <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
+        <div className="fixed inset-0 overflow-y-auto z-[10000] flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-[1px]"
             onClick={() => setShowConfirmReset(false)}
           ></div>
-          <div className="relative bg-white rounded-lg max-w-md w-full mx-auto p-6 shadow-xl">
+          <div className="relative bg-white rounded-lg max-w-md w-full mx-2 p-4 sm:p-6 shadow-xl">
             <div className="flex items-center mb-4 text-amber-600">
-              <AlertCircleIcon className="h-6 w-6 mr-2" />
-              <h3 className="text-lg font-medium">Confirmar reinicio</h3>
+              <AlertCircleIcon className="h-5 w-5 sm:h-6 sm:w-6 mr-2 flex-shrink-0" />
+              <h3 className="text-base sm:text-lg font-medium">
+                Confirmar reinicio
+              </h3>
             </div>
-            <p className="mb-6 text-gray-600">
+            <p className="mb-4 sm:mb-6 text-sm sm:text-base text-gray-600">
               ¿Estás seguro de que quieres comenzar desde cero? Se eliminarán
-              todos los bloques actuales de este template.
+              todos los bloques actuales.
             </p>
-            <div className="flex justify-end space-x-3">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">
               <button
                 onClick={() => setShowConfirmReset(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmResetTemplate}
-                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
+                className="w-full sm:w-auto px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm"
               >
-                Sí, comenzar desde cero
+                Sí, reiniciar
               </button>
             </div>
           </div>
@@ -576,5 +626,12 @@ const TemplateDesignerModal: React.FC<TemplateDesignerModalProps> = ({
       )}
     </div>
   );
+
+  // Usar portal para renderizar fuera del stacking context del Layout
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+
+  return modalContent;
 };
 export default TemplateDesignerModal;
