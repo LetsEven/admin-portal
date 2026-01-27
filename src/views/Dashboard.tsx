@@ -30,7 +30,7 @@ import { useAnalytics, type AnalyticsFilters } from "../hooks/useAnalytics";
 import { useRestaurant } from "../hooks/useRestaurant";
 import { useAdminPortalApi } from "../services/adminPortalApi";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { useOnboarding, joyrideTheme } from "../hooks/useOnboarding";
+import { useOnboarding, joyrideTheme, joyrideResponsiveCSS } from "../hooks/useOnboarding";
 import toast from "react-hot-toast";
 
 // Estilos CSS en línea para los sliders
@@ -949,15 +949,6 @@ const Dashboard = () => {
         disableOverlayClose={true}
         disableScrollParentFix={true}
         styles={joyrideTheme}
-        options={{
-          arrowColor: "#2A5A62",
-          backgroundColor: "#ffffff",
-          overlayColor: "rgba(0, 0, 0, 0.5)",
-          primaryColor: "#2A5A62",
-          textColor: "#173E44",
-          width: 400,
-          zIndex: 10000,
-        }}
         locale={{
           back: "Atrás",
           close: "Cerrar",
@@ -971,25 +962,8 @@ const Dashboard = () => {
       {/* Estilos para los sliders */}
       <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
 
-      {/* Estilos para el onboarding step 2 */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        .__floater[x-placement="right"] {
-          transform: translate3d(60px, 110px, 0px) !important;
-          transition: none !important;
-        }
-        .__floater.__floater__open[x-placement="right"] {
-          transform: translate3d(60px, 110px, 0px) !important;
-          transition: none !important;
-        }
-        .react-joyride__tooltip {
-          max-width: 400px !important;
-          width: 400px !important;
-        }
-      `,
-        }}
-      />
+      {/* Estilos responsive para onboarding */}
+      <style dangerouslySetInnerHTML={{ __html: joyrideResponsiveCSS }} />
 
       {/* Filtros superiores y header del restaurante */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-6">

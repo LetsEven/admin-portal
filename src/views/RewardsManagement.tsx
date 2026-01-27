@@ -12,7 +12,7 @@ import { setAuthHook, useAdminPortalApi } from "../services/adminPortalApi";
 import { useCampaignsApi } from "../services/campaignsApi";
 import { useSubscriptionsApi } from "../services/subscriptionsApi";
 import { useAuth } from "@clerk/nextjs";
-import { useRewardsOnboarding, joyrideTheme } from "../hooks/useRewardsOnboarding";
+import { useRewardsOnboarding, joyrideTheme, joyrideResponsiveCSS } from "../hooks/useRewardsOnboarding";
 import {
   PlusIcon,
   AwardIcon,
@@ -1784,6 +1784,8 @@ const RewardsManagement = () => {
         initialDeliveryMethods={newCampaignData.deliveryMethods}
       />
 
+      {/* Estilos responsive para onboarding */}
+      <style dangerouslySetInnerHTML={{ __html: joyrideResponsiveCSS }} />
       {/* Tour guiado para gestión de recompensas */}
       <Joyride
         callback={handleJoyrideCallback}

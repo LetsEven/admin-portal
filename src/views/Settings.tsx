@@ -15,7 +15,7 @@ import { useRestaurant } from "../hooks/useRestaurant";
 import { ImageUploadService } from "../services/imageUploadService";
 import ImageCropModal from "../components/ImageCropModal";
 import { useAdminPortalApi } from "../services/adminPortalApi";
-import { useSettingsOnboarding, joyrideTheme } from "../hooks/useSettingsOnboarding";
+import { useSettingsOnboarding, joyrideTheme, joyrideResponsiveCSS } from "../hooks/useSettingsOnboarding";
 
 interface SettingsData {
   name: string;
@@ -1643,6 +1643,8 @@ const Settings = () => {
         title="Ajustar Logo del Restaurante"
       />
 
+      {/* Estilos responsive para onboarding */}
+      <style dangerouslySetInnerHTML={{ __html: joyrideResponsiveCSS }} />
       {/* Tour guiado para configuraciones */}
       <Joyride
         callback={handleJoyrideCallback}

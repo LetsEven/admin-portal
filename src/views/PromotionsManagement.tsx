@@ -8,7 +8,7 @@ import PickNGoDashboardModal from '../components/PickNGoDashboardModal';
 import TapPayDashboardModal from '../components/TapPayDashboardModal';
 import InactiveServiceModal from '../components/InactiveServiceModal';
 import { useAdminPortalApi, ServiceInfo } from '../services/adminPortalApi';
-import { useServicesOnboarding, joyrideTheme } from '../hooks/useServicesOnboarding';
+import { useServicesOnboarding, joyrideTheme, joyrideResponsiveCSS } from '../hooks/useServicesOnboarding';
 import toast from 'react-hot-toast';
 
 // Mapeo de servicios del main-portal a servicios del admin-portal
@@ -294,6 +294,8 @@ const PromotionsManagement = () => {
         serviceName={selectedService?.name || ''}
       />
 
+      {/* Estilos responsive para onboarding */}
+      <style dangerouslySetInnerHTML={{ __html: joyrideResponsiveCSS }} />
       {/* Tour guiado para gestión de servicios */}
       <Joyride
         callback={handleJoyrideCallback}
