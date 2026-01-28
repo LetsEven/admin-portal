@@ -1578,10 +1578,10 @@ const RewardsManagement = () => {
                       Plan Básico
                     </span>
                     <span>
-                      Campañas: 0/5
+                      Campañas: 0/1
                     </span>
                     <span className="text-green-600">
-                      Restantes: 5
+                      Restantes: 1
                     </span>
                   </div>
                 </div>
