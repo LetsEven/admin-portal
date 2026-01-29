@@ -195,7 +195,10 @@ const Dashboard = () => {
     isLoadingMoreOrders,
     isLoadingTopItem,
     isLoadingRestaurants,
+    isLoadingTransactions,
     ordersPagination,
+    transactionsPagination,
+    recentTransactions,
     error,
     getDashboardMetrics,
     getCompleteDashboardData,
@@ -205,6 +208,7 @@ const Dashboard = () => {
     getTopSellingItem,
     getUserRestaurants,
     getDashboardSummary,
+    getRecentTransactions,
     clearError,
   } = useAnalytics();
 
@@ -248,6 +252,18 @@ const Dashboard = () => {
 
   // Estado para controlar toasts
   const [previousLoadingState, setPreviousLoadingState] = useState(false);
+
+  // Opciones de filtro de fecha para transacciones (independiente)
+  const opcionesFechaTransacciones = [
+    { id: 'hoy', label: 'Hoy' },
+    { id: '7dias', label: 'Últimos 7 días' },
+    { id: 'mes', label: 'Último mes' },
+    { id: 'ano', label: 'Último año' },
+  ];
+  const [filtroFechaTransacciones, setFiltroFechaTransacciones] = useState(opcionesFechaTransacciones[0]);
+  const [dropdownFechaTransaccionesAbierto, setDropdownFechaTransaccionesAbierto] = useState(false);
+  const [paginaTransacciones, setPaginaTransacciones] = useState(1);
+  const ITEMS_POR_PAGINA = 5;
 
   const fechaActual = new Date();
   const diaActual = fechaActual.getDate().toString().padStart(2, "0");
@@ -294,8 +310,11 @@ const Dashboard = () => {
     ? {
         metricas: {
           ventasTotales: allServicesData.metricas.ventasTotales,
+          propinasTotales: allServicesData.metricas.propinasTotales,
           ordenesActivas: dashboardData?.metricas?.ordenesActivas || 0, // No disponible en allServices
-          pedidos: allServicesData.metricas.totalTransacciones,
+          totalOrdenes: allServicesData.metricas.totalOrdenes, // Mesas/órdenes atendidas
+          totalPedidos: allServicesData.metricas.totalPedidos, // Comensales individuales (difiere en FlexBill)
+          pedidos: allServicesData.metricas.totalPedidos, // Alias para compatibilidad
           ticketPromedio: allServicesData.metricas.ticketPromedio,
         },
         grafico: allServicesData.grafico,
@@ -494,6 +513,76 @@ const Dashboard = () => {
     // Pasar el servicio seleccionado para filtrar los datos
     cargarDatosDashboard(restaurantId, {}, null, null, null, servicio);
   };
+
+  // Función para calcular fechas según filtro de transacciones
+  const calcularFechasTransacciones = (filtroId: string) => {
+    const ahora = new Date();
+    let startDate: Date;
+
+    switch (filtroId) {
+      case 'hoy':
+        startDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0);
+        break;
+      case '7dias':
+        startDate = new Date(ahora);
+        startDate.setDate(startDate.getDate() - 7);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'mes':
+        startDate = new Date(ahora);
+        startDate.setMonth(startDate.getMonth() - 1);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'ano':
+        startDate = new Date(ahora);
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      default:
+        startDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0);
+    }
+
+    return {
+      start_date: startDate.toISOString(),
+      end_date: ahora.toISOString(),
+    };
+  };
+
+  // Función para cargar transacciones
+  const cargarTransacciones = (filtroFecha: any = filtroFechaTransacciones, pagina: number = 1) => {
+    const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+    const fechas = calcularFechasTransacciones(filtroFecha.id);
+
+    // Usar los mismos filtros de sucursal y servicio que el dashboard
+    const serviceType = servicioSeleccionado?.id === "todos" ? null : servicioSeleccionado?.id;
+
+    getRecentTransactions({
+      restaurant_id: restaurantId,
+      branch_id: sucursalSeleccionada?.id !== 'todas' ? sucursalSeleccionada?.id : null,
+      service_type: serviceType,
+      start_date: fechas.start_date,
+      end_date: fechas.end_date,
+      limit: ITEMS_POR_PAGINA,
+      offset: (pagina - 1) * ITEMS_POR_PAGINA,
+    });
+  };
+
+  // Cambiar filtro de fecha de transacciones
+  const cambiarFiltroFechaTransacciones = (filtro: any) => {
+    setFiltroFechaTransacciones(filtro);
+    setDropdownFechaTransaccionesAbierto(false);
+    setPaginaTransacciones(1);
+    cargarTransacciones(filtro, 1);
+  };
+
+  // Cambiar página de transacciones
+  const cambiarPaginaTransacciones = (pagina: number) => {
+    setPaginaTransacciones(pagina);
+    cargarTransacciones(filtroFechaTransacciones, pagina);
+  };
+
+  // Calcular total de páginas
+  const totalPaginasTransacciones = Math.ceil(transactionsPagination.total / ITEMS_POR_PAGINA);
 
   // Filtrar opciones de servicio según los habilitados
   const opcionesServicioFiltradas = opcionesServicio.filter(
@@ -860,8 +949,17 @@ const Dashboard = () => {
         sucursalSeleccionada.id,
       );
       cargarDatosDashboard(restaurantId);
+      cargarTransacciones(); // Cargar transacciones también
     }
   }, [userRestaurants, sucursalSeleccionada, dashboardData]);
+
+  // Recargar transacciones cuando cambien filtros de sucursal o servicio
+  useEffect(() => {
+    if (userRestaurants.length > 0 && sucursalSeleccionada?.id && recentTransactions.length >= 0) {
+      setPaginaTransacciones(1);
+      cargarTransacciones(filtroFechaTransacciones, 1);
+    }
+  }, [sucursalSeleccionada?.id, servicioSeleccionado?.id]);
 
   useEffect(() => {
     if (error) {
@@ -1686,16 +1784,6 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                  Ver todo
-                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </a>
-              </div>
-            </div> */}
           </div>
 
           {/* Órdenes Activas */}
@@ -1721,16 +1809,6 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                  Ver todo
-                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </a>
-              </div>
-            </div> */}
           </div>
 
           {/* Pedidos */}
@@ -1756,64 +1834,8 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                  Ver todo
-                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </a>
-              </div>
-            </div> */}
           </div>
 
-          {/* Ticket Promedio */}
-          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-3 sm:p-8">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-purple-100 p-2 sm:p-3 rounded-full">
-                  <DollarSignIcon className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600" />
-                </div>
-                <div className="ml-2 sm:ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                      Ticket Promedio
-                    </dt>
-                    <dd>
-                      <div className="text-sm sm:text-lg font-medium text-gray-900">
-                        {isLoading || isLoadingAllServices
-                          ? "..."
-                          : `$${datosUnificados?.metricas?.ticketPromedio?.toLocaleString() || "0"}`}
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-            {/* <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                  Ver todo
-                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </a>
-              </div>
-            </div> */}
-          </div>
-        </div>
-
-        {/* Secciones adicionales */}
-        <div
-          className={`grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 mb-4 sm:mb-6 ${
-            servicesLoaded
-              ? isFlexBillEnabled
-                ? "lg:grid-cols-3"
-                : "lg:grid-cols-2"
-              : "lg:grid-cols-3"
-          }`}
-        >
           {/* Órdenes Totales */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
             <div className="p-3 sm:p-8">
@@ -1830,21 +1852,41 @@ const Dashboard = () => {
                       <div className="text-sm sm:text-base font-medium text-gray-900">
                         {isLoading || isLoadingAllServices
                           ? "..."
-                          : datosUnificados?.metricas?.pedidos || "0"}
+                          : datosUnificados?.metricas?.totalOrdenes || "0"}
                       </div>
                     </dd>
                   </dl>
                 </div>
               </div>
             </div>
-            {/* <div className="text-sm">
-              <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                Ver todo
-                <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </a>
-            </div> */}
+          </div>
+        </div>
+
+        {/* Secciones adicionales */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 mb-4 sm:mb-6 lg:grid-cols-3">
+          {/* Propina */}
+          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+            <div className="p-3 sm:p-8">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 bg-green-100 p-2 sm:p-3 rounded-full">
+                  <DollarSignIcon className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
+                </div>
+                <div className="ml-2 sm:ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                      Propinas
+                    </dt>
+                    <dd>
+                      <div className="text-sm sm:text-lg font-medium text-gray-900">
+                        {isLoading || isLoadingAllServices
+                          ? "..."
+                          : `$${datosUnificados?.metricas?.propinasTotales?.toLocaleString() || "0"}`}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Artículo más vendido */}
@@ -1877,17 +1919,35 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            {/* <div className="text-sm">
-              <a href="#" className="font-medium text-custom-green-600 hover:text-custom-green-800 flex items-center">
-                Ver todo
-                <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </a>
-            </div> */}
+          </div>
+
+          {/* Ticket Promedio */}
+          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+            <div className="p-3 sm:p-8">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 bg-purple-100 p-2 sm:p-3 rounded-full">
+                  <DollarSignIcon className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600" />
+                </div>
+                <div className="ml-2 sm:ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                      Ticket Promedio
+                    </dt>
+                    <dd>
+                      <div className="text-sm sm:text-lg font-medium text-gray-900">
+                        {isLoading || isLoadingAllServices
+                          ? "..."
+                          : `$${datosUnificados?.metricas?.ticketPromedio?.toLocaleString() || "0"}`}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Tiempo Promedio x cuenta - Solo mostrar si FlexBill está habilitado */}
+          {/*}
           {servicesLoaded && isFlexBillEnabled && (
             <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
               <div className="p-3 sm:p-6">
@@ -1918,54 +1978,80 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-          )}
+          )}*/}
         </div>
       </div>
-      {/* Recent Activity */}
+
+      {/* Recent Activity - Transacciones */}
       <div className="mt-7" data-tour="actividad-reciente">
-        <h2 className="text-base sm:text-lg font-medium text-gray-900 flex items-center flex-wrap gap-2 mb-4 truncate">
-          Actividad reciente
-          <span className="ml-2 bg-custom-green-100 text-custom-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-            Hoy
-          </span>
-        </h2>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+          <h2 className="text-base sm:text-lg font-medium text-gray-900 flex items-center flex-wrap gap-2 truncate">
+            Actividad reciente
+          </h2>
+          {/* Selector de fecha independiente */}
+          <div className="relative">
+            <button
+              onClick={() => setDropdownFechaTransaccionesAbierto(!dropdownFechaTransaccionesAbierto)}
+              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+            >
+              {filtroFechaTransacciones.label}
+              <ChevronDownIcon className="ml-2 h-4 w-4" />
+            </button>
+            {dropdownFechaTransaccionesAbierto && (
+              <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                {opcionesFechaTransacciones.map((opcion) => (
+                  <button
+                    key={opcion.id}
+                    onClick={() => cambiarFiltroFechaTransacciones(opcion)}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg ${
+                      filtroFechaTransacciones.id === opcion.id
+                        ? "bg-custom-green-50 text-custom-green-700 font-medium"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {opcion.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
         <div className="mt-4 bg-white shadow-md overflow-hidden sm:rounded-lg border border-gray-100">
           <ul className="divide-y divide-gray-200">
-            {isLoadingOrders ? (
+            {isLoadingTransactions ? (
               <li className="px-4 py-4 sm:px-6 text-center text-gray-500">
-                Cargando órdenes activas...
+                Cargando transacciones...
               </li>
-            ) : activeOrders.length > 0 ? (
-              activeOrders.map((order) => (
+            ) : recentTransactions.length > 0 ? (
+              recentTransactions.map((tx) => (
                 <li
-                  key={order.id}
-                  className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
-                  onClick={() => abrirDetallesPedido(order)}
+                  key={tx.id}
+                  className="hover:bg-gray-50 transition-colors duration-150"
                 >
                   <div className="px-4 py-4 sm:px-6 rounded-lg">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-custom-green-600 truncate">
-                        Mesa #{order.table_number}
+                        {tx.orderIdentifier}
                       </p>
-                      <div className="ml-2 flex-shrink-0 flex">
-                        <p
-                          className={`px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            order.status === "paid"
-                              ? "bg-green-100 text-green-800"
-                              : order.status === "not_paid"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : order.status === "partial"
-                                  ? "bg-orange-100 text-orange-800"
-                                  : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {order.status === "not_paid"
-                            ? "Pendiente"
-                            : order.status === "partial"
-                              ? "Parcial"
-                              : order.status === "paid"
-                                ? "Pagado"
-                                : order.status}
+                      <div className="ml-2 flex-shrink-0 flex gap-2">
+                        <p className="px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          {tx.serviceType === 'flex-bill' ? 'FlexBill' :
+                           tx.serviceType === 'tap-order-pay' ? 'Tap Order' :
+                           tx.serviceType === 'pick-n-go' ? 'Pick & Go' :
+                           tx.serviceType === 'room-service' ? 'Room Service' :
+                           tx.serviceType === 'tap-pay' ? 'Tap & Pay' :
+                           tx.serviceType}
+                        </p>
+                        <p className={`px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          tx.orderStatus === 'paid' ? 'bg-green-100 text-green-800' :
+                          tx.orderStatus === 'partial' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {tx.orderStatus === 'paid' ? 'Pagado' :
+                           tx.orderStatus === 'partial' ? 'Parcial' :
+                           tx.orderStatus === 'not_paid' ? 'Pendiente' :
+                           tx.orderStatus === 'pending' ? 'Pendiente' :
+                           tx.orderStatus}
                         </p>
                       </div>
                     </div>
@@ -1973,12 +2059,12 @@ const Dashboard = () => {
                       <div className="sm:flex sm:flex-col sm:space-y-1">
                         <p className="flex items-center text-xs sm:text-sm text-gray-500">
                           <DollarSignIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                          Total: ${order.total_amount} | Pagado: $
-                          {order.paid_amount}
+                          Total: ${tx.totalAmount?.toLocaleString() || 0}
+                          {tx.tipAmount > 0 && ` | Propina: $${tx.tipAmount?.toLocaleString()}`}
                         </p>
                         <p className="flex items-center text-xs text-custom-green-600 font-medium">
                           <ShoppingCartIcon className="flex-shrink-0 mr-1.5 h-3 w-3 text-custom-green-500" />
-                          {order.items_count} items
+                          Venta: ${tx.baseAmount?.toLocaleString() || 0}
                         </p>
                       </div>
                       <div className="mt-2 flex items-center gap-1 text-xs sm:text-sm text-gray-500 sm:mt-0">
@@ -1996,7 +2082,7 @@ const Dashboard = () => {
                           />
                         </svg>
                         <p>
-                          {new Date(order.created_at).toLocaleString("es-ES")}
+                          {new Date(tx.createdAt).toLocaleString("es-ES")}
                         </p>
                       </div>
                     </div>
@@ -2005,42 +2091,36 @@ const Dashboard = () => {
               ))
             ) : (
               <li className="px-4 py-4 sm:px-6 text-center text-gray-500">
-                No hay órdenes activas
+                No hay transacciones en este periodo
               </li>
             )}
           </ul>
 
-          {/* Botón Ver más */}
-          {ordersPagination.hasMore && (
-            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-center">
-              <button
-                onClick={() => loadMoreOrders(sucursalSeleccionada?.id)}
-                disabled={isLoadingMoreOrders}
-                className=" inline-flex items-center px-4 py-2 text-sm font-medium text-custom-green-600 bg-white border border-custom-green-300 rounded-md hover:bg-custom-green-50 hover:text-custom-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoadingMoreOrders ? (
-                  <>
-                    <div className="animate-spin -ml-1 mr-2 h-4 w-4 border-2 border-custom-green-600 border-t-transparent rounded-full"></div>
-                    Cargando...
-                  </>
-                ) : (
-                  <>
-                    <ChevronDownIcon className="h-4 w-4 mr-1" />
-                    Ver más ({ordersPagination.totalCount -
-                      activeOrders.length}{" "}
-                    restantes)
-                  </>
-                )}
-              </button>
+          {/* Paginación numérica */}
+          {totalPaginasTransacciones > 1 && (
+            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-center gap-1">
+              {Array.from({ length: totalPaginasTransacciones }, (_, i) => i + 1).map((pagina) => (
+                <button
+                  key={pagina}
+                  onClick={() => cambiarPaginaTransacciones(pagina)}
+                  disabled={isLoadingTransactions}
+                  className={`min-w-[32px] h-8 px-2 text-sm font-medium rounded transition-colors duration-200 disabled:opacity-50 ${
+                    paginaTransacciones === pagina
+                      ? "bg-custom-green-600 text-white"
+                      : "text-custom-green-600 hover:bg-custom-green-50"
+                  }`}
+                >
+                  {pagina}
+                </button>
+              ))}
             </div>
           )}
         </div>
 
         {/* Información de paginación */}
-        {ordersPagination.totalCount > 0 && (
+        {transactionsPagination.total > 0 && (
           <div className="mt-2 text-center text-xs text-gray-500">
-            Mostrando {activeOrders.length} de {ordersPagination.totalCount}{" "}
-            órdenes
+            Mostrando {recentTransactions.length} de {transactionsPagination.total} transacciones
           </div>
         )}
       </div>

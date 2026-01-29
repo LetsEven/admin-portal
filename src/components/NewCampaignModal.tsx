@@ -22,7 +22,7 @@ interface NewCampaignModalProps {
   onDesignTemplate: (
     template?: any,
     promoCode?: string,
-    discountPercentage?: string
+    discountPercentage?: string,
   ) => void;
   onNext: (
     campaignName: string,
@@ -31,7 +31,7 @@ interface NewCampaignModalProps {
     selectedWhatsAppTemplate?: WhatsAppTemplate,
     deliveryMethods?: { whatsapp: boolean; sms: boolean },
     promoCode?: string,
-    discountPercentage?: string
+    discountPercentage?: string,
   ) => void;
   savedSegments: CustomerSegment[];
   savedTemplates: any[];
@@ -76,7 +76,7 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
         selectedWhatsAppTemplate || undefined,
         deliveryMethods,
         promoCode,
-        discountPercentage
+        discountPercentage,
       );
     }
   };
@@ -196,8 +196,8 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                     <span className="hidden sm:inline">Agregar SMS</span>
                     <span className="sm:hidden">+ SMS</span>
                   </button>
-                )
-              }
+                )}
+              {/*
               {deliveryMethods.sms &&
                 !deliveryMethods.whatsapp &&
                 onAddDeliveryMethod && (
@@ -210,7 +210,7 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                     <span className="sm:hidden">+ WhatsApp</span>
                   </button>
                 )
-              }
+              }*/}
               {onChangeDeliveryMethod && (
                 <button
                   onClick={onChangeDeliveryMethod}
@@ -300,11 +300,17 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
             {selectedSegment ? (
               <p className="text-xs sm:text-sm text-gray-500 text-center flex items-center">
                 <TargetIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                <span className="hidden sm:inline">Segmento aplicado:</span> {selectedSegment.segment_name}
+                <span className="hidden sm:inline">
+                  Segmento aplicado:
+                </span>{" "}
+                {selectedSegment.segment_name}
               </p>
             ) : (
               <p className="text-xs sm:text-sm text-gray-500 text-center">
-                <span className="hidden sm:inline">Define a quién irá dirigida (frecuencia, ticket, preferencias).</span>
+                <span className="hidden sm:inline">
+                  Define a quién irá dirigida (frecuencia, ticket,
+                  preferencias).
+                </span>
                 <span className="sm:hidden">Define tu audiencia objetivo.</span>
               </p>
             )}
@@ -338,7 +344,9 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                 </p>
               ) : (
                 <p className="text-xs sm:text-sm text-gray-500 text-center">
-                  <span className="hidden sm:inline">Elige un template pre-aprobado de WhatsApp.</span>
+                  <span className="hidden sm:inline">
+                    Elige un template pre-aprobado de WhatsApp.
+                  </span>
                   <span className="sm:hidden">Elige un template.</span>
                 </p>
               )}
@@ -373,7 +381,9 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                 </p>
               ) : (
                 <p className="text-xs sm:text-sm text-gray-500 text-center">
-                  <span className="hidden sm:inline">Elige o crea el diseño de SMS (texto libre).</span>
+                  <span className="hidden sm:inline">
+                    Elige o crea el diseño de SMS (texto libre).
+                  </span>
                   <span className="sm:hidden">Crea o elige un SMS.</span>
                 </p>
               )}
@@ -411,7 +421,11 @@ const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                         {segment.active_filters_count !== 1 ? "s" : ""}
                         {segment.estimated_customers !== undefined && (
                           <span className="ml-1 sm:ml-2">
-                            • {segment.estimated_customers} <span className="hidden sm:inline">cliente{segment.estimated_customers !== 1 ? "s" : ""}</span>
+                            • {segment.estimated_customers}{" "}
+                            <span className="hidden sm:inline">
+                              cliente
+                              {segment.estimated_customers !== 1 ? "s" : ""}
+                            </span>
                           </span>
                         )}
                       </p>

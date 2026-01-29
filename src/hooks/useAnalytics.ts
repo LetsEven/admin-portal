@@ -30,6 +30,8 @@ export interface AllServicesMetrics {
   propinasTotales: number;
   ingresosTotales: number;
   totalTransacciones: number;
+  totalOrdenes: number; // Mesas/órdenes atendidas (table_order, tap_orders_and_pay, etc.)
+  totalPedidos: number; // Comensales individuales (user_order para FlexBill, igual que órdenes para otros)
   ticketPromedio: number;
 }
 
@@ -55,8 +57,11 @@ export interface AllServicesDashboardData {
 // Tipos para las métricas del dashboard
 export interface DashboardMetrics {
   ventasTotales: number;
+  propinasTotales?: number; // Opcional para compatibilidad con datos legacy
   ordenesActivas: number;
   pedidos: number;
+  totalOrdenes?: number; // Opcional para compatibilidad con datos legacy
+  totalPedidos?: number; // Opcional para compatibilidad con datos legacy
   ticketPromedio: number;
 }
 
@@ -124,6 +129,41 @@ export interface Restaurant {
   is_active: boolean;
 }
 
+// Tipos para transacción reciente
+export interface RecentTransaction {
+  id: string;
+  baseAmount: number;
+  tipAmount: number;
+  totalAmount: number;
+  createdAt: string;
+  serviceType: string;
+  orderIdentifier: string;
+  orderStatus: string;
+}
+
+// Filtros para transacciones recientes
+export interface RecentTransactionsFilters {
+  restaurant_id?: number | null;
+  branch_id?: string | null;
+  service_type?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  limit?: number;
+  offset?: number;
+}
+
+// Respuesta de transacciones recientes
+export interface RecentTransactionsResponse {
+  transactions: RecentTransaction[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+  success: boolean;
+}
+
 // Respuesta completa del dashboard
 export interface DashboardData {
   metricas: DashboardMetrics;
@@ -150,6 +190,7 @@ interface UseAnalyticsReturn {
   activeOrders: ActiveOrder[];
   topSellingItem: TopSellingItem | null;
   userRestaurants: Restaurant[];
+  recentTransactions: RecentTransaction[];
 
   // Estados de carga
   isLoading: boolean;
@@ -158,11 +199,17 @@ interface UseAnalyticsReturn {
   isLoadingMoreOrders: boolean;
   isLoadingTopItem: boolean;
   isLoadingRestaurants: boolean;
+  isLoadingTransactions: boolean;
 
   // Estados de paginación
   ordersPagination: {
     hasMore: boolean;
     totalCount: number;
+    currentOffset: number;
+  };
+  transactionsPagination: {
+    hasMore: boolean;
+    total: number;
     currentOffset: number;
   };
 
@@ -178,6 +225,8 @@ interface UseAnalyticsReturn {
   getTopSellingItem: (filters: Omit<AnalyticsFilters, 'gender' | 'age_range' | 'granularity'>) => Promise<void>;
   getUserRestaurants: () => Promise<void>;
   getDashboardSummary: (restaurantId: number) => Promise<void>;
+  getRecentTransactions: (filters: RecentTransactionsFilters, reset?: boolean) => Promise<void>;
+  loadMoreTransactions: (filters: RecentTransactionsFilters) => Promise<void>;
 
   // Utilidades
   clearError: () => void;
@@ -195,6 +244,7 @@ export function useAnalytics(): UseAnalyticsReturn {
   const [activeOrders, setActiveOrders] = useState<ActiveOrder[]>([]);
   const [topSellingItem, setTopSellingItem] = useState<TopSellingItem | null>(null);
   const [userRestaurants, setUserRestaurants] = useState<Restaurant[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
 
   // Estados de carga
   const [isLoading, setIsLoading] = useState(false);
@@ -203,11 +253,17 @@ export function useAnalytics(): UseAnalyticsReturn {
   const [isLoadingMoreOrders, setIsLoadingMoreOrders] = useState(false);
   const [isLoadingTopItem, setIsLoadingTopItem] = useState(false);
   const [isLoadingRestaurants, setIsLoadingRestaurants] = useState(false);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
 
   // Estados de paginación
   const [ordersPagination, setOrdersPagination] = useState({
     hasMore: false,
     totalCount: 0,
+    currentOffset: 0,
+  });
+  const [transactionsPagination, setTransactionsPagination] = useState({
+    hasMore: false,
+    total: 0,
     currentOffset: 0,
   });
 
@@ -496,6 +552,58 @@ export function useAnalytics(): UseAnalyticsReturn {
     }
   }, [getAuthToken]);
 
+  // Obtener transacciones recientes
+  const getRecentTransactions = useCallback(async (filters: RecentTransactionsFilters, reset: boolean = true) => {
+    try {
+      setIsLoadingTransactions(true);
+      setError(null);
+
+      const token = await getAuthToken();
+      const queryParams = buildQueryParams({
+        ...filters,
+        limit: filters.limit || 10,
+        offset: reset ? 0 : transactionsPagination.currentOffset,
+      });
+
+      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/recent-transactions?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await handleApiResponse<RecentTransactionsResponse>(response);
+
+      if (reset) {
+        setRecentTransactions(data.transactions || []);
+      } else {
+        setRecentTransactions(prev => [...prev, ...(data.transactions || [])]);
+      }
+
+      setTransactionsPagination({
+        hasMore: data.pagination?.hasMore || false,
+        total: data.pagination?.total || 0,
+        currentOffset: reset ? (filters.limit || 10) : transactionsPagination.currentOffset + (filters.limit || 10),
+      });
+
+    } catch (error) {
+      console.error('❌ Error obteniendo transacciones recientes:', error);
+      setError(error instanceof Error ? error.message : 'Error desconocido');
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  }, [getAuthToken, transactionsPagination.currentOffset]);
+
+  // Cargar más transacciones
+  const loadMoreTransactions = useCallback(async (filters: RecentTransactionsFilters) => {
+    if (isLoadingTransactions || !transactionsPagination.hasMore) return;
+
+    await getRecentTransactions({
+      ...filters,
+      offset: transactionsPagination.currentOffset,
+    }, false);
+  }, [getRecentTransactions, isLoadingTransactions, transactionsPagination]);
+
   // Cargar restaurantes al inicializar
   useEffect(() => {
     if (user) {
@@ -515,6 +623,7 @@ export function useAnalytics(): UseAnalyticsReturn {
     activeOrders,
     topSellingItem,
     userRestaurants,
+    recentTransactions,
 
     // Estados de carga
     isLoading,
@@ -523,9 +632,11 @@ export function useAnalytics(): UseAnalyticsReturn {
     isLoadingMoreOrders,
     isLoadingTopItem,
     isLoadingRestaurants,
+    isLoadingTransactions,
 
     // Estados de paginación
     ordersPagination,
+    transactionsPagination,
 
     // Error
     error,
@@ -539,6 +650,8 @@ export function useAnalytics(): UseAnalyticsReturn {
     getTopSellingItem,
     getUserRestaurants,
     getDashboardSummary,
+    getRecentTransactions,
+    loadMoreTransactions,
 
     // Utilidades
     clearError,

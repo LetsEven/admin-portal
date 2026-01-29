@@ -47,14 +47,17 @@ const DeliveryMethodModal: React.FC<DeliveryMethodModalProps> = ({
         <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
           {/* WhatsApp Option */}
           <button
-            onClick={() => onSelectMethod("whatsapp")}
-            className="border-2 border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 hover:border-custom-green-500 hover:bg-custom-green-50 transition-all group relative"
+            onClick={
+              //() => onSelectMethod("whatsapp")
+              () => {}
+            }
+            className="border-2 border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 transition-all group relative opacity-80 cursor-not-allowed"
           >
             {/* Recommended Badge */}
             <div className="absolute -top-1.5 -right-1 sm:-top-2 sm:-right-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white text-[9px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full shadow-sm flex items-center">
-              <SparklesIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-              <span className="hidden sm:inline">Recomendado</span>
-              <span className="sm:hidden">Top</span>
+              {/*<SparklesIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />*/}
+              <span className="hidden sm:inline">Proximamente</span>
+              <span className="sm:hidden">Prox</span>
             </div>
             <div className="flex flex-col items-center text-center">
               <div className="w-10 h-10 sm:w-16 sm:h-16 bg-custom-green-50 rounded-full flex items-center justify-center mb-2 sm:mb-4 group-hover:bg-custom-green-100 transition-colors">
@@ -78,7 +81,9 @@ const DeliveryMethodModal: React.FC<DeliveryMethodModalProps> = ({
               <div className="w-10 h-10 sm:w-16 sm:h-16 bg-custom-green-50 rounded-full flex items-center justify-center mb-2 sm:mb-4 group-hover:bg-custom-green-100 transition-colors">
                 <PhoneIcon className="h-5 w-5 sm:h-8 sm:w-8 text-custom-green-600" />
               </div>
-              <h3 className="text-sm sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">SMS</h3>
+              <h3 className="text-sm sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">
+                SMS
+              </h3>
               <p className="text-[10px] sm:text-sm text-gray-600 mb-1 sm:mb-2">
                 Mensaje de texto libre
               </p>
@@ -87,6 +92,7 @@ const DeliveryMethodModal: React.FC<DeliveryMethodModalProps> = ({
         </div>
 
         {/* Both Option */}
+        {/*
         <button
           onClick={() => onSelectMethod("both")}
           className="w-full border-2 border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 hover:border-custom-green-500 hover:bg-custom-green-50 transition-all group"
@@ -113,6 +119,7 @@ const DeliveryMethodModal: React.FC<DeliveryMethodModalProps> = ({
             </div>
           </div>
         </button>
+        */}
       </div>
     </div>
   );
