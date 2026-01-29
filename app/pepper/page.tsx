@@ -2,15 +2,29 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { PlusIcon, MicIcon, SendIcon } from "lucide-react";
-import Joyride from 'react-joyride';
+import Joyride from "react-joyride";
 import Layout from "../../src/components/Layout";
 import { useRestaurant } from "../../src/contexts/RestaurantContext";
 import { useUser } from "@clerk/nextjs";
-import { usePepperOnboarding, pepperJoyrideTheme } from "../../src/hooks/usePepperOnboarding";
+import {
+  usePepperOnboarding,
+  pepperJoyrideTheme,
+} from "../../src/hooks/usePepperOnboarding";
 
 // Tipo para los eventos del stream (basado en la API real de AI Spine)
 interface StreamEvent {
-  type: "token" | "done" | "error" | "conversation_start" | "thinking_start" | "thinking_end" | "node_start" | "node_end" | "final_response" | "tool_start" | "tool_end";
+  type:
+    | "token"
+    | "done"
+    | "error"
+    | "conversation_start"
+    | "thinking_start"
+    | "thinking_end"
+    | "node_start"
+    | "node_end"
+    | "final_response"
+    | "tool_start"
+    | "tool_end";
   content?: string;
   session_id?: string;
   tool_name?: string;
@@ -42,7 +56,7 @@ async function streamFromAgent(
   onSessionId: (sessionId: string) => void,
   onToolStart: (toolName: string) => void,
   onToolEnd: () => void,
-  onFinalResponse?: (content: string) => void
+  onFinalResponse?: (content: string) => void,
 ): Promise<void> {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/ai-agent/chat/stream`,
@@ -55,7 +69,7 @@ async function streamFromAgent(
         message,
         session_id: sessionId,
       }),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -183,7 +197,10 @@ function hasIncompleteImageUrl(content: string): boolean {
   const lastPart = content.split(/\s/).pop() || "";
 
   // Verificar si parece una URL en construcción (tiene http pero no termina en espacio o formato conocido)
-  if (lastPart.startsWith("http") && !lastPart.match(/\.(jpg|jpeg|png|gif|webp|svg|avif)(\?[^\s]*)?\s*$/i)) {
+  if (
+    lastPart.startsWith("http") &&
+    !lastPart.match(/\.(jpg|jpeg|png|gif|webp|svg|avif)(\?[^\s]*)?\s*$/i)
+  ) {
     return true;
   }
 
@@ -194,7 +211,7 @@ function hasIncompleteImageUrl(content: string): boolean {
 function MessageContent({
   content,
   isStreaming = false,
-  activeTool = null
+  activeTool = null,
 }: {
   content: string;
   isStreaming?: boolean;
@@ -206,7 +223,9 @@ function MessageContent({
       return (
         <div className="flex items-center gap-2">
           <Spinner />
-          <span className="text-gray-500">{toolDisplayNames[activeTool] || activeTool}</span>
+          <span className="text-gray-500">
+            {toolDisplayNames[activeTool] || activeTool}
+          </span>
         </div>
       );
     }
@@ -361,7 +380,7 @@ const PepperPage: React.FC = () => {
       const restaurantId = restaurant?.id || null;
 
       // Construir el mensaje con el contexto separado
-      const contextualMessage = `[CONTEXT: restaurant_id=${restaurantId || "null"}, user_id=${userId || "null"}, admin_portal=true]
+      const contextualMessage = `[CONTEXT: service=admin_portal, restaurant_id=${restaurantId || "null"}, user_id=${userId || "null"}]
 [USER_MESSAGE: ${messageContent}]`;
 
       console.log("📤 Enviando mensaje a Pepper (Admin Portal):", {
@@ -381,8 +400,8 @@ const PepperPage: React.FC = () => {
             prev.map((msg) =>
               msg.id === assistantMessageId
                 ? { ...msg, content: msg.content + token }
-                : msg
-            )
+                : msg,
+            ),
           );
         },
         // onSessionId - guardar el session_id
@@ -407,10 +426,10 @@ const PepperPage: React.FC = () => {
             prev.map((msg) =>
               msg.id === assistantMessageId
                 ? { ...msg, content: content }
-                : msg
-            )
+                : msg,
+            ),
           );
-        }
+        },
       );
     } catch (error) {
       console.error("Error al comunicarse con Pepper:", error);
@@ -424,8 +443,8 @@ const PepperPage: React.FC = () => {
                 content:
                   "Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.",
               }
-            : msg
-        )
+            : msg,
+        ),
       );
     } finally {
       setIsLoading(false);
@@ -489,21 +508,21 @@ const PepperPage: React.FC = () => {
           scrollDuration={300}
           styles={pepperJoyrideTheme}
           options={{
-            arrowColor: '#2A5A62',
-            backgroundColor: '#ffffff',
-            overlayColor: 'rgba(0, 0, 0, 0.5)',
-            primaryColor: '#2A5A62',
-            textColor: '#173E44',
+            arrowColor: "#2A5A62",
+            backgroundColor: "#ffffff",
+            overlayColor: "rgba(0, 0, 0, 0.5)",
+            primaryColor: "#2A5A62",
+            textColor: "#173E44",
             width: 400,
             zIndex: 10000,
           }}
           locale={{
-            back: 'Atrás',
-            close: 'Cerrar',
-            last: 'Finalizar',
-            next: 'Siguiente',
+            back: "Atrás",
+            close: "Cerrar",
+            last: "Finalizar",
+            next: "Siguiente",
             nextLabelWithProgress: `Siguiente {step} of {steps}`,
-            skip: 'Saltar',
+            skip: "Saltar",
           }}
         />
       )}
@@ -574,28 +593,28 @@ const PepperPage: React.FC = () => {
                   }}
                 >
                   <div className="max-w-4xl mx-auto text-center">
-                  {/* Gradient Circle Icon - Responsive */}
-                  <div
-                    className={`mx-auto rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-emerald-400 shadow-lg flex items-center justify-center overflow-hidden
+                    {/* Gradient Circle Icon - Responsive */}
+                    <div
+                      className={`mx-auto rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-emerald-400 shadow-lg flex items-center justify-center overflow-hidden
                       w-16 h-16 mb-4 sm:w-20 sm:h-20 sm:mb-5 md:w-24 md:h-24 md:mb-6`}
-                  >
-                    <video
-                      src="/video-icon-pepper.webm"
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="w-full h-full object-cover rounded-full"
-                    />
-                  </div>
+                    >
+                      <video
+                        src="/video-icon-pepper.webm"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    </div>
 
-                  {/* Welcome Text - Responsive */}
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-900 mb-2 sm:mb-3">
-                    Pepper
-                  </h1>
-                  <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mt-8 sm:mt-12 md:mt-16 lg:mt-20">
-                    ¿En qué te puedo ayudar hoy?
-                  </p>
+                    {/* Welcome Text - Responsive */}
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                      Pepper
+                    </h1>
+                    <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mt-8 sm:mt-12 md:mt-16 lg:mt-20">
+                      ¿En qué te puedo ayudar hoy?
+                    </p>
                   </div>
                 </div>
 
@@ -648,8 +667,18 @@ const PepperPage: React.FC = () => {
                         <div className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
                           <MessageContent
                             content={message.content}
-                            isStreaming={isStreaming && message.role === "assistant" && message === messages[messages.length - 1]}
-                            activeTool={isStreaming && message.role === "assistant" && message === messages[messages.length - 1] ? activeTool : null}
+                            isStreaming={
+                              isStreaming &&
+                              message.role === "assistant" &&
+                              message === messages[messages.length - 1]
+                            }
+                            activeTool={
+                              isStreaming &&
+                              message.role === "assistant" &&
+                              message === messages[messages.length - 1]
+                                ? activeTool
+                                : null
+                            }
                           />
                         </div>
                         <p
@@ -703,10 +732,10 @@ const PepperPage: React.FC = () => {
                 maxWidth: isMobile ? "400px" : isTablet ? "500px" : "700px",
               }}
             >
-              <div 
+              <div
                 className="bg-white rounded-full shadow-md px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-3 flex items-center space-x-2 sm:space-x-3"
                 data-tour="chat-input"
-                >
+              >
                 {/* Plus Button - Hidden on small screens */}
                 <button className="hidden sm:flex w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-gray-100 hover:bg-gray-200 rounded-full items-center justify-center transition-colors flex-shrink-0">
                   <PlusIcon className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
