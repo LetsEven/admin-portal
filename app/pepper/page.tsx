@@ -9,6 +9,7 @@ import { useUser } from "@clerk/nextjs";
 import {
   usePepperOnboarding,
   pepperJoyrideTheme,
+  joyrideResponsiveCSS,
 } from "../../src/hooks/usePepperOnboarding";
 
 // Tipo para los eventos del stream (basado en la API real de AI Spine)
@@ -526,6 +527,9 @@ const PepperPage: React.FC = () => {
           }}
         />
       )}
+
+      {/* Estilos responsive para onboarding */}
+      <style dangerouslySetInnerHTML={{ __html: joyrideResponsiveCSS }} />
 
       <style jsx global>{`
         main > div {

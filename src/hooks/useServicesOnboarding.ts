@@ -12,52 +12,8 @@ interface ServicesOnboardingHook {
 
 const SERVICES_ONBOARDING_STORAGE_KEY = 'xquisito_services_onboarding_completed';
 
-// Configuración del tema Xquisito para Joyride (reutilizamos el tema)
-export const joyrideTheme = {
-  options: {
-    primaryColor: '#2A5A62',    // Verde Xquisito
-    backgroundColor: '#ffffff',
-    textColor: '#173E44',       // Azul oscuro Xquisito
-    overlayColor: 'rgba(23, 62, 68, 0.4)',
-    arrowColor: '#2A5A62',
-    zIndex: 10000,
-    width: 400,
-    beaconSize: 36
-  },
-  tooltip: {
-    borderRadius: 12,
-    padding: 20
-  },
-  tooltipContent: {
-    padding: '20px 24px'
-  },
-  tooltipTitle: {
-    color: '#173E44',
-    fontSize: '1.125rem',
-    fontWeight: '600',
-    marginBottom: '8px'
-  },
-  tooltipBody: {
-    color: '#555555',
-    fontSize: '0.95rem',
-    lineHeight: '1.5'
-  },
-  buttonNext: {
-    backgroundColor: '#2A5A62',
-    fontSize: '0.9rem',
-    padding: '10px 20px',
-    borderRadius: '8px'
-  },
-  buttonBack: {
-    color: '#2A5A62',
-    fontSize: '0.9rem',
-    padding: '10px 20px'
-  },
-  buttonSkip: {
-    color: '#888888',
-    fontSize: '0.85rem'
-  }
-};
+// Tema centralizado importado desde utils
+export { joyrideTheme, joyrideResponsiveCSS } from '../utils/joyrideTheme';
 
 // Definición de los pasos del tour para la Gestión de Servicios
 const servicesOnboardingSteps: Step[] = [

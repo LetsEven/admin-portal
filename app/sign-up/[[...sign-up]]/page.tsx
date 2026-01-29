@@ -1,19 +1,70 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { Mail, KeyRound, User } from 'lucide-react';
+import { Mail, KeyRound, User, CheckCircle2, Circle, ShieldAlert } from 'lucide-react';
 import { Field, Input, FieldError } from "@clerk/elements/common";
 import { Root, Step, Action } from "@clerk/elements/sign-up";
 
 export default function Page() {
+  const [password, setPassword] = useState('');
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [passwordErrorEs, setPasswordErrorEs] = useState('');
+  const passwordFieldRef = useRef<HTMLDivElement>(null);
   const [emailValidation, setEmailValidation] = useState({
     loading: true,
     allowed: false,
     message: '',
     clientName: ''
   });
+
+  // Mapeo de data-error-code de Clerk a mensajes en español
+  const clerkErrorMap: Record<string, string> = {
+    'form_password_pwned': 'Tu contraseña fue encontrada en una filtración de datos. Por seguridad, usa una contraseña diferente.',
+    'form_password_length_too_short': 'La contraseña debe tener al menos 8 caracteres.',
+  };
+
+  // Observar el FieldError de Clerk y traducirlo al español
+  // Dependemos de emailValidation.allowed para que se ejecute cuando el formulario esté visible
+  useEffect(() => {
+    // Solo ejecutar cuando el formulario está visible (allowed = true)
+    if (!emailValidation.allowed) return;
+
+    let observer: MutationObserver | null = null;
+
+    // Pequeño delay para asegurar que el DOM se haya renderizado
+    const timeoutId = setTimeout(() => {
+      const container = passwordFieldRef.current;
+      if (!container) return;
+
+      const checkForErrors = () => {
+        // Buscar el FieldError de Clerk usando el atributo data-error-code (específico de Clerk)
+        const errorEl = container.querySelector('[data-error-code]') as HTMLElement | null;
+        if (errorEl) {
+          const errorCode = errorEl.getAttribute('data-error-code');
+          if (errorCode && clerkErrorMap[errorCode]) {
+            setPasswordErrorEs(clerkErrorMap[errorCode]);
+            return;
+          }
+        }
+        setPasswordErrorEs('');
+      };
+
+      // Verificar inmediatamente al montar
+      checkForErrors();
+
+      observer = new MutationObserver(checkForErrors);
+      observer.observe(container, { childList: true, subtree: true, characterData: true, attributes: true });
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [emailValidation.allowed]);
 
   const searchParams = useSearchParams();
   const { user } = useUser();
@@ -169,8 +220,19 @@ export default function Page() {
                   <FieldError className="text-rose-400 text-xs" />
                 </Field>
 
+                <div ref={passwordFieldRef}>
                 <Field name="password" className="space-y-2">
-                  <div className="relative">
+                  <div
+                    className="relative"
+                    onInput={(e) => {
+                      const target = e.target as HTMLInputElement;
+                      if (target.type === 'password' || target.name === 'password') {
+                        setPassword(target.value);
+                      }
+                    }}
+                    onFocusCapture={() => setPasswordFocused(true)}
+                    onBlurCapture={() => setPasswordFocused(false)}
+                  >
                     <KeyRound className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
                     <Input
                       required
@@ -180,8 +242,36 @@ export default function Page() {
                       placeholder="Contraseña"
                     />
                   </div>
-                  <FieldError className="text-rose-400 text-xs" />
+                  {/* FieldError de Clerk oculto visualmente pero presente en el DOM para el MutationObserver */}
+                  <FieldError className="sr-only" />
+
+                  {/* Requisitos de contraseña */}
+                  {(passwordFocused || password.length > 0) && (
+                    <div className="mt-1 space-y-1.5 transition-all duration-200">
+                      {/* <div className="flex items-center gap-1.5">
+                        {password.length >= 8 ? (
+                          <CheckCircle2 className="size-3.5 text-green-400 flex-shrink-0" />
+                        ) : (
+                          <Circle className="size-3.5 text-gray-400 flex-shrink-0" />
+                        )}
+                        <span className={`text-xs ${password.length >= 8 ? 'text-green-400' : 'text-gray-400'}`}>
+                          Mínimo 8 caracteres
+                        </span>
+                      </div> */}
+                      <div className="flex items-start gap-1.5">
+                        <ShieldAlert className={`size-3.5 flex-shrink-0 mt-0.5 ${passwordErrorEs ? 'text-rose-400' : password.length >= 8 ? 'text-amber-400' : 'text-gray-400'}`} />
+                        <span className={`text-xs ${passwordErrorEs ? 'text-rose-400 font-medium' : password.length >= 8 ? 'text-amber-400' : 'text-gray-400'}`}>
+                          {passwordErrorEs
+                            || (password.length >= 8
+                              ? 'Si tu contraseña fue expuesta en una filtración de datos, será rechazada. Usa una contraseña única.'
+                              : 'Las contraseñas comprometidas serán rechazadas por seguridad')
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </Field>
+                </div>
               </div>
 
               <div className="flex items-center justify-center gap-3 mt-6">

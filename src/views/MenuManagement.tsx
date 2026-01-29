@@ -12,7 +12,7 @@ import MobileMenuPreview from "../components/MobileMenuPreview";
 import RestaurantHeader from "../components/RestaurantHeader";
 import { useMenuAdminPortalApi } from "../services/menuAdminPortalApi";
 import { MenuSection, MenuItem } from "../services/adminPortalApi";
-import { useMenuOnboarding, joyrideTheme } from "../hooks/useMenuOnboarding";
+import { useMenuOnboarding, joyrideTheme, joyrideResponsiveCSS } from "../hooks/useMenuOnboarding";
 
 interface Branch {
   id: string;
@@ -738,6 +738,8 @@ const MenuManagement = () => {
         />
       )}
 
+      {/* Estilos responsive para onboarding */}
+      <style dangerouslySetInnerHTML={{ __html: joyrideResponsiveCSS }} />
       {/* Tour guiado para gestión de menú */}
       <Joyride
         callback={handleJoyrideCallback}
