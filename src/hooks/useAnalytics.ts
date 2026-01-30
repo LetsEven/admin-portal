@@ -141,6 +141,14 @@ export interface RecentTransaction {
   orderStatus: string;
 }
 
+export interface OrderItem {
+  nombre: string;
+  cantidad: number;
+  precio: number;
+  precioTotal: number;
+  estadoPago: string;
+}
+
 // Filtros para transacciones recientes
 export interface RecentTransactionsFilters {
   restaurant_id?: number | null;
@@ -227,6 +235,7 @@ interface UseAnalyticsReturn {
   getDashboardSummary: (restaurantId: number) => Promise<void>;
   getRecentTransactions: (filters: RecentTransactionsFilters, reset?: boolean) => Promise<void>;
   loadMoreTransactions: (filters: RecentTransactionsFilters) => Promise<void>;
+  getOrderItems: (id: string, orderStatus: string, serviceType: string) => Promise<OrderItem[]>;
 
   // Utilidades
   clearError: () => void;
@@ -604,6 +613,28 @@ export function useAnalytics(): UseAnalyticsReturn {
     }, false);
   }, [getRecentTransactions, isLoadingTransactions, transactionsPagination]);
 
+  // Obtener items de una orden/transacción
+  const getOrderItems = useCallback(async (id: string, orderStatus: string, serviceType: string): Promise<OrderItem[]> => {
+    try {
+      const token = await getToken();
+      const params = new URLSearchParams({ id, orderStatus, serviceType });
+      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/order-items?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      if (data.success && data.data?.items) {
+        return data.data.items;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error al obtener items de la orden:', error);
+      return [];
+    }
+  }, [getToken]);
+
   // Cargar restaurantes al inicializar
   useEffect(() => {
     if (user) {
@@ -652,6 +683,7 @@ export function useAnalytics(): UseAnalyticsReturn {
     getDashboardSummary,
     getRecentTransactions,
     loadMoreTransactions,
+    getOrderItems,
 
     // Utilidades
     clearError,

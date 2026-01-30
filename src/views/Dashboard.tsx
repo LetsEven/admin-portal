@@ -26,11 +26,19 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import Joyride, { STATUS } from "react-joyride";
-import { useAnalytics, type AnalyticsFilters } from "../hooks/useAnalytics";
+import {
+  useAnalytics,
+  type AnalyticsFilters,
+  type RecentTransaction,
+} from "../hooks/useAnalytics";
 import { useRestaurant } from "../hooks/useRestaurant";
 import { useAdminPortalApi } from "../services/adminPortalApi";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { useOnboarding, joyrideTheme, joyrideResponsiveCSS } from "../hooks/useOnboarding";
+import {
+  useOnboarding,
+  joyrideTheme,
+  joyrideResponsiveCSS,
+} from "../hooks/useOnboarding";
 import toast from "react-hot-toast";
 
 // Estilos CSS en línea para los sliders
@@ -209,6 +217,7 @@ const Dashboard = () => {
     getUserRestaurants,
     getDashboardSummary,
     getRecentTransactions,
+    getOrderItems,
     clearError,
   } = useAnalytics();
 
@@ -232,8 +241,11 @@ const Dashboard = () => {
   // Estados para branches/sucursales
   const [branches, setBranches] = useState([]);
   const [branchesLoading, setBranchesLoading] = useState(true);
-  const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
+  const [pedidoSeleccionado, setPedidoSeleccionado] =
+    useState<RecentTransaction | null>(null);
   const [mostrarModal, setMostrarModal] = useState(false);
+  const [itemsPedido, setItemsPedido] = useState<any[]>([]);
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
 
   // Estados para filtros
   const [generoSeleccionado, setGeneroSeleccionado] = useState(
@@ -255,13 +267,18 @@ const Dashboard = () => {
 
   // Opciones de filtro de fecha para transacciones (independiente)
   const opcionesFechaTransacciones = [
-    { id: 'hoy', label: 'Hoy' },
-    { id: '7dias', label: 'Últimos 7 días' },
-    { id: 'mes', label: 'Último mes' },
-    { id: 'ano', label: 'Último año' },
+    { id: "hoy", label: "Hoy" },
+    { id: "7dias", label: "Últimos 7 días" },
+    { id: "mes", label: "Último mes" },
+    { id: "ano", label: "Último año" },
   ];
-  const [filtroFechaTransacciones, setFiltroFechaTransacciones] = useState(opcionesFechaTransacciones[0]);
-  const [dropdownFechaTransaccionesAbierto, setDropdownFechaTransaccionesAbierto] = useState(false);
+  const [filtroFechaTransacciones, setFiltroFechaTransacciones] = useState(
+    opcionesFechaTransacciones[0],
+  );
+  const [
+    dropdownFechaTransaccionesAbierto,
+    setDropdownFechaTransaccionesAbierto,
+  ] = useState(false);
   const [paginaTransacciones, setPaginaTransacciones] = useState(1);
   const ITEMS_POR_PAGINA = 5;
 
@@ -520,26 +537,40 @@ const Dashboard = () => {
     let startDate: Date;
 
     switch (filtroId) {
-      case 'hoy':
-        startDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0);
+      case "hoy":
+        startDate = new Date(
+          ahora.getFullYear(),
+          ahora.getMonth(),
+          ahora.getDate(),
+          0,
+          0,
+          0,
+        );
         break;
-      case '7dias':
+      case "7dias":
         startDate = new Date(ahora);
         startDate.setDate(startDate.getDate() - 7);
         startDate.setHours(0, 0, 0, 0);
         break;
-      case 'mes':
+      case "mes":
         startDate = new Date(ahora);
         startDate.setMonth(startDate.getMonth() - 1);
         startDate.setHours(0, 0, 0, 0);
         break;
-      case 'ano':
+      case "ano":
         startDate = new Date(ahora);
         startDate.setFullYear(startDate.getFullYear() - 1);
         startDate.setHours(0, 0, 0, 0);
         break;
       default:
-        startDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0);
+        startDate = new Date(
+          ahora.getFullYear(),
+          ahora.getMonth(),
+          ahora.getDate(),
+          0,
+          0,
+          0,
+        );
     }
 
     return {
@@ -549,16 +580,22 @@ const Dashboard = () => {
   };
 
   // Función para cargar transacciones
-  const cargarTransacciones = (filtroFecha: any = filtroFechaTransacciones, pagina: number = 1) => {
-    const restaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+  const cargarTransacciones = (
+    filtroFecha: any = filtroFechaTransacciones,
+    pagina: number = 1,
+  ) => {
+    const restaurantId =
+      userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
     const fechas = calcularFechasTransacciones(filtroFecha.id);
 
     // Usar los mismos filtros de sucursal y servicio que el dashboard
-    const serviceType = servicioSeleccionado?.id === "todos" ? null : servicioSeleccionado?.id;
+    const serviceType =
+      servicioSeleccionado?.id === "todos" ? null : servicioSeleccionado?.id;
 
     getRecentTransactions({
       restaurant_id: restaurantId,
-      branch_id: sucursalSeleccionada?.id !== 'todas' ? sucursalSeleccionada?.id : null,
+      branch_id:
+        sucursalSeleccionada?.id !== "todas" ? sucursalSeleccionada?.id : null,
       service_type: serviceType,
       start_date: fechas.start_date,
       end_date: fechas.end_date,
@@ -582,7 +619,9 @@ const Dashboard = () => {
   };
 
   // Calcular total de páginas
-  const totalPaginasTransacciones = Math.ceil(transactionsPagination.total / ITEMS_POR_PAGINA);
+  const totalPaginasTransacciones = Math.ceil(
+    transactionsPagination.total / ITEMS_POR_PAGINA,
+  );
 
   // Filtrar opciones de servicio según los habilitados
   const opcionesServicioFiltradas = opcionesServicio.filter(
@@ -872,14 +911,29 @@ const Dashboard = () => {
     }
   };
 
-  const abrirDetallesPedido = (pedido: any) => {
+  const abrirDetallesPedido = async (pedido: any) => {
     setPedidoSeleccionado(pedido);
     setMostrarModal(true);
+    setItemsPedido([]);
+    setIsLoadingItems(true);
+    try {
+      const items = await getOrderItems(
+        pedido.id,
+        pedido.orderStatus,
+        pedido.serviceType,
+      );
+      setItemsPedido(items);
+    } catch (e) {
+      console.error("Error cargando items:", e);
+    } finally {
+      setIsLoadingItems(false);
+    }
   };
 
   const cerrarModal = () => {
     setMostrarModal(false);
     setPedidoSeleccionado(null);
+    setItemsPedido([]);
   };
 
   // Función para cargar branches/sucursales
@@ -955,7 +1009,11 @@ const Dashboard = () => {
 
   // Recargar transacciones cuando cambien filtros de sucursal o servicio
   useEffect(() => {
-    if (userRestaurants.length > 0 && sucursalSeleccionada?.id && recentTransactions.length >= 0) {
+    if (
+      userRestaurants.length > 0 &&
+      sucursalSeleccionada?.id &&
+      recentTransactions.length >= 0
+    ) {
       setPaginaTransacciones(1);
       cargarTransacciones(filtroFechaTransacciones, 1);
     }
@@ -1965,7 +2023,11 @@ const Dashboard = () => {
           {/* Selector de fecha independiente */}
           <div className="relative">
             <button
-              onClick={() => setDropdownFechaTransaccionesAbierto(!dropdownFechaTransaccionesAbierto)}
+              onClick={() =>
+                setDropdownFechaTransaccionesAbierto(
+                  !dropdownFechaTransaccionesAbierto,
+                )
+              }
               className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
             >
               {filtroFechaTransacciones.label}
@@ -2000,7 +2062,8 @@ const Dashboard = () => {
               recentTransactions.map((tx) => (
                 <li
                   key={tx.id}
-                  className="hover:bg-gray-50 transition-colors duration-150"
+                  className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                  onClick={() => abrirDetallesPedido(tx)}
                 >
                   <div className="px-4 py-4 sm:px-6 rounded-lg">
                     <div className="flex items-center justify-between">
@@ -2009,23 +2072,36 @@ const Dashboard = () => {
                       </p>
                       <div className="ml-2 flex-shrink-0 flex gap-2">
                         <p className="px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          {tx.serviceType === 'flex-bill' ? 'FlexBill' :
-                           tx.serviceType === 'tap-order-pay' ? 'Tap Order' :
-                           tx.serviceType === 'pick-n-go' ? 'Pick & Go' :
-                           tx.serviceType === 'room-service' ? 'Room Service' :
-                           tx.serviceType === 'tap-pay' ? 'Tap & Pay' :
-                           tx.serviceType}
+                          {tx.serviceType === "flex-bill"
+                            ? "FlexBill"
+                            : tx.serviceType === "tap-order-pay"
+                              ? "Tap Order"
+                              : tx.serviceType === "pick-n-go"
+                                ? "Pick & Go"
+                                : tx.serviceType === "room-service"
+                                  ? "Room Service"
+                                  : tx.serviceType === "tap-pay"
+                                    ? "Tap & Pay"
+                                    : tx.serviceType}
                         </p>
-                        <p className={`px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          tx.orderStatus === 'paid' ? 'bg-green-100 text-green-800' :
-                          tx.orderStatus === 'partial' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {tx.orderStatus === 'paid' ? 'Pagado' :
-                           tx.orderStatus === 'partial' ? 'Parcial' :
-                           tx.orderStatus === 'not_paid' ? 'Pendiente' :
-                           tx.orderStatus === 'pending' ? 'Pendiente' :
-                           tx.orderStatus}
+                        <p
+                          className={`px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            tx.orderStatus === "paid"
+                              ? "bg-green-100 text-green-800"
+                              : tx.orderStatus === "partial"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {tx.orderStatus === "paid"
+                            ? "Pagado"
+                            : tx.orderStatus === "partial"
+                              ? "Parcial"
+                              : tx.orderStatus === "not_paid"
+                                ? "Pendiente"
+                                : tx.orderStatus === "pending"
+                                  ? "Pendiente"
+                                  : tx.orderStatus}
                         </p>
                       </div>
                     </div>
@@ -2034,7 +2110,8 @@ const Dashboard = () => {
                         <p className="flex items-center text-xs sm:text-sm text-gray-500">
                           <DollarSignIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
                           Total: ${tx.totalAmount?.toLocaleString() || 0}
-                          {tx.tipAmount > 0 && ` | Propina: $${tx.tipAmount?.toLocaleString()}`}
+                          {tx.tipAmount > 0 &&
+                            ` | Propina: $${tx.tipAmount?.toLocaleString()}`}
                         </p>
                         <p className="flex items-center text-xs text-custom-green-600 font-medium">
                           <ShoppingCartIcon className="flex-shrink-0 mr-1.5 h-3 w-3 text-custom-green-500" />
@@ -2055,9 +2132,7 @@ const Dashboard = () => {
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <p>
-                          {new Date(tx.createdAt).toLocaleString("es-ES")}
-                        </p>
+                        <p>{new Date(tx.createdAt).toLocaleString("es-ES")}</p>
                       </div>
                     </div>
                   </div>
@@ -2073,7 +2148,10 @@ const Dashboard = () => {
           {/* Paginación numérica */}
           {totalPaginasTransacciones > 1 && (
             <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-center gap-1">
-              {Array.from({ length: totalPaginasTransacciones }, (_, i) => i + 1).map((pagina) => (
+              {Array.from(
+                { length: totalPaginasTransacciones },
+                (_, i) => i + 1,
+              ).map((pagina) => (
                 <button
                   key={pagina}
                   onClick={() => cambiarPaginaTransacciones(pagina)}
@@ -2094,7 +2172,8 @@ const Dashboard = () => {
         {/* Información de paginación */}
         {transactionsPagination.total > 0 && (
           <div className="mt-2 text-center text-xs text-gray-500">
-            Mostrando {recentTransactions.length} de {transactionsPagination.total} transacciones
+            Mostrando {recentTransactions.length} de{" "}
+            {transactionsPagination.total} transacciones
           </div>
         )}
       </div>
@@ -2124,49 +2203,60 @@ const Dashboard = () => {
 
             {/* Contenido del Modal */}
             <div className="px-6 py-4 max-h-[70vh] overflow-y-auto">
-              {/* Número de Pedido y Cliente */}
+              {/* Identificador y Estado */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
                     <ShoppingCartIcon className="h-5 w-5 text-custom-green-600 mr-2" />
                     <span className="text-lg font-semibold text-custom-green-600">
-                      Mesa #{pedidoSeleccionado.table_number || "N/A"}
+                      {pedidoSeleccionado.orderIdentifier || "Orden"}
                     </span>
                   </div>
                   <span
                     className={`px-3 py-1 text-xs font-medium rounded-full ${
-                      pedidoSeleccionado.status === "paid"
+                      pedidoSeleccionado.orderStatus === "paid"
                         ? "bg-green-100 text-green-800"
-                        : pedidoSeleccionado.status === "not_paid"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : pedidoSeleccionado.status === "partial"
-                            ? "bg-orange-100 text-orange-800"
+                        : pedidoSeleccionado.orderStatus === "partial"
+                          ? "bg-orange-100 text-orange-800"
+                          : pedidoSeleccionado.orderStatus === "not_paid" ||
+                              pedidoSeleccionado.orderStatus === "pending"
+                            ? "bg-red-100 text-red-800"
                             : "bg-gray-100 text-gray-800"
                     }`}
                   >
-                    {pedidoSeleccionado.status === "not_paid"
-                      ? "No Pagado"
-                      : pedidoSeleccionado.status === "paid"
-                        ? "Pagado"
-                        : pedidoSeleccionado.status === "partial"
-                          ? "Parcial"
-                          : pedidoSeleccionado.status || "Sin estado"}
+                    {pedidoSeleccionado.orderStatus === "paid"
+                      ? "Pagado"
+                      : pedidoSeleccionado.orderStatus === "partial"
+                        ? "Parcial"
+                        : pedidoSeleccionado.orderStatus === "not_paid" ||
+                            pedidoSeleccionado.orderStatus === "pending"
+                          ? "Pendiente"
+                          : pedidoSeleccionado.orderStatus || "Sin estado"}
                   </span>
                 </div>
 
                 <div className="flex items-center mb-2">
                   <ShoppingBagIcon className="h-4 w-4 text-gray-400 mr-2" />
                   <span className="text-sm font-medium text-gray-700">
-                    {pedidoSeleccionado.restaurant_name ||
-                      "Restaurante no especificado"}
+                    {pedidoSeleccionado.serviceType === "flex-bill"
+                      ? "FlexBill"
+                      : pedidoSeleccionado.serviceType === "tap-order-pay"
+                        ? "Tap Order & Pay"
+                        : pedidoSeleccionado.serviceType === "pick-n-go"
+                          ? "Pick & Go"
+                          : pedidoSeleccionado.serviceType === "room-service"
+                            ? "Room Service"
+                            : pedidoSeleccionado.serviceType === "tap-pay"
+                              ? "Tap & Pay"
+                              : pedidoSeleccionado.serviceType}
                   </span>
                 </div>
 
                 <div className="flex items-center mb-2">
                   <ClockIcon className="h-4 w-4 text-gray-400 mr-2" />
                   <span className="text-sm text-gray-500">
-                    {pedidoSeleccionado.created_at
-                      ? new Date(pedidoSeleccionado.created_at).toLocaleString(
+                    {pedidoSeleccionado.createdAt
+                      ? new Date(pedidoSeleccionado.createdAt).toLocaleString(
                           "es-ES",
                           {
                             day: "2-digit",
@@ -2179,16 +2269,6 @@ const Dashboard = () => {
                       : "Tiempo no disponible"}
                   </span>
                 </div>
-
-                <div className="flex items-center">
-                  <UserIcon className="h-4 w-4 text-custom-green-500 mr-2" />
-                  <span className="text-sm font-medium text-custom-green-600">
-                    ID:{" "}
-                    {pedidoSeleccionado.id
-                      ? pedidoSeleccionado.id.slice(0, 8) + "..."
-                      : "No disponible"}
-                  </span>
-                </div>
               </div>
 
               {/* Items del Pedido */}
@@ -2198,13 +2278,27 @@ const Dashboard = () => {
                   Items del Pedido
                 </h4>
                 <div className="space-y-3">
-                  {pedidoSeleccionado.items &&
-                  pedidoSeleccionado.items.length > 0 ? (
-                    pedidoSeleccionado.items.map((item, index) => (
+                  {isLoadingItems ? (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500 text-sm">Cargando items...</p>
+                    </div>
+                  ) : itemsPedido.length > 0 ? (
+                    itemsPedido.map((item: any, index: number) => (
                       <div key={index} className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900 text-sm">
+                        <div className="flex items-start gap-3">
+                          {item.imagen ? (
+                            <img
+                              src={item.imagen}
+                              alt={item.nombre}
+                              className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+                              <ShoppingBagIcon className="h-5 w-5 text-gray-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 text-sm truncate">
                               {item.nombre || "Producto sin nombre"}
                             </p>
                             <div className="flex items-center mt-1 space-x-3">
@@ -2212,25 +2306,16 @@ const Dashboard = () => {
                                 Cantidad: {item.cantidad || 0}
                               </p>
                               <p className="text-xs text-gray-500">
-                                Precio unitario: $
+                                Precio: $
                                 {item.precio ? item.precio.toFixed(2) : "0.00"}
                               </p>
-                              {/* {item.estado_pago && (
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                item.estado_pago === 'paid'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {item.estado_pago === 'paid' ? 'Pagado' : 'Pendiente'}
-                              </span>
-                            )} */}
                             </div>
                           </div>
-                          <div className="text-right ml-4">
+                          <div className="text-right flex-shrink-0">
                             <p className="font-medium text-gray-900 text-sm">
                               $
-                              {item.precio_total
-                                ? item.precio_total.toFixed(2)
+                              {item.precioTotal
+                                ? item.precioTotal.toFixed(2)
                                 : (item.precio * item.cantidad).toFixed(2)}
                             </p>
                             <p className="text-xs text-gray-500">Total</p>
@@ -2241,18 +2326,14 @@ const Dashboard = () => {
                   ) : (
                     <div className="text-center py-4">
                       <p className="text-gray-500 text-sm">
-                        Este pedido tiene {pedidoSeleccionado.items_count || 0}{" "}
-                        item(s)
-                      </p>
-                      <p className="text-gray-400 text-xs mt-1">
-                        No se encontraron detalles de items para esta orden
+                        No se encontraron items para esta orden
                       </p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Resumen de Precios */}
+              {/* Resumen de Pago */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
                   <DollarSignIcon className="h-4 w-4 mr-2 text-gray-500" />
@@ -2261,21 +2342,24 @@ const Dashboard = () => {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Cantidad de items:</span>
+                    <span className="text-gray-600">Venta:</span>
                     <span className="font-medium">
-                      {pedidoSeleccionado.items_count || 0}
+                      $
+                      {pedidoSeleccionado.baseAmount?.toLocaleString() ||
+                        "0.00"}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Monto pagado:</span>
-                    <span className="font-medium text-custom-green-600">
-                      $
-                      {pedidoSeleccionado.paid_amount
-                        ? pedidoSeleccionado.paid_amount.toFixed(2)
-                        : "0.00"}
-                    </span>
-                  </div>
+                  {pedidoSeleccionado.tipAmount > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">Propina:</span>
+                      <span className="font-medium text-custom-green-600">
+                        $
+                        {pedidoSeleccionado.tipAmount?.toLocaleString() ||
+                          "0.00"}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="border-t border-gray-200 pt-2 mt-2">
                     <div className="flex justify-between items-center">
@@ -2284,9 +2368,8 @@ const Dashboard = () => {
                       </span>
                       <span className="text-lg font-bold text-custom-green-600">
                         $
-                        {pedidoSeleccionado.total_amount
-                          ? pedidoSeleccionado.total_amount.toFixed(2)
-                          : "0.00"}
+                        {pedidoSeleccionado.totalAmount?.toLocaleString() ||
+                          "0.00"}
                       </span>
                     </div>
                   </div>

@@ -192,21 +192,27 @@ const LoadingDots = () => (
   </div>
 );
 
-// Función para detectar URLs de imagen incompletas durante streaming
-function hasIncompleteImageUrl(content: string): boolean {
-  // Si el contenido termina con algo que parece una URL incompleta
-  const lastPart = content.split(/\s/).pop() || "";
-
-  // Verificar si parece una URL en construcción (tiene http pero no termina en espacio o formato conocido)
-  if (
-    lastPart.startsWith("http") &&
-    !lastPart.match(/\.(jpg|jpeg|png|gif|webp|svg|avif)(\?[^\s]*)?\s*$/i)
-  ) {
+// Función para detectar si hay una URL de imagen incompleta al final del contenido
+const hasIncompleteImageUrl = (text: string): boolean => {
+  // Detectar markdown de imagen incompleto: ![...] o ![...]( o ![...](url incompleta
+  if (/!\[[^\]]*\]?\(?[^)]*$/.test(text)) {
     return true;
   }
-
+  // Detectar URL de imagen incompleta al final (empieza con http pero no termina con extensión de imagen completa)
+  if (/https?:\/\/[^\s)]*$/.test(text)) {
+    const urlMatch = text.match(/https?:\/\/[^\s)]*$/);
+    if (urlMatch) {
+      const partialUrl = urlMatch[0];
+      // Si parece que está escribiendo una URL de imagen pero no está completa
+      if (
+        !/\.(jpg|jpeg|png|gif|webp|svg|avif)(\?[^\s)]*)?$/i.test(partialUrl)
+      ) {
+        return true;
+      }
+    }
+  }
   return false;
-}
+};
 
 // Componente para renderizar mensajes con imágenes
 function MessageContent({
