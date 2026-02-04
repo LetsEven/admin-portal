@@ -422,61 +422,61 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     });
   };
   return (
-    <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center py-8">
+    <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-3 sm:p-4 md:py-8">
       <div
         className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]"
         onClick={onCancel}
       ></div>
-      <div className="relative bg-white rounded-lg max-w-2xl w-full mx-auto p-6 my-8 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium text-gray-900">
+      <div className="relative bg-white rounded-lg max-w-2xl w-full mx-auto p-4 sm:p-6 mt-10 sm:mt-8 mb-4 sm:mb-8 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <h2 className="text-base sm:text-lg font-medium text-gray-900">
             {initialValues.id ? "Editar platillo" : "Agregar platillo"}
           </h2>
           <button
             type="button"
-            className="text-gray-400 hover:text-gray-500"
+            className="text-gray-400 hover:text-gray-500 p-1"
             onClick={onCancel}
           >
-            <XIcon className="h-6 w-6" />
+            <XIcon className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div>
               <label
                 htmlFor="image"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-xs sm:text-sm font-medium text-gray-700"
               >
                 Imagen del platillo
               </label>
               <div className="mt-1 flex items-center">
                 <div className="flex-shrink-0 relative">
                   {imagePreview ? (
-                    <div className="h-24 w-24 overflow-hidden rounded-md">
+                    <div className="h-20 w-20 sm:h-24 sm:w-24 overflow-hidden rounded-md">
                       <img
                         src={imagePreview}
                         alt="Vista previa"
-                        className="h-24 w-24 object-cover img-food-quality rounded-md"
+                        className="h-20 w-20 sm:h-24 sm:w-24 object-cover img-food-quality rounded-md"
                         loading="eager"
                         decoding="async"
                       />
                       {isUploadingImage && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-md">
-                          <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <div className="h-5 w-5 sm:h-6 sm:w-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="h-24 w-24 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center text-gray-400">
+                    <div className="h-20 w-20 sm:h-24 sm:w-24 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center text-gray-400">
                       {isUploadingImage ? (
-                        <div className="h-6 w-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                        <div className="h-5 w-5 sm:h-6 sm:w-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                       ) : (
-                        <UploadIcon className="h-8 w-8" />
+                        <UploadIcon className="h-6 w-6 sm:h-8 sm:w-8" />
                       )}
                     </div>
                   )}
                 </div>
-                <div className="ml-4 flex-1">
+                <div className="ml-3 sm:ml-4 flex-1">
                   <div className="relative">
                     <input
                       type="file"
@@ -488,7 +488,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                     />
                     <label
                       htmlFor="imageFile"
-                      className={`cursor-pointer py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 ${isUploadingImage ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`cursor-pointer py-1.5 sm:py-2 px-2.5 sm:px-3 border border-gray-300 rounded-md shadow-sm text-xs sm:text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 ${isUploadingImage ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       {isUploadingImage ? "Subiendo..." : "Seleccionar imagen"}
                     </label>
@@ -496,9 +496,9 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                       <input type="file" disabled className="sr-only" />
                     )}
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">JPG, PNG o WEBP.</p>
+                  <p className="mt-1 text-[10px] sm:text-xs text-gray-500">JPG, PNG o WEBP.</p>
                   {imageFile && (
-                    <p className="mt-1 text-xs text-gray-700">
+                    <p className="mt-1 text-[10px] sm:text-xs text-gray-700 truncate max-w-[150px] sm:max-w-none">
                       {imageFile.name}
                     </p>
                   )}
@@ -508,7 +508,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
             <div>
               <label
                 htmlFor="section_id"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-xs sm:text-sm font-medium text-gray-700"
               >
                 Categoría *
               </label>
@@ -519,7 +519,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                 value={values.section_id || ''}
                 onChange={handleSectionChange}
                 disabled={sectionsLoading}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 text-sm"
               >
                 <option value="">
                   {sectionsLoading ? 'Cargando categorías...' : 'Seleccionar categoría'}
@@ -534,7 +534,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-xs sm:text-sm font-medium text-gray-700"
               >
                 Nombre
               </label>
@@ -545,13 +545,13 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                 required
                 value={values.name}
                 onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 text-sm"
               />
             </div>
             <div>
               <label
                 htmlFor="description"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-xs sm:text-sm font-medium text-gray-700"
               >
                 Descripción
               </label>
@@ -562,22 +562,22 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                 required
                 value={values.description}
                 onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 text-sm"
               />
             </div>
 
             {/* Disponibilidad por Sucursal Section */}
-            <div className="pt-4 border-t border-gray-200">
-              <div className="flex justify-between items-center mb-3">
-                <label className="block text-sm font-medium text-gray-700">
-                  <MapPin className="h-4 w-4 inline mr-2" />
+            <div className="pt-3 sm:pt-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2 sm:mb-3">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                  <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 inline mr-1.5 sm:mr-2" />
                   Disponibilidad por Sucursal
                 </label>
                 {branches.length > 1 && (
                   <button
                     type="button"
                     onClick={handleSelectAllBranches}
-                    className="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                    className="inline-flex items-center px-2 py-1 border border-gray-300 text-[10px] sm:text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 self-start sm:self-auto"
                   >
                     {isAllBranchesSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
                   </button>
@@ -585,60 +585,60 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
               </div>
 
               {branchesLoading ? (
-                <div className="text-center py-4">
-                  <div className="text-sm text-gray-500">Cargando sucursales...</div>
+                <div className="text-center py-3 sm:py-4">
+                  <div className="text-xs sm:text-sm text-gray-500">Cargando sucursales...</div>
                 </div>
               ) : branches.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-sm text-gray-500 italic">
+                <div className="text-center py-3 sm:py-4">
+                  <p className="text-xs sm:text-sm text-gray-500 italic">
                     No hay sucursales configuradas para este restaurante.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <p className="text-xs text-gray-600 mb-3">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <p className="text-[10px] sm:text-xs text-gray-600 mb-2 sm:mb-3">
                     Selecciona las sucursales donde este producto estará disponible:
                   </p>
                   {branches.map((branch) => (
                     <label
                       key={branch.id}
-                      className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                      className={`flex items-center p-2.5 sm:p-3 border rounded-lg cursor-pointer transition-colors ${
                         selectedBranches.includes(branch.id)
                           ? 'border-green-300 bg-green-50'
                           : 'border-gray-200 bg-white hover:bg-gray-50'
                       }`}
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-1 min-w-0">
                         <input
                           type="checkbox"
                           checked={selectedBranches.includes(branch.id)}
                           onChange={() => handleBranchToggle(branch.id)}
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded flex-shrink-0"
                         />
-                        <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900">
+                        <div className="ml-2.5 sm:ml-3 min-w-0">
+                          <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                             {branch.name}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-[10px] sm:text-xs text-gray-500 truncate">
                             {branch.address}
                           </div>
                         </div>
                       </div>
                       {selectedBranches.includes(branch.id) && (
-                        <CheckIcon className="h-4 w-4 text-green-600 ml-auto" />
+                        <CheckIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 ml-2 flex-shrink-0" />
                       )}
                     </label>
                   ))}
 
                   {selectedBranches.length === 0 && (
-                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                      <p className="text-xs text-yellow-800">
+                    <div className="mt-1.5 sm:mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-[10px] sm:text-xs text-yellow-800">
                         Este producto no estará disponible en ninguna sucursal.
                       </p>
                     </div>
                   )}
 
-                  <div className="mt-2 text-xs text-gray-500">
+                  <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-500">
                     {selectedBranches.length} de {branches.length} sucursal{branches.length !== 1 ? 'es' : ''} seleccionada{selectedBranches.length !== 1 ? 's' : ''}
                   </div>
                 </div>
@@ -646,49 +646,49 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
             </div>
 
             {/* Personalización Section */}
-            <div className="pt-4 border-t border-gray-200">
-              <div className="flex justify-between items-center mb-3">
-                <label className="block text-sm font-medium text-gray-700">
+            <div className="pt-3 sm:pt-4 border-t border-gray-200">
+              <div className="flex justify-between items-center mb-2 sm:mb-3">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">
                   Personalización
                 </label>
                 <button
                   type="button"
                   onClick={handleAddField}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500"
+                  className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 border border-transparent text-[10px] sm:text-xs font-medium rounded-md text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500"
                 >
-                  <PlusIcon className="h-4 w-4 mr-1" />
+                  <PlusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                   Add Field
                 </button>
               </div>
 
               {customFields.length === 0 ? (
-                <p className="text-sm text-gray-500 italic">
+                <p className="text-xs sm:text-sm text-gray-500 italic">
                   No hay campos de personalización. Haz clic en "Add Field" para
                   agregar uno.
                 </p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {customFields.map((field, fieldIndex) => (
                     <div
                       key={field.id}
-                      className="p-3 border border-gray-200 rounded-md bg-gray-50"
+                      className="p-2.5 sm:p-3 border border-gray-200 rounded-md bg-gray-50"
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-medium text-gray-500">
+                        <span className="text-[10px] sm:text-xs font-medium text-gray-500">
                           Campo {fieldIndex + 1}
                         </span>
                         <button
                           type="button"
                           onClick={() => handleRemoveField(field.id)}
-                          className="text-red-500 hover:text-red-700"
+                          className="text-red-500 hover:text-red-700 p-0.5"
                         >
-                          <TrashIcon className="h-4 w-4" />
+                          <TrashIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </button>
                       </div>
 
                       <div className="space-y-2">
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1">
                             Nombre del campo
                           </label>
                           <input
@@ -698,12 +698,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                               handleFieldNameChange(field.id, e.target.value)
                             }
                             placeholder="Ej: Tamaño, Extras, etc."
-                            className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                            className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-xs sm:text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1">
                             Tipo de respuesta
                           </label>
                           <select
@@ -714,7 +714,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                                 e.target.value as CustomField["type"]
                               )
                             }
-                            className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                            className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-xs sm:text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
                           >
                             <option value="dropdown">Lista Desplegable</option>
                             <option value="checkboxes">
@@ -742,11 +742,11 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                                   )
                                 );
                               }}
-                              className="h-4 w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
+                              className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
                             />
                             <label
                               htmlFor={`required-${field.id}`}
-                              className="ml-2 block text-xs font-medium text-gray-700"
+                              className="ml-2 block text-[10px] sm:text-xs font-medium text-gray-700"
                             >
                               Obligatorio
                             </label>
@@ -758,7 +758,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                           <div>
                             <label
                               htmlFor={`max-selections-${field.id}`}
-                              className="block text-xs font-medium text-gray-700 mb-1"
+                              className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1"
                             >
                               Máximo de opciones seleccionables
                             </label>
@@ -774,9 +774,9 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                                   handleMaxSelectionsChange(field.id, value);
                                 }
                               }}
-                              className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                              className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-xs sm:text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
                             />
-                            <p className="mt-1 text-xs text-gray-500">
+                            <p className="mt-1 text-[10px] sm:text-xs text-gray-500">
                               Los clientes podrán seleccionar hasta{" "}
                               {field.maxSelections || 1}{" "}
                               {field.maxSelections === 1 ? "opción" : "opciones"}
@@ -790,24 +790,24 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                           field.type === "dropdown-quantity") && (
                           <div>
                             <div className="flex justify-between items-center mb-1">
-                              <label className="block text-xs font-medium text-gray-700">
+                              <label className="block text-[10px] sm:text-xs font-medium text-gray-700">
                                 Opciones
                               </label>
                               <button
                                 type="button"
                                 onClick={() => handleAddOption(field.id)}
-                                className="text-xs text-custom-green-600 hover:text-custom-green-700"
+                                className="text-[10px] sm:text-xs text-custom-green-600 hover:text-custom-green-700"
                               >
                                 + Agregar opción
                               </button>
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-1.5 sm:space-y-2">
                               {field.options.map((option, optionIndex) => (
                                 <div
                                   key={optionIndex}
-                                  className="border border-gray-200 rounded-md p-2 bg-gray-50"
+                                  className="border border-gray-200 rounded-md p-1.5 sm:p-2 bg-gray-50"
                                 >
-                                  <div className="flex items-center gap-2 mb-2">
+                                  <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
                                     <input
                                       type="text"
                                       value={option.name}
@@ -819,7 +819,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                                         )
                                       }
                                       placeholder={`Opción ${optionIndex + 1}`}
-                                      className="flex-1 block border border-gray-300 rounded-md shadow-sm py-1 px-2 text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                                      className="flex-1 block border border-gray-300 rounded-md shadow-sm py-1 px-2 text-xs sm:text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
                                     />
                                     {field.options &&
                                       field.options.length > 1 && (
@@ -831,21 +831,21 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                                               optionIndex
                                             )
                                           }
-                                          className="text-red-500 hover:text-red-700"
+                                          className="text-red-500 hover:text-red-700 p-0.5"
                                         >
-                                          <TrashIcon className="h-3.5 w-3.5" />
+                                          <TrashIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                         </button>
                                       )}
                                   </div>
 
                                   {/* Precio opcional */}
-                                  <div className="flex items-center gap-2">
-                                    <label className="text-xs text-gray-600">
-                                      Precio adicional (opcional):
+                                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                    <label className="text-[10px] sm:text-xs text-gray-600">
+                                      Precio adicional:
                                     </label>
                                     <div className="relative">
                                       <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                                        <span className="text-gray-500 text-xs">
+                                        <span className="text-gray-500 text-[10px] sm:text-xs">
                                           $
                                         </span>
                                       </div>
@@ -862,7 +862,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                                           )
                                         }
                                         placeholder="0.00"
-                                        className="w-20 pl-5 pr-2 py-1 border border-gray-300 rounded-md shadow-sm text-xs focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                                        className="w-16 sm:w-20 pl-4 sm:pl-5 pr-1.5 sm:pr-2 py-1 border border-gray-300 rounded-md shadow-sm text-[10px] sm:text-xs focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
                                       />
                                     </div>
                                   </div>
@@ -881,7 +881,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
             <div>
               <label
                 htmlFor="discount"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-xs sm:text-sm font-medium text-gray-700"
               >
                 Descuento (%)
               </label>
@@ -895,13 +895,13 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                   step="1"
                   value={values.discount || 0}
                   onChange={handleChange}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 text-sm"
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">%</span>
+                  <span className="text-gray-500 text-sm">%</span>
                 </div>
               </div>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-[10px] sm:text-xs text-gray-500">
                 Porcentaje de descuento aplicado al precio original (0-100%)
               </p>
             </div>
@@ -909,13 +909,13 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
             <div>
               <label
                 htmlFor="price"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-xs sm:text-sm font-medium text-gray-700"
               >
                 Precio
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
+                  <span className="text-gray-500 text-sm">$</span>
                 </div>
                 <input
                   type="number"
@@ -927,20 +927,20 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                   value={values.price || ""}
                   onChange={handleChange}
                   placeholder="0.00"
-                  className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm"
+                  className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 text-sm"
                 />
               </div>
               {parseFloat(values.price) > 0 && (
-                <div className="mt-2 flex justify-between items-center">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-medium">Precio mas IVA (16%):</span>
-                    <span className="ml-2 font-semibold">
+                <div className="mt-2 flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-2">
+                  <p className="text-xs sm:text-sm text-gray-700">
+                    <span className="font-medium">Precio + IVA (16%):</span>
+                    <span className="ml-1 sm:ml-2 font-semibold">
                       ${(parseFloat(values.price) * 1.16).toFixed(2)}
                     </span>
                   </p>
-                  <p className="text-sm text-gray-700">
-                    <span className="font-medium">Precio con descuento:</span>
-                    <span className="ml-2 font-semibold text-custom-green-600">
+                  <p className="text-xs sm:text-sm text-gray-700">
+                    <span className="font-medium">Con descuento:</span>
+                    <span className="ml-1 sm:ml-2 font-semibold text-custom-green-600">
                       $
                       {(
                         parseFloat(values.price) *
@@ -953,19 +953,19 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
               )}
             </div>
           </div>
-          <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-            <button
-              type="submit"
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-custom-green-600 text-base font-medium text-white hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 sm:col-start-2 sm:text-sm"
-            >
-              {initialValues.id ? "Guardar cambios" : "Agregar platillo"}
-            </button>
+          <div className="mt-4 sm:mt-6 grid grid-cols-2 gap-2 sm:gap-3">
             <button
               type="button"
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+              className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-3 sm:px-4 py-2 bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500"
               onClick={onCancel}
             >
               Cancelar
+            </button>
+            <button
+              type="submit"
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 sm:px-4 py-2 bg-custom-green-600 text-xs sm:text-sm font-medium text-white hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500"
+            >
+              {initialValues.id ? "Guardar" : "Agregar"}
             </button>
           </div>
         </form>
