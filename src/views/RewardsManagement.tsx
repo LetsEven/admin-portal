@@ -181,28 +181,28 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
     }
   };
   return (
-    <div className="bg-white overflow-hidden shadow rounded-lg border border-gray-200 transition-all duration-200 ease-out hover:bg-[#E9F2F2] hover:border-[#D6E6E6] hover:shadow-md hover:scale-105 focus-within:outline-offset-2 focus-within:outline-[#0EA5E9] focus-within:outline-2 active:scale-[0.995]">
-      <div className="relative h-36 overflow-hidden">
+    <div className="bg-white overflow-hidden shadow rounded-lg border border-gray-200 transition-all duration-200 ease-out hover:bg-[#E9F2F2] hover:border-[#D6E6E6] hover:shadow-md sm:hover:scale-105 focus-within:outline-offset-2 focus-within:outline-[#0EA5E9] focus-within:outline-2 active:scale-[0.995]">
+      <div className="relative h-28 sm:h-36 overflow-hidden">
         <img
           src={campaign.image}
           alt={campaign.name}
           className="w-full h-full object-cover"
         />
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2">
           {getStatusBadge(campaign.status)}
         </div>
       </div>
-      <div className="p-4">
+      <div className="p-3 sm:p-4">
         <div className="flex items-start">
           <div
-            className={`flex-shrink-0 p-2 rounded-full ${campaign.active ? "bg-custom-green-100" : "bg-gray-100"}`}
+            className={`flex-shrink-0 p-1.5 sm:p-2 rounded-full ${campaign.active ? "bg-custom-green-100" : "bg-gray-100"}`}
           >
             <IconComponent
-              className={`h-5 w-5 ${campaign.active ? "text-custom-green-600" : "text-gray-400"}`}
+              className={`h-4 w-4 sm:h-5 sm:w-5 ${campaign.active ? "text-custom-green-600" : "text-gray-400"}`}
             />
           </div>
-          <div className="ml-3 flex-1">
-            <h3 className="text-lg font-medium text-gray-900">
+          <div className="ml-2 sm:ml-3 flex-1 min-w-0">
+            <h3 className="text-sm sm:text-lg font-medium text-gray-900 truncate">
               {campaign.name}
             </h3>
             {/*<p className="mt-1 text-sm text-gray-500 line-clamp-2">
@@ -210,7 +210,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
             </p>*/}
             {campaign.deliveryMethods &&
               campaign.deliveryMethods.length > 0 && (
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-gray-400">
                   {campaign.deliveryMethods
                     .map((method: string) => {
                       const methodLabels: Record<string, string> = {
@@ -224,27 +224,27 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
                     .join(" + ")}
                 </p>
               )}
-            <div className="mt-2 flex items-center text-xs text-gray-500">
+            <div className="mt-1 sm:mt-2 flex items-center text-[10px] sm:text-xs text-gray-500">
               {/*<span className="bg-custom-green-100 text-custom-green-800 px-2 py-0.5 rounded-full font-medium">
                 {campaign.pointsRequired} puntos
               </span>*/}
-              <span className="ml-2">{campaign.expirationDays} días</span>
+              <span className="sm:ml-2">{campaign.expirationDays} días</span>
             </div>
           </div>
         </div>
       </div>
-      <div className="bg-gray-50 px-4 py-3 flex justify-between items-center">
-        <div className="text-xs text-gray-500">
+      <div className="bg-gray-50 px-2.5 sm:px-4 py-2 sm:py-3 flex justify-between items-center">
+        <div className="text-[10px] sm:text-xs text-gray-500">
           {formatDate(campaign.startDate)} - {formatDate(campaign.endDate)}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 sm:space-x-2">
           {/* Botón Ver */}
           <button
             onClick={() => onPreview(campaign)}
-            className="p-1.5 bg-blue-100 rounded-full text-blue-600 hover:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0EA5E9]"
+            className="p-1 sm:p-1.5 bg-blue-100 rounded-full text-blue-600 hover:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0EA5E9]"
             aria-label="Ver vista previa"
           >
-            <EyeIcon className="h-4 w-4" />
+            <EyeIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
           {/* Botón Power/Estado */}
           <div className="relative">
@@ -257,13 +257,12 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
               aria-haspopup="true"
               aria-expanded={showStatusMenu}
               aria-controls="status-menu"
-              className={`p-1.5 flex items-center justify-center rounded-full hover:shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0EA5E9] ${getPowerButtonStyles(campaign.status)}`}
+              className={`p-1 sm:p-1.5 flex items-center justify-center rounded-full hover:shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0EA5E9] ${getPowerButtonStyles(campaign.status)}`}
               aria-label="Cambiar estado"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                className="h-3.5 w-3.5 sm:h-4 sm:w-4"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -326,10 +325,10 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
               e.stopPropagation();
               onDelete(campaign.id);
             }}
-            className="p-1.5 bg-red-100 rounded-full text-red-600 hover:bg-red-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0EA5E9]"
+            className="p-1 sm:p-1.5 bg-red-100 rounded-full text-red-600 hover:bg-red-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0EA5E9]"
             aria-label="Eliminar campaña"
           >
-            <TrashIcon className="h-4 w-4" />
+            <TrashIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
         </div>
       </div>

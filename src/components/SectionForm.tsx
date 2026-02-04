@@ -61,40 +61,40 @@ const SectionForm: React.FC<SectionFormProps> = ({
     items.splice(result.destination.index, 0, reorderedItem);
     setOrderedSections(items);
   };
-  return <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
+  return <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 sm:p-6">
       <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]" onClick={onCancel}></div>
-      <div className="relative bg-white rounded-lg max-w-md w-full mx-auto p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium text-gray-900">
+      <div className="relative bg-white rounded-lg max-w-md w-full mx-auto p-4 sm:p-6">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <h2 className="text-base sm:text-lg font-medium text-gray-900">
             Gestionar secciones del menú
           </h2>
-          <button type="button" className="text-gray-400 hover:text-gray-500" onClick={onCancel}>
-            <XIcon className="h-6 w-6" />
+          <button type="button" className="text-gray-400 hover:text-gray-500 p-1" onClick={onCancel}>
+            <XIcon className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="newSection" className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="mb-3 sm:mb-4">
+            <label htmlFor="newSection" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Agregar nueva sección
             </label>
             <div className="flex">
-              <input type="text" id="newSection" value={newSection} onChange={e => setNewSection(e.target.value)} className="flex-1 border border-gray-300 rounded-l-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 sm:text-sm" placeholder="Nombre de la sección" />
-              <button type="button" onClick={handleAddSection} className="inline-flex items-center px-4 py-2 border border-transparent rounded-r-md shadow-sm text-sm font-medium text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500">
-                <PlusIcon className="h-5 w-5" />
+              <input type="text" id="newSection" value={newSection} onChange={e => setNewSection(e.target.value)} className="flex-1 border border-gray-300 rounded-l-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 text-sm" placeholder="Nombre de la sección" />
+              <button type="button" onClick={handleAddSection} className="inline-flex items-center px-3 sm:px-4 py-2 border border-transparent rounded-r-md shadow-sm text-sm font-medium text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500">
+                <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </div>
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="mb-3 sm:mb-4">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
               Secciones actuales
-              <span className="ml-2 text-xs text-gray-500 font-normal">
+              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs text-gray-500 font-normal">
                 (Arrastra para reordenar)
               </span>
             </label>
             <DragDropContext onDragEnd={onDragEnd}>
               <Droppable droppableId="sections">
-                {provided => <ul {...provided.droppableProps} ref={provided.innerRef} className="border border-gray-200 rounded-md divide-y divide-gray-200 max-h-60 overflow-y-auto">
-                    {orderedSections.length === 0 && newSectionNames.length === 0 ? <li className="px-4 py-3 text-sm text-gray-500">
+                {provided => <ul {...provided.droppableProps} ref={provided.innerRef} className="border border-gray-200 rounded-md divide-y divide-gray-200 max-h-48 sm:max-h-60 overflow-y-auto">
+                    {orderedSections.length === 0 && newSectionNames.length === 0 ? <li className="px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-500">
                         No hay secciones definidas
                       </li> : (
                       <>
@@ -102,15 +102,15 @@ const SectionForm: React.FC<SectionFormProps> = ({
                         {orderedSections.map((section, index) => (
                           <Draggable key={createSafeDraggableId(index)} draggableId={createSafeDraggableId(index)} index={index}>
                             {(provided, snapshot) => (
-                              <li ref={provided.innerRef} {...provided.draggableProps} className={`px-4 py-3 flex items-center justify-between text-sm ${snapshot.isDragging ? 'bg-gray-50' : ''}`}>
-                                <div className="flex items-center flex-1">
-                                  <span {...provided.dragHandleProps} className="mr-2 cursor-grab text-gray-400 hover:text-gray-600">
-                                    <GripIcon className="h-4 w-4" />
+                              <li ref={provided.innerRef} {...provided.draggableProps} className={`px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between text-xs sm:text-sm ${snapshot.isDragging ? 'bg-gray-50' : ''}`}>
+                                <div className="flex items-center flex-1 min-w-0">
+                                  <span {...provided.dragHandleProps} className="mr-1.5 sm:mr-2 cursor-grab text-gray-400 hover:text-gray-600 flex-shrink-0">
+                                    <GripIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                   </span>
-                                  <span className="text-gray-900">{section.name}</span>
+                                  <span className="text-gray-900 truncate">{section.name}</span>
                                 </div>
-                                <button type="button" onClick={() => handleRemoveSection(index, false)} className="text-red-500 hover:text-red-700 ml-2">
-                                  <TrashIcon className="h-5 w-5" />
+                                <button type="button" onClick={() => handleRemoveSection(index, false)} className="text-red-500 hover:text-red-700 ml-2 flex-shrink-0 p-0.5">
+                                  <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                                 </button>
                               </li>
                             )}
@@ -119,16 +119,16 @@ const SectionForm: React.FC<SectionFormProps> = ({
 
                         {/* New sections (not draggable yet) */}
                         {newSectionNames.map((sectionName, index) => (
-                          <li key={`new-${index}`} className="px-4 py-3 flex items-center justify-between text-sm bg-green-50 border-l-4 border-green-400">
-                            <div className="flex items-center flex-1">
-                              <span className="mr-2 text-green-400">
-                                <PlusIcon className="h-4 w-4" />
+                          <li key={`new-${index}`} className="px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between text-xs sm:text-sm bg-green-50 border-l-4 border-green-400">
+                            <div className="flex items-center flex-1 min-w-0">
+                              <span className="mr-1.5 sm:mr-2 text-green-400 flex-shrink-0">
+                                <PlusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               </span>
-                              <span className="text-gray-900 font-medium">{sectionName}</span>
-                              <span className="ml-2 text-xs text-green-600 bg-green-100 px-2 py-1 rounded">Nueva</span>
+                              <span className="text-gray-900 font-medium truncate">{sectionName}</span>
+                              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs text-green-600 bg-green-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded flex-shrink-0">Nueva</span>
                             </div>
-                            <button type="button" onClick={() => handleRemoveSection(index, true)} className="text-red-500 hover:text-red-700 ml-2">
-                              <TrashIcon className="h-5 w-5" />
+                            <button type="button" onClick={() => handleRemoveSection(index, true)} className="text-red-500 hover:text-red-700 ml-2 flex-shrink-0 p-0.5">
+                              <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                             </button>
                           </li>
                         ))}
@@ -139,12 +139,12 @@ const SectionForm: React.FC<SectionFormProps> = ({
               </Droppable>
             </DragDropContext>
           </div>
-          <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-            <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-custom-green-600 text-base font-medium text-white hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 sm:col-start-2 sm:text-sm">
-              Guardar cambios
-            </button>
-            <button type="button" className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 sm:mt-0 sm:col-start-1 sm:text-sm" onClick={onCancel}>
+          <div className="mt-4 sm:mt-6 grid grid-cols-2 gap-2 sm:gap-3">
+            <button type="button" className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-3 sm:px-4 py-2 bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500" onClick={onCancel}>
               Cancelar
+            </button>
+            <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 sm:px-4 py-2 bg-custom-green-600 text-xs sm:text-sm font-medium text-white hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500">
+              Guardar
             </button>
           </div>
         </form>
