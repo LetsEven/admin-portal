@@ -1049,9 +1049,20 @@ const RewardsManagement = () => {
       await loadCampaigns();
     } catch (error: any) {
       console.error("Error updating campaign status:", error);
-      toast.error(error.message || "Error al actualizar estado", {
-        id: loadingToast,
-      });
+
+      // Check if it's a campaign limit error
+      if (error.message?.includes('límite de campañas') ||
+          error.response?.data?.error_code === 'CAMPAIGN_LIMIT_EXCEEDED') {
+        toast.error(
+          'Has alcanzado el límite de campañas activas de tu plan. Pausa otra campaña o actualiza tu plan.',
+          { id: loadingToast, duration: 6000 }
+        );
+        setShowPricingModal(true);
+      } else {
+        toast.error(error.message || "Error al actualizar estado", {
+          id: loadingToast,
+        });
+      }
     }
   };
 
