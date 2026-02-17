@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "react-hot-toast";
 import { RestaurantProvider } from "../src/contexts/RestaurantContext";
+import { SocketProvider } from "../src/contexts/SocketContext";
 import "../src/index.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -33,10 +34,11 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <RestaurantProvider>
-        <html lang="es">
-          <body className={inter.className}>
-            {children}
-            <Toaster
+        <SocketProvider>
+          <html lang="es">
+            <body className={inter.className}>
+              {children}
+              <Toaster
               position="top-right"
               toastOptions={{
                 duration: 3000,
@@ -67,8 +69,9 @@ export default function RootLayout({
                 },
               }}
             />
-          </body>
-        </html>
+            </body>
+          </html>
+        </SocketProvider>
       </RestaurantProvider>
     </ClerkProvider>
   );

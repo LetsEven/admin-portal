@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   BarChart2Icon,
   UsersIcon,
@@ -30,7 +30,9 @@ import {
   useAnalytics,
   type AnalyticsFilters,
   type RecentTransaction,
+  type ActiveOrder,
 } from "../hooks/useAnalytics";
+import { useRealtimeDashboard } from "../hooks/useRealtimeDashboard";
 import { useRestaurant } from "../hooks/useRestaurant";
 import { useAdminPortalApi } from "../services/adminPortalApi";
 import { useUser, useAuth } from "@clerk/nextjs";
@@ -233,6 +235,10 @@ const Dashboard = () => {
   } = useOnboarding();
 
   const { restaurant } = useRestaurant();
+
+  // Estado para disparar refresh desde eventos de socket
+  const [socketRefreshTrigger, setSocketRefreshTrigger] = useState(0);
+
   const [sucursalSeleccionada, setSucursalSeleccionada] = useState(
     sucursalesDefault[0],
   );
@@ -622,6 +628,51 @@ const Dashboard = () => {
   const totalPaginasTransacciones = Math.ceil(
     transactionsPagination.total / ITEMS_POR_PAGINA,
   );
+
+  // Hook de tiempo real - WebSockets
+  const currentRestaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+
+  const handleRealtimeNewTransaction = useCallback((transaction: RecentTransaction) => {
+    console.log('Nueva transacción en tiempo real:', transaction);
+    toast.success('Nueva transacción recibida');
+    setSocketRefreshTrigger(prev => prev + 1);
+  }, []);
+
+  const handleRealtimeMetricsUpdate = useCallback(() => {
+    console.log('Métricas actualizadas en tiempo real');
+    setSocketRefreshTrigger(prev => prev + 1);
+  }, []);
+
+  const handleRealtimeOrderUpdate = useCallback((order: ActiveOrder, action: 'created' | 'updated' | 'closed') => {
+    console.log('Orden actualizada en tiempo real:', action);
+    if (action === 'created') {
+      toast.success('Nueva orden recibida');
+    }
+    setSocketRefreshTrigger(prev => prev + 1);
+  }, []);
+
+  const handleRealtimeFullRefresh = useCallback(() => {
+    console.log('Refresh completo solicitado');
+    setSocketRefreshTrigger(prev => prev + 1);
+  }, []);
+
+  const { isSocketConnected } = useRealtimeDashboard({
+    restaurantId: currentRestaurantId,
+    enabled: true,
+    onNewTransaction: handleRealtimeNewTransaction,
+    onMetricsUpdate: handleRealtimeMetricsUpdate,
+    onOrderUpdate: handleRealtimeOrderUpdate,
+    onFullRefresh: handleRealtimeFullRefresh,
+  });
+
+  // Efecto para recargar datos cuando llega un evento de socket
+  useEffect(() => {
+    if (socketRefreshTrigger > 0 && currentRestaurantId) {
+      cargarDatosDashboard(currentRestaurantId);
+      cargarTransacciones(filtroFechaTransacciones, 1);
+      setPaginaTransacciones(1);
+    }
+  }, [socketRefreshTrigger]);
 
   // Filtrar opciones de servicio según los habilitados
   const opcionesServicioFiltradas = opcionesServicio.filter(
@@ -1421,6 +1472,8 @@ const Dashboard = () => {
                 const restaurantId =
                   userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
                 cargarDatosDashboard(restaurantId);
+                cargarTransacciones(filtroFechaTransacciones, 1);
+                setPaginaTransacciones(1);
               }}
               disabled={isLoading}
               className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
@@ -1434,6 +1487,14 @@ const Dashboard = () => {
               </span>
               <span className="xs:hidden">{isLoading ? "..." : ""}</span>
             </button>
+
+            {/* Indicador de conexión en tiempo real */}
+            <div className="flex items-center ml-2" title={isSocketConnected ? "Conectado en tiempo real" : "Sin conexión en tiempo real"}>
+              <div className={`w-2 h-2 rounded-full ${isSocketConnected ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
+              <span className="hidden sm:inline ml-1 text-xs text-gray-500">
+                {isSocketConnected ? "En vivo" : ""}
+              </span>
+            </div>
 
             {/* Selector de mes (para granularidad Día) */}
             {granularidadSeleccionada.id === "dia" && (
