@@ -116,8 +116,7 @@ const Layout: React.FC<LayoutProps> = ({
             <MenuIcon className="h-6 w-6" />
           </button>
           <div className="ml-4 flex items-center">
-            <img src="/iso-1-white.webp" alt="Xquisito Logo" className="h-8 w-auto mr-2" />
-            <span className="text-lg font-medium text-gray-800">Xquisito</span>
+            <img src="/logo-green.webp" alt="Xquisito Logo" className="h-8 w-auto" />
           </div>
         </div>
         <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none bg-gray-50">

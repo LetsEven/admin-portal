@@ -1021,6 +1021,21 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (error) {
+      // Ignorar errores relacionados con falta de datos (no son errores reales)
+      const errorLower = error.toLowerCase();
+      const isNoDataError =
+        errorLower.includes("no hay") ||
+        errorLower.includes("sin datos") ||
+        errorLower.includes("no data") ||
+        errorLower.includes("not found") ||
+        errorLower.includes("no se encontr");
+
+      if (isNoDataError) {
+        console.log("ℹ️ [Dashboard] Sin datos disponibles:", error);
+        toast.dismiss("dashboard-loading");
+        return;
+      }
+
       console.error("Error en analytics:", error);
       // Mostrar toast de error y cerrar el de carga
       toast.dismiss("dashboard-loading");
