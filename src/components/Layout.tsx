@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { UserButton, useUser, useAuth } from '@clerk/nextjs';
-import { useRestaurant } from '../contexts/RestaurantContext';
-import Sidebar from './Sidebar';
-import { MenuIcon, XIcon, StoreIcon, ArrowRightIcon } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { UserButton, useUser, useAuth } from "@clerk/nextjs";
+import { useRestaurant } from "../contexts/RestaurantContext";
+import Sidebar from "./Sidebar";
+import { MenuIcon, XIcon, StoreIcon, ArrowRightIcon } from "lucide-react";
 interface LayoutProps {
   children: React.ReactNode;
 }
-const Layout: React.FC<LayoutProps> = ({
-  children
-}) => {
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useUser();
   const { isLoaded, isSignedIn } = useAuth();
@@ -22,38 +20,45 @@ const Layout: React.FC<LayoutProps> = ({
       const userEmail = user.emailAddresses[0].emailAddress;
 
       // Verificar si hay información de invitación en localStorage
-      const invitationEmail = localStorage.getItem('invitation_email');
+      const invitationEmail = localStorage.getItem("invitation_email");
 
-      const isFromInvitation = invitationEmail === userEmail ||
-                              userEmail.includes('+') ||
-                              localStorage.getItem('registration_completed') !== 'true';
+      const isFromInvitation =
+        invitationEmail === userEmail ||
+        userEmail.includes("+") ||
+        localStorage.getItem("registration_completed") !== "true";
 
       if (isFromInvitation) {
         try {
-          console.log('🔄 Attempting to complete registration for:', userEmail);
+          console.log("🔄 Attempting to complete registration for:", userEmail);
 
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin-portal/complete-registration`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin-portal/complete-registration`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                email: userEmail,
+                user_id: user.id,
+              }),
             },
-            body: JSON.stringify({
-              email: userEmail,
-              user_id: user.id
-            })
-          });
+          );
 
           const data = await response.json();
 
           if (response.ok) {
-            console.log('✅ Registration completed successfully for:', userEmail);
-            localStorage.setItem('registration_completed', 'true');
-            localStorage.removeItem('invitation_email');
+            console.log(
+              "✅ Registration completed successfully for:",
+              userEmail,
+            );
+            localStorage.setItem("registration_completed", "true");
+            localStorage.removeItem("invitation_email");
           } else {
-            console.log('ℹ️ Registration completion response:', data);
+            console.log("ℹ️ Registration completion response:", data);
           }
         } catch (error) {
-          console.error('❌ Error completing registration:', error);
+          console.error("❌ Error completing registration:", error);
         }
       }
     };
@@ -75,7 +80,7 @@ const Layout: React.FC<LayoutProps> = ({
 
   // Redirect to sign-in if not authenticated (fallback, middleware should handle this)
   if (!isSignedIn) {
-    window.location.href = '/sign-in';
+    window.location.href = "/sign-in";
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -85,14 +90,25 @@ const Layout: React.FC<LayoutProps> = ({
       </div>
     );
   }
-  return <div className="flex h-screen bg-gray-50">
+  return (
+    <div className="flex h-screen bg-gray-50">
       {/* Mobile sidebar */}
       <div className="md:hidden">
-        <div className={`fixed inset-0 z-40 flex ${sidebarOpen ? 'visible' : 'invisible'}`}>
-          <div className={`fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity ease-linear duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`} onClick={() => setSidebarOpen(false)} />
-          <div className={`relative flex-1 flex flex-col max-w-xs w-full bg-white transition ease-in-out duration-300 transform shadow-xl ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div
+          className={`fixed inset-0 z-40 flex ${sidebarOpen ? "visible" : "invisible"}`}
+        >
+          <div
+            className={`fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity ease-linear duration-300 ${sidebarOpen ? "opacity-100" : "opacity-0"}`}
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div
+            className={`relative flex-1 flex flex-col max-w-xs w-full bg-white transition ease-in-out duration-300 transform shadow-xl ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+          >
             <div className="absolute top-0 right-0 -mr-12 pt-2">
-              <button className={`ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white ${sidebarOpen ? '' : 'hidden'}`} onClick={() => setSidebarOpen(false)}>
+              <button
+                className={`ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white ${sidebarOpen ? "" : "hidden"}`}
+                onClick={() => setSidebarOpen(false)}
+              >
                 <span className="sr-only">Cerrar menú</span>
                 <XIcon className="h-6 w-6 text-white" />
               </button>
@@ -110,14 +126,22 @@ const Layout: React.FC<LayoutProps> = ({
       </div>
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden group">
-        <div className="md:hidden pl-3 pt-3 flex items-center border-b border-gray-200 bg-white shadow-sm h-14 sticky top-0 z-10">
-          <button className="h-10 w-10 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-custom-green-500" onClick={() => setSidebarOpen(true)}>
+        <div className="md:hidden flex items-center justify-between border-b border-gray-200 bg-white shadow-sm h-14 sticky top-0 z-10 px-3">
+          <button
+            className="h-10 w-10 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-custom-green-500"
+            onClick={() => setSidebarOpen(true)}
+          >
             <span className="sr-only">Abrir menú</span>
             <MenuIcon className="h-6 w-6" />
           </button>
-          <div className="ml-4 flex items-center">
-            <img src="/logo-green.webp" alt="Xquisito Logo" className="h-8 w-auto" />
+          <div className="flex-1 flex justify-center">
+            <img
+              src="/logo-short-green.webp"
+              alt="Xquisito Logo"
+              className="h-8 w-auto"
+            />
           </div>
+          <div className="w-10"></div>
         </div>
         <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none bg-gray-50">
           {/* Restaurant Setup Banner */}
@@ -160,6 +184,7 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         </main>
       </div>
-    </div>;
+    </div>
+  );
 };
 export default Layout;
