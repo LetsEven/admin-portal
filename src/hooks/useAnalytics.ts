@@ -1,15 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useUser, useAuth } from '@clerk/nextjs';
+import { useState, useEffect, useCallback } from "react";
+import { useUser, useAuth } from "@clerk/nextjs";
 
 // Tipos para los filtros de analytics
 export interface AnalyticsFilters {
   restaurant_id?: number | null;
-  branch_id?: string | null;  // ✅ NUEVO: Filtro por sucursal
+  branch_id?: string | null; // ✅ NUEVO: Filtro por sucursal
   start_date?: string | null;
   end_date?: string | null;
-  gender?: 'todos' | 'hombre' | 'mujer' | 'otro';
-  age_range?: 'todos' | '14-17' | '18-25' | '26-35' | '36-45' | '46+';
-  granularity?: 'hora' | 'dia' | 'mes' | 'ano';
+  gender?: "todos" | "hombre" | "mujer" | "otro";
+  age_range?: "todos" | "14-17" | "18-25" | "26-35" | "36-45" | "46+";
+  granularity?: "hora" | "dia" | "mes" | "ano";
 }
 
 // Tipos para filtros de todos los servicios
@@ -18,10 +18,16 @@ export interface AllServicesFilters {
   branch_id?: string | null;
   start_date?: string | null;
   end_date?: string | null;
-  granularity?: 'hora' | 'dia' | 'mes' | 'ano';
-  service_type?: 'flex-bill' | 'pick-n-go' | 'tap-order-pay' | 'tap-pay' | 'room-service' | null;
-  gender?: 'todos' | 'hombre' | 'mujer' | 'otro';
-  age_range?: 'todos' | '14-17' | '18-25' | '26-35' | '36-45' | '46+';
+  granularity?: "hora" | "dia" | "mes" | "ano";
+  service_type?:
+    | "flex-bill"
+    | "pick-n-go"
+    | "tap-order-pay"
+    | "tap-pay"
+    | "room-service"
+    | null;
+  gender?: "todos" | "hombre" | "mujer" | "otro";
+  age_range?: "todos" | "14-17" | "18-25" | "26-35" | "36-45" | "46+";
 }
 
 // Tipos para métricas de todos los servicios
@@ -139,6 +145,10 @@ export interface RecentTransaction {
   serviceType: string;
   orderIdentifier: string;
   orderStatus: string;
+  // Campos adicionales para FlexBill (desde table_order)
+  noItems?: number | null;
+  paidAmount?: number | null;
+  remainingAmount?: number | null;
 }
 
 export interface OrderItem {
@@ -178,6 +188,7 @@ export interface DashboardData {
   grafico: ChartDataPoint[];
   filtros_aplicados: AnalyticsFilters;
   articulo_mas_vendido?: TopSellingItem;
+  tiempo_promedio_mesa?: number | null;
   success: boolean;
 }
 
@@ -227,33 +238,52 @@ interface UseAnalyticsReturn {
   // Funciones
   getDashboardMetrics: (filters: AnalyticsFilters) => Promise<void>;
   getCompleteDashboardData: (filters: AnalyticsFilters) => Promise<void>;
-  getDashboardMetricsAllServices: (filters: AllServicesFilters) => Promise<void>;
+  getDashboardMetricsAllServices: (
+    filters: AllServicesFilters,
+  ) => Promise<void>;
   getActiveOrders: (restaurantId: number, reset?: boolean) => Promise<void>;
   loadMoreOrders: (restaurantId: number) => Promise<void>;
-  getTopSellingItem: (filters: Omit<AnalyticsFilters, 'gender' | 'age_range' | 'granularity'>) => Promise<void>;
+  getTopSellingItem: (
+    filters: Omit<AnalyticsFilters, "gender" | "age_range" | "granularity">,
+  ) => Promise<void>;
   getUserRestaurants: () => Promise<void>;
   getDashboardSummary: (restaurantId: number) => Promise<void>;
-  getRecentTransactions: (filters: RecentTransactionsFilters, reset?: boolean) => Promise<void>;
+  getRecentTransactions: (
+    filters: RecentTransactionsFilters,
+    reset?: boolean,
+  ) => Promise<void>;
   loadMoreTransactions: (filters: RecentTransactionsFilters) => Promise<void>;
-  getOrderItems: (id: string, orderStatus: string, serviceType: string) => Promise<OrderItem[]>;
+  getOrderItems: (
+    id: string,
+    orderStatus: string,
+    serviceType: string,
+  ) => Promise<OrderItem[]>;
 
   // Utilidades
   clearError: () => void;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 export function useAnalytics(): UseAnalyticsReturn {
   const { user } = useUser();
   const { getToken } = useAuth();
 
   // Estados para datos
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [allServicesData, setAllServicesData] = useState<AllServicesDashboardData | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+    null,
+  );
+  const [allServicesData, setAllServicesData] =
+    useState<AllServicesDashboardData | null>(null);
   const [activeOrders, setActiveOrders] = useState<ActiveOrder[]>([]);
-  const [topSellingItem, setTopSellingItem] = useState<TopSellingItem | null>(null);
+  const [topSellingItem, setTopSellingItem] = useState<TopSellingItem | null>(
+    null,
+  );
   const [userRestaurants, setUserRestaurants] = useState<Restaurant[]>([]);
-  const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<
+    RecentTransaction[]
+  >([]);
 
   // Estados de carga
   const [isLoading, setIsLoading] = useState(false);
@@ -282,18 +312,18 @@ export function useAnalytics(): UseAnalyticsReturn {
   // Obtener token de autenticación
   const getAuthToken = useCallback(async (): Promise<string> => {
     if (!user) {
-      throw new Error('Usuario no autenticado');
+      throw new Error("Usuario no autenticado");
     }
 
     try {
       const token = await getToken();
       if (!token) {
-        throw new Error('No se pudo obtener el token de autenticación');
+        throw new Error("No se pudo obtener el token de autenticación");
       }
       return token;
     } catch (error) {
-      console.error('❌ [getAuthToken] Error obteniendo token:', error);
-      throw new Error('Error de autenticación');
+      console.error("❌ [getAuthToken] Error obteniendo token:", error);
+      throw new Error("Error de autenticación");
     }
   }, [user, getToken]);
 
@@ -302,7 +332,7 @@ export function useAnalytics(): UseAnalyticsReturn {
     const params = new URLSearchParams();
 
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
+      if (value !== null && value !== undefined && value !== "") {
         params.append(key, String(value));
       }
     });
@@ -314,200 +344,245 @@ export function useAnalytics(): UseAnalyticsReturn {
   const handleApiResponse = async <T>(response: Response): Promise<T> => {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      throw new Error(
+        errorData.error || `Error ${response.status}: ${response.statusText}`,
+      );
     }
 
     const result: ApiResponse<T> = await response.json();
 
     if (!result.success) {
-      throw new Error(result.error || 'Error en la respuesta de la API');
+      throw new Error(result.error || "Error en la respuesta de la API");
     }
 
     return result.data;
   };
 
   // Obtener métricas del dashboard
-  const getDashboardMetrics = useCallback(async (filters: AnalyticsFilters) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const getDashboardMetrics = useCallback(
+    async (filters: AnalyticsFilters) => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-      const token = await getAuthToken();
-      const queryParams = buildQueryParams(filters);
+        const token = await getAuthToken();
+        const queryParams = buildQueryParams(filters);
 
-      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/metrics?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        const response = await fetch(
+          `${API_BASE_URL}/api/analytics/dashboard/metrics?${queryParams}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
 
-      const data = await handleApiResponse<DashboardData>(response);
-      setDashboardData(data);
-
-    } catch (error) {
-      console.error('❌ Error obteniendo métricas del dashboard:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [getAuthToken]);
+        const data = await handleApiResponse<DashboardData>(response);
+        setDashboardData(data);
+      } catch (error) {
+        console.error("❌ Error obteniendo métricas del dashboard:", error);
+        setError(error instanceof Error ? error.message : "Error desconocido");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [getAuthToken],
+  );
 
   // Obtener datos completos del dashboard
-  const getCompleteDashboardData = useCallback(async (filters: AnalyticsFilters) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const getCompleteDashboardData = useCallback(
+    async (filters: AnalyticsFilters) => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-      const token = await getAuthToken();
-      const queryParams = buildQueryParams(filters);
+        const token = await getAuthToken();
+        const queryParams = buildQueryParams(filters);
 
-      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/complete?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        const response = await fetch(
+          `${API_BASE_URL}/api/analytics/dashboard/complete?${queryParams}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
 
-      const data = await handleApiResponse<DashboardData>(response);
-      setDashboardData(data);
-
-    } catch (error) {
-      console.error('❌ Error obteniendo datos completos del dashboard:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [getAuthToken]);
+        const data = await handleApiResponse<DashboardData>(response);
+        setDashboardData(data);
+      } catch (error) {
+        console.error(
+          "❌ Error obteniendo datos completos del dashboard:",
+          error,
+        );
+        setError(error instanceof Error ? error.message : "Error desconocido");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [getAuthToken],
+  );
 
   // Obtener métricas de TODOS los servicios (FlexBill, Pick&Go, Room Service, Tap Order, Tap Pay)
-  const getDashboardMetricsAllServices = useCallback(async (filters: AllServicesFilters) => {
-    try {
-      setIsLoadingAllServices(true);
-      setError(null);
+  const getDashboardMetricsAllServices = useCallback(
+    async (filters: AllServicesFilters) => {
+      try {
+        setIsLoadingAllServices(true);
+        setError(null);
 
-      const token = await getAuthToken();
-      const queryParams = buildQueryParams(filters);
+        const token = await getAuthToken();
+        const queryParams = buildQueryParams(filters);
 
-      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/metrics-all-services?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        const response = await fetch(
+          `${API_BASE_URL}/api/analytics/dashboard/metrics-all-services?${queryParams}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
 
-      const data = await handleApiResponse<AllServicesDashboardData>(response);
-      setAllServicesData(data);
-
-    } catch (error) {
-      console.error('❌ Error obteniendo métricas de todos los servicios:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
-    } finally {
-      setIsLoadingAllServices(false);
-    }
-  }, [getAuthToken]);
+        const data =
+          await handleApiResponse<AllServicesDashboardData>(response);
+        setAllServicesData(data);
+      } catch (error) {
+        console.error(
+          "❌ Error obteniendo métricas de todos los servicios:",
+          error,
+        );
+        setError(error instanceof Error ? error.message : "Error desconocido");
+      } finally {
+        setIsLoadingAllServices(false);
+      }
+    },
+    [getAuthToken],
+  );
 
   // Obtener órdenes del dia
-  const getActiveOrders = useCallback(async (restaurantId: number, reset: boolean = true) => {
-    try {
-      setIsLoadingOrders(true);
-      setError(null);
+  const getActiveOrders = useCallback(
+    async (restaurantId: number, reset: boolean = true) => {
+      try {
+        setIsLoadingOrders(true);
+        setError(null);
 
-      const token = await getAuthToken();
-      const offset = reset ? 0 : ordersPagination.currentOffset;
+        const token = await getAuthToken();
+        const offset = reset ? 0 : ordersPagination.currentOffset;
 
-      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/orders/${restaurantId}?limit=5&offset=${offset}&status=todos&dateFilter=hoy`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        const response = await fetch(
+          `${API_BASE_URL}/api/analytics/dashboard/orders/${restaurantId}?limit=5&offset=${offset}&status=todos&dateFilter=hoy`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
 
-      const apiResponse = await handleApiResponse<OrdersPaginationResponse>(response);
+        const apiResponse =
+          await handleApiResponse<OrdersPaginationResponse>(response);
 
-      if (reset) {
-        setActiveOrders(apiResponse.orders || []);
-      } else {
-        setActiveOrders(prev => [...prev, ...(apiResponse.orders || [])]);
+        if (reset) {
+          setActiveOrders(apiResponse.orders || []);
+        } else {
+          setActiveOrders((prev) => [...prev, ...(apiResponse.orders || [])]);
+        }
+
+        setOrdersPagination({
+          hasMore: apiResponse.pagination?.has_more || false,
+          totalCount: apiResponse.pagination?.total_count || 0,
+          currentOffset: offset + (apiResponse.pagination?.returned_count || 0),
+        });
+      } catch (error) {
+        console.error("❌ Error obteniendo órdenes:", error);
+        setError(error instanceof Error ? error.message : "Error desconocido");
+      } finally {
+        setIsLoadingOrders(false);
       }
-
-      setOrdersPagination({
-        hasMore: apiResponse.pagination?.has_more || false,
-        totalCount: apiResponse.pagination?.total_count || 0,
-        currentOffset: offset + (apiResponse.pagination?.returned_count || 0),
-      });
-
-    } catch (error) {
-      console.error('❌ Error obteniendo órdenes:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
-    } finally {
-      setIsLoadingOrders(false);
-    }
-  }, [getAuthToken, ordersPagination.currentOffset]);
+    },
+    [getAuthToken, ordersPagination.currentOffset],
+  );
 
   // Nueva función para cargar más órdenes
-  const loadMoreOrders = useCallback(async (restaurantId: number) => {
-    if (!ordersPagination.hasMore || isLoadingMoreOrders) {
-      return;
-    }
+  const loadMoreOrders = useCallback(
+    async (restaurantId: number) => {
+      if (!ordersPagination.hasMore || isLoadingMoreOrders) {
+        return;
+      }
 
-    try {
-      setIsLoadingMoreOrders(true);
-      setError(null);
+      try {
+        setIsLoadingMoreOrders(true);
+        setError(null);
 
-      const token = await getAuthToken();
+        const token = await getAuthToken();
 
-      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/orders/${restaurantId}?limit=5&offset=${ordersPagination.currentOffset}&status=todos&dateFilter=hoy`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        const response = await fetch(
+          `${API_BASE_URL}/api/analytics/dashboard/orders/${restaurantId}?limit=5&offset=${ordersPagination.currentOffset}&status=todos&dateFilter=hoy`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
 
-      const apiResponse = await handleApiResponse<OrdersPaginationResponse>(response);
+        const apiResponse =
+          await handleApiResponse<OrdersPaginationResponse>(response);
 
-      setActiveOrders(prev => [...prev, ...(apiResponse.orders || [])]);
+        setActiveOrders((prev) => [...prev, ...(apiResponse.orders || [])]);
 
-      setOrdersPagination({
-        hasMore: apiResponse.pagination?.has_more || false,
-        totalCount: apiResponse.pagination?.total_count || 0,
-        currentOffset: ordersPagination.currentOffset + (apiResponse.pagination?.returned_count || 0),
-      });
-
-    } catch (error) {
-      console.error('❌ Error cargando más órdenes:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
-    } finally {
-      setIsLoadingMoreOrders(false);
-    }
-  }, [getAuthToken, ordersPagination, isLoadingMoreOrders]);
+        setOrdersPagination({
+          hasMore: apiResponse.pagination?.has_more || false,
+          totalCount: apiResponse.pagination?.total_count || 0,
+          currentOffset:
+            ordersPagination.currentOffset +
+            (apiResponse.pagination?.returned_count || 0),
+        });
+      } catch (error) {
+        console.error("❌ Error cargando más órdenes:", error);
+        setError(error instanceof Error ? error.message : "Error desconocido");
+      } finally {
+        setIsLoadingMoreOrders(false);
+      }
+    },
+    [getAuthToken, ordersPagination, isLoadingMoreOrders],
+  );
 
   // Obtener artículo más vendido
-  const getTopSellingItem = useCallback(async (filters: Omit<AnalyticsFilters, 'gender' | 'age_range' | 'granularity'>) => {
-    try {
-      setIsLoadingTopItem(true);
-      setError(null);
+  const getTopSellingItem = useCallback(
+    async (
+      filters: Omit<AnalyticsFilters, "gender" | "age_range" | "granularity">,
+    ) => {
+      try {
+        setIsLoadingTopItem(true);
+        setError(null);
 
-      const token = await getAuthToken();
-      const queryParams = buildQueryParams(filters);
+        const token = await getAuthToken();
+        const queryParams = buildQueryParams(filters);
 
-      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/top-selling-item?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        const response = await fetch(
+          `${API_BASE_URL}/api/analytics/dashboard/top-selling-item?${queryParams}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
 
-      const data = await handleApiResponse<TopSellingItem>(response);
-      setTopSellingItem(data);
-
-    } catch (error) {
-      console.error('❌ Error obteniendo artículo más vendido:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
-    } finally {
-      setIsLoadingTopItem(false);
-    }
-  }, [getAuthToken]);
+        const data = await handleApiResponse<TopSellingItem>(response);
+        setTopSellingItem(data);
+      } catch (error) {
+        console.error("❌ Error obteniendo artículo más vendido:", error);
+        setError(error instanceof Error ? error.message : "Error desconocido");
+      } finally {
+        setIsLoadingTopItem(false);
+      }
+    },
+    [getAuthToken],
+  );
 
   // Obtener restaurantes del usuario
   const getUserRestaurants = useCallback(async () => {
@@ -517,123 +592,157 @@ export function useAnalytics(): UseAnalyticsReturn {
 
       const token = await getAuthToken();
 
-      const response = await fetch(`${API_BASE_URL}/api/analytics/restaurants`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${API_BASE_URL}/api/analytics/restaurants`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       const data = await handleApiResponse<Restaurant[]>(response);
       setUserRestaurants(Array.isArray(data) ? data : []);
-
     } catch (error) {
-      console.error('❌ Error obteniendo restaurantes del usuario:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
+      console.error("❌ Error obteniendo restaurantes del usuario:", error);
+      setError(error instanceof Error ? error.message : "Error desconocido");
     } finally {
       setIsLoadingRestaurants(false);
     }
   }, [getAuthToken]);
 
   // Obtener resumen del dashboard
-  const getDashboardSummary = useCallback(async (restaurantId: number) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const getDashboardSummary = useCallback(
+    async (restaurantId: number) => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-      const token = await getAuthToken();
+        const token = await getAuthToken();
 
-      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/summary/${restaurantId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        const response = await fetch(
+          `${API_BASE_URL}/api/analytics/dashboard/summary/${restaurantId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
 
-      const data = await handleApiResponse<DashboardData>(response);
-      setDashboardData(data);
-
-    } catch (error) {
-      console.error('❌ Error obteniendo resumen del dashboard:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [getAuthToken]);
+        const data = await handleApiResponse<DashboardData>(response);
+        setDashboardData(data);
+      } catch (error) {
+        console.error("❌ Error obteniendo resumen del dashboard:", error);
+        setError(error instanceof Error ? error.message : "Error desconocido");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [getAuthToken],
+  );
 
   // Obtener transacciones recientes
-  const getRecentTransactions = useCallback(async (filters: RecentTransactionsFilters, reset: boolean = true) => {
-    try {
-      setIsLoadingTransactions(true);
-      setError(null);
+  const getRecentTransactions = useCallback(
+    async (filters: RecentTransactionsFilters, reset: boolean = true) => {
+      try {
+        setIsLoadingTransactions(true);
+        setError(null);
 
-      const token = await getAuthToken();
-      const queryParams = buildQueryParams({
-        ...filters,
-        limit: filters.limit || 10,
-        offset: reset ? 0 : transactionsPagination.currentOffset,
-      });
+        const token = await getAuthToken();
+        const queryParams = buildQueryParams({
+          ...filters,
+          limit: filters.limit || 10,
+          offset: reset ? 0 : transactionsPagination.currentOffset,
+        });
 
-      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/recent-transactions?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        const response = await fetch(
+          `${API_BASE_URL}/api/analytics/dashboard/recent-transactions?${queryParams}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
 
-      const data = await handleApiResponse<RecentTransactionsResponse>(response);
+        const data =
+          await handleApiResponse<RecentTransactionsResponse>(response);
 
-      if (reset) {
-        setRecentTransactions(data.transactions || []);
-      } else {
-        setRecentTransactions(prev => [...prev, ...(data.transactions || [])]);
+        if (reset) {
+          setRecentTransactions(data.transactions || []);
+        } else {
+          setRecentTransactions((prev) => [
+            ...prev,
+            ...(data.transactions || []),
+          ]);
+        }
+
+        setTransactionsPagination({
+          hasMore: data.pagination?.hasMore || false,
+          total: data.pagination?.total || 0,
+          currentOffset: reset
+            ? filters.limit || 10
+            : transactionsPagination.currentOffset + (filters.limit || 10),
+        });
+      } catch (error) {
+        console.error("❌ Error obteniendo transacciones recientes:", error);
+        setError(error instanceof Error ? error.message : "Error desconocido");
+      } finally {
+        setIsLoadingTransactions(false);
       }
-
-      setTransactionsPagination({
-        hasMore: data.pagination?.hasMore || false,
-        total: data.pagination?.total || 0,
-        currentOffset: reset ? (filters.limit || 10) : transactionsPagination.currentOffset + (filters.limit || 10),
-      });
-
-    } catch (error) {
-      console.error('❌ Error obteniendo transacciones recientes:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
-    } finally {
-      setIsLoadingTransactions(false);
-    }
-  }, [getAuthToken, transactionsPagination.currentOffset]);
+    },
+    [getAuthToken, transactionsPagination.currentOffset],
+  );
 
   // Cargar más transacciones
-  const loadMoreTransactions = useCallback(async (filters: RecentTransactionsFilters) => {
-    if (isLoadingTransactions || !transactionsPagination.hasMore) return;
+  const loadMoreTransactions = useCallback(
+    async (filters: RecentTransactionsFilters) => {
+      if (isLoadingTransactions || !transactionsPagination.hasMore) return;
 
-    await getRecentTransactions({
-      ...filters,
-      offset: transactionsPagination.currentOffset,
-    }, false);
-  }, [getRecentTransactions, isLoadingTransactions, transactionsPagination]);
+      await getRecentTransactions(
+        {
+          ...filters,
+          offset: transactionsPagination.currentOffset,
+        },
+        false,
+      );
+    },
+    [getRecentTransactions, isLoadingTransactions, transactionsPagination],
+  );
 
   // Obtener items de una orden/transacción
-  const getOrderItems = useCallback(async (id: string, orderStatus: string, serviceType: string): Promise<OrderItem[]> => {
-    try {
-      const token = await getToken();
-      const params = new URLSearchParams({ id, orderStatus, serviceType });
-      const response = await fetch(`${API_BASE_URL}/api/analytics/dashboard/order-items?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await response.json();
-      if (data.success && data.data?.items) {
-        return data.data.items;
+  const getOrderItems = useCallback(
+    async (
+      id: string,
+      orderStatus: string,
+      serviceType: string,
+    ): Promise<OrderItem[]> => {
+      try {
+        const token = await getToken();
+        const params = new URLSearchParams({ id, orderStatus, serviceType });
+        const response = await fetch(
+          `${API_BASE_URL}/api/analytics/dashboard/order-items?${params}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        const data = await response.json();
+        if (data.success && data.data?.items) {
+          return data.data.items;
+        }
+        return [];
+      } catch (error) {
+        console.error("Error al obtener items de la orden:", error);
+        return [];
       }
-      return [];
-    } catch (error) {
-      console.error('Error al obtener items de la orden:', error);
-      return [];
-    }
-  }, [getToken]);
+    },
+    [getToken],
+  );
 
   // Cargar restaurantes al inicializar
   useEffect(() => {

@@ -34,7 +34,7 @@ import {
 } from "../hooks/useAnalytics";
 import { useRealtimeDashboard } from "../hooks/useRealtimeDashboard";
 import { useRestaurant } from "../hooks/useRestaurant";
-import { useAdminPortalApi } from "../services/adminPortalApi";
+import { useAdminPortalApi, Branch } from "../services/adminPortalApi";
 import { useUser, useAuth } from "@clerk/nextjs";
 import {
   useOnboarding,
@@ -108,12 +108,19 @@ const opcionesServicio = [
   { id: "room-service", label: "Room Service" },
 ];
 
+// Tipo para sucursal seleccionada (compatible con Branch y estado inicial)
+interface SucursalSeleccionada {
+  id: string | null;
+  name: string;
+  active: boolean;
+}
+
 // Esta será reemplazada por datos reales del hook
-const sucursalesDefault = [
+const sucursalesDefault: SucursalSeleccionada[] = [
   {
     id: null, // ✅ CAMBIO: null en lugar de 1 para evitar UUID inválido
     name: "Cargando...",
-    is_active: true,
+    active: true,
   },
 ];
 
@@ -239,13 +246,12 @@ const Dashboard = () => {
   // Estado para disparar refresh desde eventos de socket
   const [socketRefreshTrigger, setSocketRefreshTrigger] = useState(0);
 
-  const [sucursalSeleccionada, setSucursalSeleccionada] = useState(
-    sucursalesDefault[0],
-  );
+  const [sucursalSeleccionada, setSucursalSeleccionada] =
+    useState<SucursalSeleccionada>(sucursalesDefault[0]);
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
 
   // Estados para branches/sucursales
-  const [branches, setBranches] = useState([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(true);
   const [pedidoSeleccionado, setPedidoSeleccionado] =
     useState<RecentTransaction | null>(null);
@@ -347,7 +353,7 @@ const Dashboard = () => {
       }
     : dashboardData;
 
-  const cambiarSucursal = (sucursal) => {
+  const cambiarSucursal = (sucursal: SucursalSeleccionada) => {
     setSucursalSeleccionada(sucursal);
     setDropdownAbierto(false);
     // ✅ Ahora usamos el restaurant_id del usuario, no el branch UUID
@@ -630,30 +636,37 @@ const Dashboard = () => {
   );
 
   // Hook de tiempo real - WebSockets
-  const currentRestaurantId = userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+  const currentRestaurantId =
+    userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
 
-  const handleRealtimeNewTransaction = useCallback((transaction: RecentTransaction) => {
-    console.log('Nueva transacción en tiempo real:', transaction);
-    toast.success('Nueva transacción recibida');
-    setSocketRefreshTrigger(prev => prev + 1);
-  }, []);
+  const handleRealtimeNewTransaction = useCallback(
+    (transaction: RecentTransaction) => {
+      console.log("Nueva transacción en tiempo real:", transaction);
+      toast.success("Nueva transacción recibida");
+      setSocketRefreshTrigger((prev) => prev + 1);
+    },
+    [],
+  );
 
   const handleRealtimeMetricsUpdate = useCallback(() => {
-    console.log('Métricas actualizadas en tiempo real');
-    setSocketRefreshTrigger(prev => prev + 1);
+    console.log("Métricas actualizadas en tiempo real");
+    setSocketRefreshTrigger((prev) => prev + 1);
   }, []);
 
-  const handleRealtimeOrderUpdate = useCallback((order: ActiveOrder, action: 'created' | 'updated' | 'closed') => {
-    console.log('Orden actualizada en tiempo real:', action);
-    if (action === 'created') {
-      toast.success('Nueva orden recibida');
-    }
-    setSocketRefreshTrigger(prev => prev + 1);
-  }, []);
+  const handleRealtimeOrderUpdate = useCallback(
+    (order: ActiveOrder, action: "created" | "updated" | "closed") => {
+      console.log("Orden actualizada en tiempo real:", action);
+      if (action === "created") {
+        toast.success("Nueva orden recibida");
+      }
+      setSocketRefreshTrigger((prev) => prev + 1);
+    },
+    [],
+  );
 
   const handleRealtimeFullRefresh = useCallback(() => {
-    console.log('Refresh completo solicitado');
-    setSocketRefreshTrigger(prev => prev + 1);
+    console.log("Refresh completo solicitado");
+    setSocketRefreshTrigger((prev) => prev + 1);
   }, []);
 
   const { isSocketConnected } = useRealtimeDashboard({
@@ -1166,7 +1179,6 @@ const Dashboard = () => {
         continuous={true}
         showProgress={true}
         showSkipButton={true}
-        showBackButton={true}
         spotlightClicks={false}
         disableOverlayClose={true}
         disableScrollParentFix={true}
@@ -1489,8 +1501,17 @@ const Dashboard = () => {
             </button>
 
             {/* Indicador de conexión en tiempo real */}
-            <div className="flex items-center ml-2" title={isSocketConnected ? "Conectado en tiempo real" : "Sin conexión en tiempo real"}>
-              <div className={`w-2 h-2 rounded-full ${isSocketConnected ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
+            <div
+              className="flex items-center ml-2"
+              title={
+                isSocketConnected
+                  ? "Conectado en tiempo real"
+                  : "Sin conexión en tiempo real"
+              }
+            >
+              <div
+                className={`w-2 h-2 rounded-full ${isSocketConnected ? "bg-green-500 animate-pulse" : "bg-gray-400"}`}
+              />
               <span className="hidden sm:inline ml-1 text-xs text-gray-500">
                 {isSocketConnected ? "En vivo" : ""}
               </span>
@@ -2193,6 +2214,32 @@ const Dashboard = () => {
                           <ShoppingCartIcon className="flex-shrink-0 mr-1.5 h-3 w-3 text-custom-green-500" />
                           Venta: ${tx.baseAmount?.toLocaleString() || 0}
                         </p>
+                        {/* Campos adicionales para FlexBill */}
+                        {tx.serviceType === "flex-bill" && (
+                          <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                            {tx.noItems !== null &&
+                              tx.noItems !== undefined && (
+                                <span className="flex items-center">
+                                  <ShoppingBagIcon className="flex-shrink-0 mr-1 h-3 w-3 text-gray-400" />
+                                  {tx.noItems} items
+                                </span>
+                              )}
+                            {tx.paidAmount !== null &&
+                              tx.paidAmount !== undefined && (
+                                <span className="text-green-600">
+                                  Pagado: ${tx.paidAmount?.toLocaleString()}
+                                </span>
+                              )}
+                            {tx.remainingAmount !== null &&
+                              tx.remainingAmount !== undefined &&
+                              tx.remainingAmount > 0 && (
+                                <span className="text-orange-600">
+                                  Pendiente: $
+                                  {tx.remainingAmount?.toLocaleString()}
+                                </span>
+                              )}
+                          </div>
+                        )}
                       </div>
                       <div className="mt-2 flex items-center gap-1 text-xs sm:text-sm text-gray-500 sm:mt-0">
                         <svg
