@@ -2216,7 +2216,7 @@ const Dashboard = () => {
                         </p>
                         {/* Campos adicionales para FlexBill */}
                         {tx.serviceType === "flex-bill" && (
-                          <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                          <div className="flex items-center flex-wrap gap-2 text-xs text-gray-500 mt-1">
                             {tx.noItems !== null &&
                               tx.noItems !== undefined && (
                                 <span className="flex items-center">
@@ -2225,7 +2225,8 @@ const Dashboard = () => {
                                 </span>
                               )}
                             {tx.paidAmount !== null &&
-                              tx.paidAmount !== undefined && (
+                              tx.paidAmount !== undefined &&
+                              tx.paidAmount > 0 && (
                                 <span className="text-green-600">
                                   Pagado: ${tx.paidAmount?.toLocaleString()}
                                 </span>
@@ -2340,7 +2341,7 @@ const Dashboard = () => {
                       pedidoSeleccionado.orderStatus === "paid"
                         ? "bg-green-100 text-green-800"
                         : pedidoSeleccionado.orderStatus === "partial"
-                          ? "bg-orange-100 text-orange-800"
+                          ? "bg-yellow-100 text-yellow-800"
                           : pedidoSeleccionado.orderStatus === "not_paid" ||
                               pedidoSeleccionado.orderStatus === "pending"
                             ? "bg-red-100 text-red-800"
@@ -2408,7 +2409,7 @@ const Dashboard = () => {
                   ) : itemsPedido.length > 0 ? (
                     itemsPedido.map((item: any, index: number) => (
                       <div key={index} className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-center gap-3">
                           {item.imagen ? (
                             <img
                               src={item.imagen}
@@ -2442,6 +2443,22 @@ const Dashboard = () => {
                                 : (item.precio * item.cantidad).toFixed(2)}
                             </p>
                             <p className="text-xs text-gray-500">Total</p>
+                            {/* Estado de entrega del item */}
+                            <span
+                              className={`mt-1 inline-block px-1.5 py-0.5 rounded text-xs font-medium ${
+                                item.estadoEntrega === "delivered"
+                                  ? "bg-green-100 text-green-700"
+                                  : item.estadoEntrega === "cooking"
+                                    ? "bg-orange-100 text-orange-700"
+                                    : "bg-yellow-100 text-yellow-700"
+                              }`}
+                            >
+                              {item.estadoEntrega === "delivered"
+                                ? "Entregado"
+                                : item.estadoEntrega === "cooking"
+                                  ? "Cocinando"
+                                  : "Pendiente"}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -2476,7 +2493,7 @@ const Dashboard = () => {
                   {pedidoSeleccionado.tipAmount > 0 && (
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-gray-600">Propina:</span>
-                      <span className="font-medium text-custom-green-600">
+                      <span className="font-medium text-blue-600">
                         $
                         {pedidoSeleccionado.tipAmount?.toLocaleString() ||
                           "0.00"}
@@ -2489,13 +2506,42 @@ const Dashboard = () => {
                       <span className="text-base font-semibold text-gray-900">
                         Total:
                       </span>
-                      <span className="text-lg font-bold text-custom-green-600">
+                      <span className="text-lg font-bold text-gray-900">
                         $
                         {pedidoSeleccionado.totalAmount?.toLocaleString() ||
                           "0.00"}
                       </span>
                     </div>
                   </div>
+
+                  {/* Campos de pago para FlexBill */}
+                  {pedidoSeleccionado.serviceType === "flex-bill" && (
+                    <div className="border-t border-gray-200 pt-2 mt-2 space-y-2">
+                      {pedidoSeleccionado.paidAmount !== null &&
+                        pedidoSeleccionado.paidAmount !== undefined && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600">Pagado:</span>
+                            <span className="font-medium text-green-600">
+                              $
+                              {pedidoSeleccionado.paidAmount?.toLocaleString() ||
+                                "0.00"}
+                            </span>
+                          </div>
+                        )}
+                      {pedidoSeleccionado.remainingAmount !== null &&
+                        pedidoSeleccionado.remainingAmount !== undefined &&
+                        pedidoSeleccionado.remainingAmount > 0 && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600">Pendiente:</span>
+                            <span className="font-medium text-orange-600">
+                              $
+                              {pedidoSeleccionado.remainingAmount?.toLocaleString() ||
+                                "0.00"}
+                            </span>
+                          </div>
+                        )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
