@@ -140,7 +140,9 @@ export interface RecentTransaction {
   id: string;
   baseAmount: number;
   tipAmount: number;
+  commission: number;
   totalAmount: number;
+  restaurantNet: number;
   createdAt: string;
   serviceType: string;
   orderIdentifier: string;
@@ -258,6 +260,11 @@ interface UseAnalyticsReturn {
     orderStatus: string,
     serviceType: string,
   ) => Promise<OrderItem[]>;
+  updateDishDeliveryStatus: (
+    dishId: string,
+    status: string,
+    serviceType: string,
+  ) => Promise<boolean>;
 
   // Utilidades
   clearError: () => void;
@@ -744,6 +751,69 @@ export function useAnalytics(): UseAnalyticsReturn {
     [getToken],
   );
 
+  // Actualizar estado de entrega de un platillo
+  const updateDishDeliveryStatus = useCallback(
+    async (
+      dishId: string,
+      status: string,
+      serviceType: string,
+    ): Promise<boolean> => {
+      try {
+        const token = await getToken();
+
+        // Determinar el endpoint según el tipo de servicio
+        let endpoint = "";
+        let method = "PUT";
+
+        switch (serviceType) {
+          case "flex-bill":
+            endpoint = `${API_BASE_URL}/api/dishes/${dishId}/status`;
+            break;
+          case "tap-order-pay":
+            endpoint = `${API_BASE_URL}/api/dish-orders/${dishId}/status`;
+            method = "PATCH";
+            break;
+          case "tap-pay":
+            endpoint = `${API_BASE_URL}/api/tap-pay/dishes/${dishId}/status`;
+            break;
+          case "room-service":
+            endpoint = `${API_BASE_URL}/api/dish-orders/${dishId}/status`;
+            method = "PATCH";
+            break;
+          case "pick-n-go":
+            endpoint = `${API_BASE_URL}/api/pick-and-go/dishes/${dishId}/status`;
+            break;
+          default:
+            console.error("Tipo de servicio no soportado:", serviceType);
+            return false;
+        }
+
+        const response = await fetch(endpoint, {
+          method,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          console.log("✅ Estado de platillo actualizado:", dishId, status);
+          return true;
+        }
+
+        console.error("Error al actualizar estado:", data.error);
+        return false;
+      } catch (error) {
+        console.error("Error al actualizar estado de platillo:", error);
+        return false;
+      }
+    },
+    [getToken],
+  );
+
   // Cargar restaurantes al inicializar
   useEffect(() => {
     if (user) {
@@ -793,6 +863,7 @@ export function useAnalytics(): UseAnalyticsReturn {
     getRecentTransactions,
     loadMoreTransactions,
     getOrderItems,
+    updateDishDeliveryStatus,
 
     // Utilidades
     clearError,

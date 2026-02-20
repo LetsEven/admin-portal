@@ -15,6 +15,7 @@ import {
   RotateCcwIcon,
   CrownIcon,
   StarIcon,
+  InfoIcon,
 } from "lucide-react";
 import {
   LineChart,
@@ -227,6 +228,7 @@ const Dashboard = () => {
     getDashboardSummary,
     getRecentTransactions,
     getOrderItems,
+    updateDishDeliveryStatus,
     clearError,
   } = useAnalytics();
 
@@ -258,6 +260,14 @@ const Dashboard = () => {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [itemsPedido, setItemsPedido] = useState<any[]>([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
+
+  // Estados para modal de cambio de estado de platillo
+  const [itemSeleccionado, setItemSeleccionado] = useState<any | null>(null);
+  const [mostrarModalEstado, setMostrarModalEstado] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [nuevoEstadoSeleccionado, setNuevoEstadoSeleccionado] = useState<
+    string | null
+  >(null);
 
   // Estados para filtros
   const [generoSeleccionado, setGeneroSeleccionado] = useState(
@@ -998,6 +1008,63 @@ const Dashboard = () => {
     setMostrarModal(false);
     setPedidoSeleccionado(null);
     setItemsPedido([]);
+  };
+
+  // Funciones para modal de cambio de estado de platillo
+  const abrirModalEstado = (item: any) => {
+    setItemSeleccionado(item);
+    setNuevoEstadoSeleccionado(item.estadoEntrega || "pending");
+    setMostrarModalEstado(true);
+  };
+
+  const cerrarModalEstado = () => {
+    setMostrarModalEstado(false);
+    setItemSeleccionado(null);
+    setNuevoEstadoSeleccionado(null);
+  };
+
+  const confirmarCambioEstado = async () => {
+    if (!itemSeleccionado || !pedidoSeleccionado || !nuevoEstadoSeleccionado)
+      return;
+
+    // No hacer nada si el estado es el mismo
+    if (
+      nuevoEstadoSeleccionado === (itemSeleccionado.estadoEntrega || "pending")
+    ) {
+      cerrarModalEstado();
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    try {
+      const success = await updateDishDeliveryStatus(
+        itemSeleccionado.id.toString(),
+        nuevoEstadoSeleccionado,
+        pedidoSeleccionado.serviceType,
+      );
+
+      if (success) {
+        // Actualizar el item en la lista local
+        setItemsPedido((prevItems) =>
+          prevItems.map((item) =>
+            item.id === itemSeleccionado.id
+              ? { ...item, estadoEntrega: nuevoEstadoSeleccionado }
+              : item,
+          ),
+        );
+        toast.success(
+          `Estado actualizado a "${nuevoEstadoSeleccionado === "delivered" ? "Entregado" : nuevoEstadoSeleccionado === "cooking" ? "Cocinando" : "Pendiente"}"`,
+        );
+        cerrarModalEstado();
+      } else {
+        toast.error("Error al actualizar el estado");
+      }
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+      toast.error("Error al actualizar el estado");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
   };
 
   // Función para cargar branches/sucursales
@@ -2408,7 +2475,11 @@ const Dashboard = () => {
                     </div>
                   ) : itemsPedido.length > 0 ? (
                     itemsPedido.map((item: any, index: number) => (
-                      <div key={index} className="bg-gray-50 rounded-lg p-3">
+                      <div
+                        key={index}
+                        className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={() => abrirModalEstado(item)}
+                      >
                         <div className="flex items-center gap-3">
                           {item.imagen ? (
                             <img
@@ -2481,35 +2552,83 @@ const Dashboard = () => {
                 </h4>
 
                 <div className="space-y-2">
+                  {/* Consumo */}
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Venta:</span>
+                    <span className="text-gray-600">Consumo:</span>
                     <span className="font-medium">
                       $
-                      {pedidoSeleccionado.baseAmount?.toLocaleString() ||
-                        "0.00"}
+                      {pedidoSeleccionado.baseAmount?.toLocaleString("es-MX", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }) || "0.00"}
                     </span>
                   </div>
 
+                  {/* Propina - solo si hay transacciones */}
                   {pedidoSeleccionado.tipAmount > 0 && (
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-gray-600">Propina:</span>
                       <span className="font-medium text-blue-600">
                         $
-                        {pedidoSeleccionado.tipAmount?.toLocaleString() ||
-                          "0.00"}
+                        {pedidoSeleccionado.tipAmount?.toLocaleString("es-MX", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }) || "0.00"}
                       </span>
                     </div>
                   )}
 
+                  {/* Comisiones - solo si hay transacciones */}
+                  {pedidoSeleccionado.commission > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">Comisiones:</span>
+                      <span className="font-medium text-gray-600">
+                        $
+                        {pedidoSeleccionado.commission?.toLocaleString(
+                          "es-MX",
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          },
+                        ) || "0.00"}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Total cobrado */}
                   <div className="border-t border-gray-200 pt-2 mt-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-base font-semibold text-gray-900">
-                        Total:
-                      </span>
+                      <div className="relative inline-flex items-center gap-1">
+                        <span className="text-base font-semibold text-gray-900 peer cursor-default">
+                          Total cobrado:
+                        </span>
+
+                        {pedidoSeleccionado.restaurantNet > 0 && (
+                          <>
+                            <InfoIcon className="size-3.5 text-gray-900" />
+
+                            <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 peer-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 pointer-events-none">
+                              Neto restaurante: $
+                              {pedidoSeleccionado.restaurantNet?.toLocaleString(
+                                "es-MX",
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                },
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
                       <span className="text-lg font-bold text-gray-900">
                         $
-                        {pedidoSeleccionado.totalAmount?.toLocaleString() ||
-                          "0.00"}
+                        {pedidoSeleccionado.totalAmount?.toLocaleString(
+                          "es-MX",
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          },
+                        ) || "0.00"}
                       </span>
                     </div>
                   </div>
@@ -2523,8 +2642,13 @@ const Dashboard = () => {
                             <span className="text-gray-600">Pagado:</span>
                             <span className="font-medium text-green-600">
                               $
-                              {pedidoSeleccionado.paidAmount?.toLocaleString() ||
-                                "0.00"}
+                              {pedidoSeleccionado.paidAmount?.toLocaleString(
+                                "es-MX",
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                },
+                              ) || "0.00"}
                             </span>
                           </div>
                         )}
@@ -2535,8 +2659,13 @@ const Dashboard = () => {
                             <span className="text-gray-600">Pendiente:</span>
                             <span className="font-medium text-orange-600">
                               $
-                              {pedidoSeleccionado.remainingAmount?.toLocaleString() ||
-                                "0.00"}
+                              {pedidoSeleccionado.remainingAmount?.toLocaleString(
+                                "es-MX",
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                },
+                              ) || "0.00"}
                             </span>
                           </div>
                         )}
@@ -2553,6 +2682,143 @@ const Dashboard = () => {
                 className="w-full bg-custom-green-600 text-white py-2 px-4 rounded-lg hover:bg-custom-green-700 transition-colors font-medium"
               >
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cambio de Estado de Platillo */}
+      {mostrarModalEstado && itemSeleccionado && (
+        <div className="fixed inset-0 overflow-y-auto z-[60] flex items-center justify-center">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]"
+            onClick={cerrarModalEstado}
+          ></div>
+          <div className="relative bg-white rounded-xl max-w-xs w-full mx-4 shadow-2xl">
+            {/* Header del Modal */}
+            <div className="px-4 py-3 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-gray-900">
+                  Cambiar Estado
+                </h3>
+                <button
+                  onClick={cerrarModalEstado}
+                  className="text-gray-400 hover:text-gray-500 transition-colors p-1 rounded-full hover:bg-gray-100"
+                >
+                  <XIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido del Modal */}
+            <div className="px-4 py-3">
+              {/* Info del platillo */}
+              <div className="flex items-center gap-2 mb-4 p-2 bg-gray-50 rounded-lg">
+                {itemSeleccionado.imagen ? (
+                  <img
+                    src={itemSeleccionado.imagen}
+                    alt={itemSeleccionado.nombre}
+                    className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+                    <ShoppingBagIcon className="h-4 w-4 text-gray-400" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {itemSeleccionado.nombre || "Producto sin nombre"}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Cantidad: {itemSeleccionado.cantidad || 0}
+                  </p>
+                </div>
+              </div>
+
+              {/* Opciones de estado */}
+              <div className="space-y-2">
+                {/* Pendiente */}
+                <button
+                  onClick={() => setNuevoEstadoSeleccionado("pending")}
+                  disabled={isUpdatingStatus}
+                  className={`w-full flex items-center justify-between p-2.5 rounded-lg border transition-all ${
+                    nuevoEstadoSeleccionado === "pending"
+                      ? "border-yellow-500 bg-yellow-50"
+                      : "border-gray-200 hover:border-yellow-300 hover:bg-yellow-50"
+                  } ${isUpdatingStatus ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-yellow-100 flex items-center justify-center">
+                      <ClockIcon className="h-4 w-4 text-yellow-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-900">
+                      Pendiente
+                    </p>
+                  </div>
+                  {nuevoEstadoSeleccionado === "pending" && (
+                    <CheckIcon className="h-4 w-4 text-yellow-600" />
+                  )}
+                </button>
+
+                {/* Cocinando */}
+                <button
+                  onClick={() => setNuevoEstadoSeleccionado("cooking")}
+                  disabled={isUpdatingStatus}
+                  className={`w-full flex items-center justify-between p-2.5 rounded-lg border transition-all ${
+                    nuevoEstadoSeleccionado === "cooking"
+                      ? "border-orange-500 bg-orange-50"
+                      : "border-gray-200 hover:border-orange-300 hover:bg-orange-50"
+                  } ${isUpdatingStatus ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center">
+                      <RotateCcwIcon className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-900">
+                      Cocinando
+                    </p>
+                  </div>
+                  {nuevoEstadoSeleccionado === "cooking" && (
+                    <CheckIcon className="h-4 w-4 text-orange-600" />
+                  )}
+                </button>
+
+                {/* Entregado */}
+                <button
+                  onClick={() => setNuevoEstadoSeleccionado("delivered")}
+                  disabled={isUpdatingStatus}
+                  className={`w-full flex items-center justify-between p-2.5 rounded-lg border transition-all ${
+                    nuevoEstadoSeleccionado === "delivered"
+                      ? "border-green-500 bg-green-50"
+                      : "border-gray-200 hover:border-green-300 hover:bg-green-50"
+                  } ${isUpdatingStatus ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center">
+                      <CheckIcon className="h-4 w-4 text-green-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-900">
+                      Entregado
+                    </p>
+                  </div>
+                  {nuevoEstadoSeleccionado === "delivered" && (
+                    <CheckIcon className="h-4 w-4 text-green-600" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Footer del Modal */}
+            <div className="px-4 py-3 border-t border-gray-200">
+              <button
+                onClick={confirmarCambioEstado}
+                disabled={isUpdatingStatus}
+                className={`w-full bg-blue-600 text-white py-2 px-3 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium ${
+                  isUpdatingStatus ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                {isUpdatingStatus ? "Actualizando..." : "Actualizar estatus"}
               </button>
             </div>
           </div>
