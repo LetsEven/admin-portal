@@ -1055,6 +1055,8 @@ const Dashboard = () => {
         toast.success(
           `Estado actualizado a "${nuevoEstadoSeleccionado === "delivered" ? "Entregado" : nuevoEstadoSeleccionado === "cooking" ? "Cocinando" : "Pendiente"}"`,
         );
+        // Recargar transacciones para actualizar el badge de entrega
+        cargarTransacciones(filtroFechaTransacciones, paginaTransacciones);
         cerrarModalEstado();
       } else {
         toast.error("Error al actualizar el estado");
@@ -2267,6 +2269,22 @@ const Dashboard = () => {
                                   ? "Pendiente"
                                   : tx.orderStatus}
                         </p>
+                        {/* Badge de estado de entrega */}
+                        <p
+                          className={`px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            tx.deliveryStatus === "complete"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : tx.deliveryStatus === "partial"
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          {tx.deliveryStatus === "complete"
+                            ? "Entregado"
+                            : tx.deliveryStatus === "partial"
+                              ? "Entrega parcial"
+                              : "Sin entregar"}
+                        </p>
                       </div>
                     </div>
                     <div className="mt-2 flex flex-col sm:flex-row sm:justify-between gap-2">
@@ -2443,6 +2461,18 @@ const Dashboard = () => {
                   </span>
                 </div>
 
+                {/* Nombre del cliente para Tap Order y Pick & Go */}
+                {pedidoSeleccionado.customerName &&
+                  (pedidoSeleccionado.serviceType === "tap-order-pay" ||
+                    pedidoSeleccionado.serviceType === "pick-n-go") && (
+                    <div className="flex items-center mb-2">
+                      <UserIcon className="h-4 w-4 text-gray-400 mr-2" />
+                      <span className="text-sm text-gray-700">
+                        {pedidoSeleccionado.customerName}
+                      </span>
+                    </div>
+                  )}
+
                 <div className="flex items-center mb-2">
                   <ClockIcon className="h-4 w-4 text-gray-400 mr-2" />
                   <span className="text-sm text-gray-500">
@@ -2505,6 +2535,14 @@ const Dashboard = () => {
                                 {item.precio ? item.precio.toFixed(2) : "0.00"}
                               </p>
                             </div>
+                            {/* Nombre del invitado para FlexBill */}
+                            {pedidoSeleccionado?.serviceType === "flex-bill" &&
+                              item.guestName && (
+                                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                  <UserIcon className="h-3 w-3" />
+                                  {item.guestName}
+                                </p>
+                              )}
                           </div>
                           <div className="text-right flex-shrink-0">
                             <p className="font-medium text-gray-900 text-sm">
@@ -2563,6 +2601,45 @@ const Dashboard = () => {
                       }) || "0.00"}
                     </span>
                   </div>
+
+                  {/* Pagado y Pendiente para FlexBill - entre consumo y propina */}
+                  {pedidoSeleccionado.serviceType === "flex-bill" && (
+                    <>
+                      {pedidoSeleccionado.paidAmount !== null &&
+                        pedidoSeleccionado.paidAmount !== undefined && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600">Pagado:</span>
+                            <span className="font-medium text-green-600">
+                              $
+                              {pedidoSeleccionado.paidAmount?.toLocaleString(
+                                "es-MX",
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                },
+                              ) || "0.00"}
+                            </span>
+                          </div>
+                        )}
+                      {pedidoSeleccionado.remainingAmount !== null &&
+                        pedidoSeleccionado.remainingAmount !== undefined &&
+                        pedidoSeleccionado.remainingAmount > 0 && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600">Pendiente:</span>
+                            <span className="font-medium text-orange-600">
+                              $
+                              {pedidoSeleccionado.remainingAmount?.toLocaleString(
+                                "es-MX",
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                },
+                              ) || "0.00"}
+                            </span>
+                          </div>
+                        )}
+                    </>
+                  )}
 
                   {/* Propina - solo si hay transacciones */}
                   {pedidoSeleccionado.tipAmount > 0 && (
@@ -2632,45 +2709,6 @@ const Dashboard = () => {
                       </span>
                     </div>
                   </div>
-
-                  {/* Campos de pago para FlexBill */}
-                  {pedidoSeleccionado.serviceType === "flex-bill" && (
-                    <div className="border-t border-gray-200 pt-2 mt-2 space-y-2">
-                      {pedidoSeleccionado.paidAmount !== null &&
-                        pedidoSeleccionado.paidAmount !== undefined && (
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-600">Pagado:</span>
-                            <span className="font-medium text-green-600">
-                              $
-                              {pedidoSeleccionado.paidAmount?.toLocaleString(
-                                "es-MX",
-                                {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                },
-                              ) || "0.00"}
-                            </span>
-                          </div>
-                        )}
-                      {pedidoSeleccionado.remainingAmount !== null &&
-                        pedidoSeleccionado.remainingAmount !== undefined &&
-                        pedidoSeleccionado.remainingAmount > 0 && (
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-600">Pendiente:</span>
-                            <span className="font-medium text-orange-600">
-                              $
-                              {pedidoSeleccionado.remainingAmount?.toLocaleString(
-                                "es-MX",
-                                {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                },
-                              ) || "0.00"}
-                            </span>
-                          </div>
-                        )}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

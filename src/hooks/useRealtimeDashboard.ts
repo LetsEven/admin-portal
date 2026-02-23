@@ -59,6 +59,7 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions) {
     joinRestaurant,
     leaveRestaurant,
     requestRefresh,
+    reconnect,
   } = useSocketContext();
   const previousRestaurantId = useRef<number | null>(null);
 
@@ -150,5 +151,6 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions) {
   return {
     isSocketConnected: isConnected,
     refreshData,
+    reconnectSocket: reconnect,
   };
 }

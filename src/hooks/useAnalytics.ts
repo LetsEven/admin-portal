@@ -92,10 +92,11 @@ export interface OrderItem {
   nombre: string;
   cantidad: number;
   precio: number;
-  precio_total: number;
-  estado_pago: string;
-  extras?: any;
-  imagen?: string;
+  precioTotal: number;
+  estadoPago: string;
+  estadoEntrega?: string;
+  imagen?: string | null;
+  guestName?: string | null;
 }
 
 // Tipos para orden activa
@@ -136,6 +137,11 @@ export interface Restaurant {
 }
 
 // Tipos para transacción reciente
+export interface PaymentBreakdown {
+  name: string;
+  amount: number;
+}
+
 export interface RecentTransaction {
   id: string;
   baseAmount: number;
@@ -147,18 +153,13 @@ export interface RecentTransaction {
   serviceType: string;
   orderIdentifier: string;
   orderStatus: string;
+  deliveryStatus: "none" | "partial" | "complete";
+  customerName?: string | null;
+  paymentsBreakdown?: PaymentBreakdown[] | null;
   // Campos adicionales para FlexBill (desde table_order)
   noItems?: number | null;
   paidAmount?: number | null;
   remainingAmount?: number | null;
-}
-
-export interface OrderItem {
-  nombre: string;
-  cantidad: number;
-  precio: number;
-  precioTotal: number;
-  estadoPago: string;
 }
 
 // Filtros para transacciones recientes
