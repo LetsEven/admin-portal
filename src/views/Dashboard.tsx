@@ -2311,7 +2311,10 @@ const Dashboard = () => {
                               )}
                             {tx.paidAmount !== null &&
                               tx.paidAmount !== undefined &&
-                              tx.paidAmount > 0 && (
+                              tx.paidAmount > 0 &&
+                              tx.remainingAmount !== null &&
+                              tx.remainingAmount !== undefined &&
+                              tx.remainingAmount > 0 && (
                                 <span className="text-green-600">
                                   Pagado: ${tx.paidAmount?.toLocaleString()}
                                 </span>
@@ -2658,7 +2661,7 @@ const Dashboard = () => {
                   {/* Comisiones - solo si hay transacciones */}
                   {pedidoSeleccionado.commission > 0 && (
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Comisiones:</span>
+                      <span className="text-gray-600">Comisión:</span>
                       <span className="font-medium text-gray-600">
                         $
                         {pedidoSeleccionado.commission?.toLocaleString(
@@ -2675,8 +2678,8 @@ const Dashboard = () => {
                   {/* Total cobrado */}
                   <div className="border-t border-gray-200 pt-2 mt-2">
                     <div className="flex justify-between items-center">
-                      <div className="relative inline-flex items-center gap-1">
-                        <span className="text-base font-semibold text-gray-900 peer cursor-default">
+                      <div className="relative inline-flex items-center gap-1 group/neto cursor-default">
+                        <span className="text-base font-semibold text-gray-900">
                           Total cobrado:
                         </span>
 
@@ -2684,7 +2687,7 @@ const Dashboard = () => {
                           <>
                             <InfoIcon className="size-3.5 text-gray-900" />
 
-                            <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 peer-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 pointer-events-none">
+                            <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover/neto:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 pointer-events-none">
                               Neto restaurante: $
                               {pedidoSeleccionado.restaurantNet?.toLocaleString(
                                 "es-MX",
