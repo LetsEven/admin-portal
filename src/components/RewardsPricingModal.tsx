@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { XIcon } from "lucide-react";
 import { useSubscriptionsApi, SubscriptionPlan, Subscription } from "../services/subscriptionsApi";
-import { useAuth } from "@clerk/nextjs";
 import toast from "react-hot-toast";
 import CardPaymentModal, { CardData } from "./CardPaymentModal";
 
@@ -47,6 +46,17 @@ const RewardsPricingModal: React.FC<RewardsPricingModalProps> = ({
   // Estados del modal de tarjeta
   const [showCardModal, setShowCardModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+
+  // Estados para downgrade programado
+  const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
+  const [pendingDowngradePlan, setPendingDowngradePlan] = useState<SubscriptionPlan | null>(null);
+
+  // Precios de los planes para comparar (orden de menor a mayor)
+  const planPriceOrder: Record<string, number> = {
+    basico: 0,
+    premium: 399,
+    ultra: 599
+  };
 
   // Cargar datos cuando el modal se abre
   useEffect(() => {
@@ -99,20 +109,96 @@ const RewardsPricingModal: React.FC<RewardsPricingModalProps> = ({
     }
   };
 
+  // Función para detectar si es un downgrade
+  const isDowngrade = (targetPlanId: string): boolean => {
+    if (!currentSubscription) return false;
+    const currentPrice = planPriceOrder[currentSubscription.plan_type] || 0;
+    const targetPrice = planPriceOrder[targetPlanId] || 0;
+    return targetPrice < currentPrice;
+  };
+
+  // Función para obtener fecha de fin del periodo actual
+  const getEndDateFormatted = (): string => {
+    if (!currentSubscription?.end_date) return 'el fin de tu periodo actual';
+    const endDate = new Date(currentSubscription.end_date);
+    return endDate.toLocaleDateString('es-MX', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
   const handleSelectPlan = async (plan: PlanForDisplay) => {
     if (plan.isCurrentPlan) {
       return;
     }
 
-    // Si es plan gratuito, usar lógica inteligente (crear o cambiar)
+    // Verificar si es un downgrade
+    if (isDowngrade(plan.planData.id)) {
+      // Mostrar confirmación de downgrade programado
+      setPendingDowngradePlan(plan.planData);
+      setShowDowngradeConfirm(true);
+      return;
+    }
+
+    // Si es plan gratuito (y es upgrade o primera vez), usar lógica inteligente
     if (plan.planData.free || plan.planData.price === 0) {
       await createOrChangePlan(plan.planData.id);
       return;
     }
 
-    // Para planes pagos, abrir modal de tarjeta
+    // Para upgrades a planes pagos, abrir modal de tarjeta
     setSelectedPlan(plan.planData);
     setShowCardModal(true);
+  };
+
+  // Función para procesar downgrade programado
+  const handleConfirmDowngrade = async () => {
+    if (!pendingDowngradePlan) return;
+
+    try {
+      setProcessingPayment(pendingDowngradePlan.id);
+
+      const result = await subscriptionsApi.scheduleDowngrade(pendingDowngradePlan.id);
+
+      if (result.success) {
+        toast.success(
+          `Cambio a plan ${pendingDowngradePlan.name} programado para ${getEndDateFormatted()}`,
+          { duration: 5000 }
+        );
+        setShowDowngradeConfirm(false);
+        setPendingDowngradePlan(null);
+        await loadSubscriptionData();
+      } else {
+        throw new Error(result.error || 'Error al programar cambio de plan');
+      }
+    } catch (error) {
+      console.error('Error scheduling downgrade:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al programar cambio de plan');
+    } finally {
+      setProcessingPayment(null);
+    }
+  };
+
+  // Función para cancelar downgrade programado
+  const handleCancelScheduledDowngrade = async () => {
+    try {
+      setProcessingPayment('cancelling');
+
+      const result = await subscriptionsApi.cancelScheduledDowngrade();
+
+      if (result.success) {
+        toast.success('Cambio de plan cancelado. Mantendrás tu plan actual.');
+        await loadSubscriptionData();
+      } else {
+        throw new Error(result.error || 'Error al cancelar cambio programado');
+      }
+    } catch (error) {
+      console.error('Error cancelling scheduled downgrade:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al cancelar cambio programado');
+    } finally {
+      setProcessingPayment(null);
+    }
   };
 
   // Función inteligente que decide si crear suscripción o cambiar plan
@@ -262,6 +348,24 @@ const RewardsPricingModal: React.FC<RewardsPricingModalProps> = ({
               )}
             </p>
           )}
+
+          {/* Indicador de downgrade programado */}
+          {currentSubscription?.scheduled_plan_change && (
+            <div className="mt-3 bg-yellow-500/20 border border-yellow-400/30 rounded-lg p-3 max-w-md mx-auto">
+              <p className="text-yellow-100 text-sm mb-2">
+                <strong>Cambio programado:</strong> Tu plan cambiará a{' '}
+                <span className="font-semibold">{currentSubscription.scheduled_plan_change}</span>{' '}
+                el {getEndDateFormatted()}
+              </p>
+              <button
+                onClick={handleCancelScheduledDowngrade}
+                disabled={processingPayment === 'cancelling'}
+                className="text-yellow-200 hover:text-white text-xs underline disabled:opacity-50"
+              >
+                {processingPayment === 'cancelling' ? 'Cancelando...' : 'Cancelar cambio programado'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Loading State */}
@@ -389,6 +493,64 @@ const RewardsPricingModal: React.FC<RewardsPricingModalProps> = ({
         plan={selectedPlan}
         loading={processingPayment !== null}
       />
+
+      {/* Modal de confirmación de downgrade */}
+      {showDowngradeConfirm && pendingDowngradePlan && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-60"
+            onClick={() => {
+              setShowDowngradeConfirm(false);
+              setPendingDowngradePlan(null);
+            }}
+          />
+          <div className="relative bg-white rounded-xl p-6 max-w-md mx-4 shadow-2xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-3">
+              Confirmar cambio de plan
+            </h3>
+            <div className="mb-4">
+              <p className="text-gray-600 text-sm mb-3">
+                Estás cambiando de <strong>{currentSubscription?.plan_type}</strong> a{' '}
+                <strong>{pendingDowngradePlan.name}</strong>.
+              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-blue-800 text-sm">
+                  <strong>El cambio se aplicará el {getEndDateFormatted()}</strong>
+                </p>
+                <p className="text-blue-700 text-xs mt-1">
+                  Seguirás disfrutando de tu plan actual hasta esa fecha. Al renovar, se cobrará el nuevo plan.
+                </p>
+              </div>
+              {pendingDowngradePlan.id === 'basico' && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
+                  <p className="text-yellow-800 text-sm">
+                    <strong>Nota:</strong> El plan básico solo permite 1 campaña activa.
+                    Las campañas excedentes serán pausadas automáticamente.
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowDowngradeConfirm(false);
+                  setPendingDowngradePlan(null);
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmDowngrade}
+                disabled={processingPayment !== null}
+                className="flex-1 px-4 py-2 bg-custom-green-600 text-white rounded-lg hover:bg-custom-green-700 text-sm font-medium disabled:opacity-50 disabled:cursor-wait"
+              >
+                {processingPayment ? 'Procesando...' : 'Confirmar cambio'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -37,10 +37,14 @@ export interface Subscription {
   ecartpay_customer_id?: string;
   start_date: string;
   end_date?: string;
+  next_billing_date?: string;
   auto_renew: boolean;
   price_paid: number;
   currency: string;
   days_remaining?: number;
+  renewal_attempts?: number;
+  scheduled_plan_change?: string | null;
+  renewal_reminder_sent?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -107,11 +111,6 @@ const handleApiResponse = async (response: Response) => {
 // ===============================================
 // FUNCIONES DE LA API
 // ===============================================
-
-// Funciones que requieren autenticación - se usan dentro del hook
-const createApiFunction = <T extends any[], R>(fn: (getToken: () => Promise<string | null>, ...args: T) => Promise<R>) => {
-  return (getToken: () => Promise<string | null>) => (...args: T) => fn(getToken, ...args);
-};
 
 // Obtener todos los planes disponibles (público)
 const getPlansInternal = async (): Promise<SubscriptionPlan[]> => {
@@ -241,12 +240,68 @@ const checkFeatureAccessInternal = async (getToken: () => Promise<string | null>
   }
 };
 
+// Programar un downgrade para el fin del ciclo de facturacion
+const scheduleDowngradeInternal = async (getToken: () => Promise<string | null>, targetPlan: string): Promise<PaymentResponse> => {
+  try {
+    const headers = await getAuthHeaders(getToken);
+
+    const response = await fetch(`${SUBSCRIPTIONS_BASE}/schedule-downgrade`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ target_plan: targetPlan }),
+    });
+
+    const result = await handleApiResponse(response);
+    return result;
+  } catch (error) {
+    console.error('Error scheduling downgrade:', error);
+    throw error;
+  }
+};
+
+// Cancelar un downgrade programado
+const cancelScheduledDowngradeInternal = async (getToken: () => Promise<string | null>): Promise<PaymentResponse> => {
+  try {
+    const headers = await getAuthHeaders(getToken);
+
+    const response = await fetch(`${SUBSCRIPTIONS_BASE}/schedule-downgrade`, {
+      method: 'DELETE',
+      headers,
+    });
+
+    const result = await handleApiResponse(response);
+    return result;
+  } catch (error) {
+    console.error('Error cancelling scheduled downgrade:', error);
+    throw error;
+  }
+};
+
+// Activar/desactivar renovacion automatica
+const toggleAutoRenewInternal = async (getToken: () => Promise<string | null>, autoRenew: boolean): Promise<PaymentResponse> => {
+  try {
+    const headers = await getAuthHeaders(getToken);
+
+    const response = await fetch(`${SUBSCRIPTIONS_BASE}/auto-renew`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ auto_renew: autoRenew }),
+    });
+
+    const result = await handleApiResponse(response);
+    return result;
+  } catch (error) {
+    console.error('Error toggling auto renew:', error);
+    throw error;
+  }
+};
+
 // ===============================================
 // HOOK REACT PERSONALIZADO
 // ===============================================
 
 export const useSubscriptionsApi = () => {
-  const { getToken, userId } = useAuth();
+  const { getToken } = useAuth();
 
   return {
     getPlans: getPlansInternal,
@@ -256,6 +311,10 @@ export const useSubscriptionsApi = () => {
     changePlan: (data: CreateSubscriptionData) => changePlanInternal(getToken, data),
     cancelSubscription: (subscriptionId: number) => cancelSubscriptionInternal(getToken, subscriptionId),
     checkFeatureAccess: (restaurantId: number, featureName: string) => checkFeatureAccessInternal(getToken, restaurantId, featureName),
+    // Nuevas funciones para renovacion automatica
+    scheduleDowngrade: (targetPlan: string) => scheduleDowngradeInternal(getToken, targetPlan),
+    cancelScheduledDowngrade: () => cancelScheduledDowngradeInternal(getToken),
+    toggleAutoRenew: (autoRenew: boolean) => toggleAutoRenewInternal(getToken, autoRenew),
   };
 };
 
