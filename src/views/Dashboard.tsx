@@ -1712,9 +1712,9 @@ const Dashboard = () => {
         </div>
 
         {/* Controles específicos para granularidad Hora */}
+        {/*
         {granularidadSeleccionada.id === "hora" && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 gap-3 sm:gap-4">
-            {/* Selector de día con calendario */}
             <div className="relative">
               <button
                 onClick={() => setCalendarioAbierto(!calendarioAbierto)}
@@ -1729,10 +1729,8 @@ const Dashboard = () => {
                 />
               </button>
 
-              {/* Calendario desplegable */}
               {calendarioAbierto && (
                 <div className="absolute left-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-20 p-4 w-64">
-                  {/* Header del calendario */}
                   <div className="flex items-center justify-between mb-4">
                     <button
                       onClick={() => cambiarMes(-1)}
@@ -1754,7 +1752,6 @@ const Dashboard = () => {
                     </button>
                   </div>
 
-                  {/* Días de la semana */}
                   <div className="grid grid-cols-7 gap-1 mb-2">
                     {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((dia) => (
                       <div
@@ -1766,7 +1763,6 @@ const Dashboard = () => {
                     ))}
                   </div>
 
-                  {/* Días del mes */}
                   <div className="grid grid-cols-7 gap-1">
                     {obtenerDiasDelMes(mesActual).map((diaInfo, index) => (
                       <button
@@ -1798,7 +1794,6 @@ const Dashboard = () => {
               )}
             </div>
 
-            {/* Range slider para horas */}
             <div className="flex-1 sm:mx-6">
               <div className="text-center mb-2">
                 <span className="text-xs sm:text-sm font-medium text-gray-700">
@@ -1807,9 +1802,7 @@ const Dashboard = () => {
                 </span>
               </div>
 
-              {/* Controles separados para cada slider */}
               <div className="space-y-4">
-                {/* Slider de hora inicio */}
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     Hora Inicio: {rangoHoras[0].toString().padStart(2, "0")}:00
@@ -1832,7 +1825,6 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Slider de hora final */}
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     Hora Final: {rangoHoras[1].toString().padStart(2, "0")}:00
@@ -1855,7 +1847,6 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Visualización del rango completo */}
                 <div className="mt-4">
                   <div className="text-xs text-gray-500 mb-1">
                     Rango seleccionado:
@@ -1869,7 +1860,6 @@ const Dashboard = () => {
                       }}
                     ></div>
                   </div>
-                  {/* Marcadores de tiempo */}
                   <div className="flex justify-between mt-2 text-xs text-gray-500">
                     <span>0:00</span>
                     <span>6:00</span>
@@ -1881,7 +1871,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-        )}
+        )}*/}
       </div>
 
       {/* Gráfico de Ingresos Totales */}
