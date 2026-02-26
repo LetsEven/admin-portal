@@ -1586,6 +1586,88 @@ const Dashboard = () => {
               </span>
             </div>
 
+            {/* Selector de día (para granularidad Hora) */}
+            {granularidadSeleccionada.id === "hora" && (
+              <div className="relative">
+                <button
+                  onClick={() => setCalendarioAbierto(!calendarioAbierto)}
+                  className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+                >
+                  <span className="text-xs sm:text-sm text-gray-600">Día:</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-800">
+                    {diaSeleccionado}
+                  </span>
+                  <ChevronDownIcon
+                    className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${calendarioAbierto ? "transform rotate-180" : ""}`}
+                  />
+                </button>
+
+                {calendarioAbierto && (
+                  <div className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-20 p-4 w-64">
+                    <div className="flex items-center justify-between mb-4">
+                      <button
+                        onClick={() => cambiarMes(-1)}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        <ChevronDownIcon className="h-4 w-4 transform rotate-90 text-gray-600" />
+                      </button>
+                      <h3 className="text-sm font-medium text-gray-900">
+                        {mesActual.toLocaleDateString("es-ES", {
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </h3>
+                      <button
+                        onClick={() => cambiarMes(1)}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        <ChevronDownIcon className="h-4 w-4 transform -rotate-90 text-gray-600" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1 mb-2">
+                      {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((dia) => (
+                        <div
+                          key={dia}
+                          className="text-xs font-medium text-gray-500 text-center p-2"
+                        >
+                          {dia}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1">
+                      {obtenerDiasDelMes(mesActual).map((diaInfo, index) => (
+                        <button
+                          key={index}
+                          onClick={() =>
+                            !diaInfo.esOtroMes && seleccionarDia(diaInfo.dia)
+                          }
+                          disabled={diaInfo.esOtroMes}
+                          className={`
+                            p-2 text-sm rounded transition-colors
+                            ${
+                              diaInfo.esOtroMes
+                                ? "text-gray-300 cursor-not-allowed"
+                                : "text-gray-700 hover:bg-gray-100 cursor-pointer"
+                            }
+                            ${
+                              diaInfo.dia === diaSeleccionadoCalendario &&
+                              !diaInfo.esOtroMes
+                                ? "bg-custom-green-500 text-white hover:bg-custom-green-600"
+                                : ""
+                            }
+                          `}
+                        >
+                          {diaInfo.dia}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Selector de mes (para granularidad Día) */}
             {granularidadSeleccionada.id === "dia" && (
               <div className="relative">
@@ -1711,167 +1793,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Controles específicos para granularidad Hora */}
-        {/*
-        {granularidadSeleccionada.id === "hora" && (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 gap-3 sm:gap-4">
-            <div className="relative">
-              <button
-                onClick={() => setCalendarioAbierto(!calendarioAbierto)}
-                className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
-              >
-                <span className="text-xs sm:text-sm text-gray-600">Día:</span>
-                <span className="text-xs sm:text-sm font-medium text-gray-800">
-                  {diaSeleccionado}
-                </span>
-                <ChevronDownIcon
-                  className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${calendarioAbierto ? "transform rotate-180" : ""}`}
-                />
-              </button>
-
-              {calendarioAbierto && (
-                <div className="absolute left-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-20 p-4 w-64">
-                  <div className="flex items-center justify-between mb-4">
-                    <button
-                      onClick={() => cambiarMes(-1)}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
-                    >
-                      <ChevronDownIcon className="h-4 w-4 transform rotate-90 text-gray-600" />
-                    </button>
-                    <h3 className="text-sm font-medium text-gray-900">
-                      {mesActual.toLocaleDateString("es-ES", {
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </h3>
-                    <button
-                      onClick={() => cambiarMes(1)}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
-                    >
-                      <ChevronDownIcon className="h-4 w-4 transform -rotate-90 text-gray-600" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-7 gap-1 mb-2">
-                    {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((dia) => (
-                      <div
-                        key={dia}
-                        className="text-xs font-medium text-gray-500 text-center p-2"
-                      >
-                        {dia}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="grid grid-cols-7 gap-1">
-                    {obtenerDiasDelMes(mesActual).map((diaInfo, index) => (
-                      <button
-                        key={index}
-                        onClick={() =>
-                          !diaInfo.esOtroMes && seleccionarDia(diaInfo.dia)
-                        }
-                        disabled={diaInfo.esOtroMes}
-                        className={`
-                          p-2 text-sm rounded transition-colors
-                          ${
-                            diaInfo.esOtroMes
-                              ? "text-gray-300 cursor-not-allowed"
-                              : "text-gray-700 hover:bg-gray-100 cursor-pointer"
-                          }
-                          ${
-                            diaInfo.dia === diaSeleccionadoCalendario &&
-                            !diaInfo.esOtroMes
-                              ? "bg-custom-green-500 text-white hover:bg-custom-green-600"
-                              : ""
-                          }
-                        `}
-                      >
-                        {diaInfo.dia}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1 sm:mx-6">
-              <div className="text-center mb-2">
-                <span className="text-xs sm:text-sm font-medium text-gray-700">
-                  Rango: {rangoHoras[0].toString().padStart(2, "0")}:00 -{" "}
-                  {rangoHoras[1].toString().padStart(2, "0")}:00
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Hora Inicio: {rangoHoras[0].toString().padStart(2, "0")}:00
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="range"
-                      min="0"
-                      max="23"
-                      value={rangoHoras[0]}
-                      onChange={(e) => {
-                        const newValue = parseInt(e.target.value);
-                        cambiarHoraInicio(newValue);
-                      }}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-inicio"
-                      style={{
-                        background: `linear-gradient(to right, #10b981 0%, #10b981 ${(rangoHoras[0] / 23) * 100}%, #e5e7eb ${(rangoHoras[0] / 23) * 100}%, #e5e7eb 100%)`,
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Hora Final: {rangoHoras[1].toString().padStart(2, "0")}:00
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="range"
-                      min="0"
-                      max="23"
-                      value={rangoHoras[1]}
-                      onChange={(e) => {
-                        const newValue = parseInt(e.target.value);
-                        cambiarHoraFin(newValue);
-                      }}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-final"
-                      style={{
-                        background: `linear-gradient(to right, #e5e7eb 0%, #e5e7eb ${(rangoHoras[1] / 23) * 100}%, #10b981 ${(rangoHoras[1] / 23) * 100}%, #10b981 100%)`,
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <div className="text-xs text-gray-500 mb-1">
-                    Rango seleccionado:
-                  </div>
-                  <div className="w-full h-3 bg-gray-200 rounded-full relative">
-                    <div
-                      className="h-3 bg-custom-green-500 rounded-full absolute"
-                      style={{
-                        left: `${(rangoHoras[0] / 23) * 100}%`,
-                        width: `${((rangoHoras[1] - rangoHoras[0]) / 23) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                  <div className="flex justify-between mt-2 text-xs text-gray-500">
-                    <span>0:00</span>
-                    <span>6:00</span>
-                    <span>12:00</span>
-                    <span>18:00</span>
-                    <span>23:00</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}*/}
       </div>
 
       {/* Gráfico de Ingresos Totales */}
