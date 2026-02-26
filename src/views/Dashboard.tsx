@@ -1792,7 +1792,6 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-
       </div>
 
       {/* Gráfico de Ingresos Totales */}
