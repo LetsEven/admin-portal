@@ -1057,6 +1057,12 @@ const Dashboard = () => {
         );
         // Recargar transacciones para actualizar el badge de entrega
         cargarTransacciones(filtroFechaTransacciones, paginaTransacciones);
+        // Recargar métricas del dashboard para actualizar Órdenes Activas
+        const restaurantId =
+          userRestaurants.length > 0 ? userRestaurants[0]?.id : null;
+        if (restaurantId) {
+          cargarDatosDashboard(restaurantId);
+        }
         cerrarModalEstado();
       } else {
         toast.error("Error al actualizar el estado");
