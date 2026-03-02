@@ -350,7 +350,7 @@ const Dashboard = () => {
         metricas: {
           ventasTotales: allServicesData.metricas.ventasTotales,
           propinasTotales: allServicesData.metricas.propinasTotales,
-          ordenesActivas: dashboardData?.metricas?.ordenesActivas || 0, // No disponible en allServices
+          ordenesActivas: allServicesData.metricas.ordenesActivas || 0,
           totalOrdenes: allServicesData.metricas.totalOrdenes, // Mesas/órdenes atendidas
           totalPedidos: allServicesData.metricas.totalPedidos, // Comensales individuales (difiere en FlexBill)
           pedidos: allServicesData.metricas.totalPedidos, // Alias para compatibilidad

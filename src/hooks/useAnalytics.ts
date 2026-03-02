@@ -39,6 +39,7 @@ export interface AllServicesMetrics {
   totalOrdenes: number; // Mesas/órdenes atendidas (table_order, tap_orders_and_pay, etc.)
   totalPedidos: number; // Comensales individuales (user_order para FlexBill, igual que órdenes para otros)
   ticketPromedio: number;
+  ordenesActivas: number; // Órdenes no pagadas o con platillos no entregados
 }
 
 // Desglose por servicio
@@ -662,7 +663,7 @@ export function useAnalytics(): UseAnalyticsReturn {
         const queryParams = buildQueryParams({
           ...filters,
           limit: filters.limit || 10,
-          offset: reset ? 0 : transactionsPagination.currentOffset,
+          offset: filters.offset ?? (reset ? 0 : transactionsPagination.currentOffset),
         });
 
         const response = await fetch(
