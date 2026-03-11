@@ -742,8 +742,7 @@ const PepperPage: React.FC = () => {
                         {/* Pepper Icon Video - Solo para respuestas de Pepper - Responsive */}
                         {message.role === "assistant" && (
                           <div
-                            className="absolute rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-emerald-400 shadow-lg flex items-center justify-center overflow-hidden
-                              w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8"
+                            className="absolute rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-emerald-400 shadow-lg flex items-center justify-center overflow-hidden w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8"
                             style={{
                               bottom: "-2px",
                               left: isMobile ? "-28px" : "-35px",
