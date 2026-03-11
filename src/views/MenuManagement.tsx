@@ -12,7 +12,11 @@ import MobileMenuPreview from "../components/MobileMenuPreview";
 import RestaurantHeader from "../components/RestaurantHeader";
 import { useMenuAdminPortalApi } from "../services/menuAdminPortalApi";
 import { MenuSection, MenuItem } from "../services/adminPortalApi";
-import { useMenuOnboarding, joyrideTheme, joyrideResponsiveCSS } from "../hooks/useMenuOnboarding";
+import {
+  useMenuOnboarding,
+  joyrideTheme,
+  joyrideResponsiveCSS,
+} from "../hooks/useMenuOnboarding";
 
 interface Branch {
   id: string;
@@ -58,14 +62,12 @@ const MenuManagement = () => {
       try {
         const sectionsData = await menuApi.sections.getAll();
 
-        // Use filtered items if branch is selected, otherwise get all items
-        const itemsData = selectedBranch
-          ? await menuApi.items.getAllByBranch(selectedBranch.id)
-          : await menuApi.items.getAll();
+        // Always get all items (don't filter by branch - we'll show "Agotado" badge instead)
+        const itemsData = await menuApi.items.getAll();
 
         // Sort sections by display_order to ensure proper ordering
         const sortedSections = sectionsData.sort(
-          (a, b) => a.display_order - b.display_order
+          (a, b) => a.display_order - b.display_order,
         );
         setSections(sortedSections);
         setMenuItems(itemsData);
@@ -81,7 +83,8 @@ const MenuManagement = () => {
           const itemsData = JSON.parse(savedItems);
 
           const sortedSections = sectionsData.sort(
-            (a, b) => a.display_order - b.display_order
+            (a: MenuSection, b: MenuSection) =>
+              a.display_order - b.display_order,
           );
           setSections(sortedSections);
           setMenuItems(itemsData);
@@ -137,7 +140,7 @@ const MenuManagement = () => {
   const [filterCategory, setFilterCategory] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(
-    null
+    null,
   );
 
   const allCategories = sections.map((s) => s.name);
@@ -219,11 +222,11 @@ const MenuManagement = () => {
           {
             duration: 4000,
             icon: "❌",
-          }
+          },
         );
 
         setError(
-          error instanceof Error ? error.message : "Failed to delete item"
+          error instanceof Error ? error.message : "Failed to delete item",
         );
       }
     }
@@ -304,14 +307,14 @@ const MenuManagement = () => {
   };
   const handleSectionFormSubmit = async (
     reorderedSections: MenuSection[],
-    newSectionNames: string[]
+    newSectionNames: string[],
   ) => {
     const loadingToast = toast.loading("Guardando cambios...");
 
     try {
       // 1. Handle reordering of existing sections
       const orderChanged = reorderedSections.some(
-        (section, index) => section.display_order !== index
+        (section, index) => section.display_order !== index,
       );
 
       if (orderChanged) {
@@ -326,7 +329,7 @@ const MenuManagement = () => {
               "⚠️ Skipping section with invalid/temporary ID:",
               section.id,
               "Name:",
-              section.name
+              section.name,
             );
             return false;
           }
@@ -340,7 +343,7 @@ const MenuManagement = () => {
               "Section restaurant_id:",
               section.restaurant_id,
               "Current restaurant_id:",
-              restaurant?.id
+              restaurant?.id,
             );
             return false;
           }
@@ -350,7 +353,7 @@ const MenuManagement = () => {
 
         if (validSections.length === 0) {
           console.warn(
-            "⚠️ No valid sections to reorder (all have temporary IDs)"
+            "⚠️ No valid sections to reorder (all have temporary IDs)",
           );
           toast.dismiss(loadingToast);
           toast.success("Cambios guardados correctamente");
@@ -381,7 +384,7 @@ const MenuManagement = () => {
       // 2. Handle section deletions
       const reorderedSectionNames = reorderedSections.map((s) => s.name);
       const sectionsToDelete = sections.filter(
-        (section) => !reorderedSectionNames.includes(section.name)
+        (section) => !reorderedSectionNames.includes(section.name),
       );
 
       for (const section of sectionsToDelete) {
@@ -398,7 +401,7 @@ const MenuManagement = () => {
           if (user) {
             localStorage.setItem(
               `sections_${user.id}`,
-              JSON.stringify(updatedSections)
+              JSON.stringify(updatedSections),
             );
           }
           return;
@@ -435,7 +438,7 @@ const MenuManagement = () => {
           if (user) {
             localStorage.setItem(
               `sections_${user.id}`,
-              JSON.stringify(updatedSections)
+              JSON.stringify(updatedSections),
             );
           }
           return;
@@ -453,7 +456,7 @@ const MenuManagement = () => {
       toast.dismiss(loadingToast);
       toast.error("Error al guardar los cambios");
       setError(
-        error instanceof Error ? error.message : "Failed to update sections"
+        error instanceof Error ? error.message : "Failed to update sections",
       );
     }
   };
@@ -484,12 +487,12 @@ const MenuManagement = () => {
   const itemsByCategory = sections.reduce(
     (acc, section) => {
       const items = filteredItems.filter(
-        (item) => item.section_id === section.id
+        (item) => item.section_id === section.id,
       );
       acc[section.name] = items;
       return acc;
     },
-    {} as Record<string, MenuItem[]>
+    {} as Record<string, MenuItem[]>,
   );
 
   if (!isHydrated || loading || restaurantLoading || !restaurant) {
@@ -540,7 +543,9 @@ const MenuManagement = () => {
         <div className="mt-4 sm:mt-6">
           <div className="text-center py-8 sm:py-12 px-4">
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 max-w-md mx-auto">
-              <p className="text-sm sm:text-base text-red-600 font-medium">Error al cargar datos</p>
+              <p className="text-sm sm:text-base text-red-600 font-medium">
+                Error al cargar datos
+              </p>
               <p className="text-red-500 text-xs sm:text-sm mt-1">{error}</p>
               <button
                 onClick={loadData}
@@ -630,7 +635,9 @@ const MenuManagement = () => {
                       <span className="text-base sm:text-lg font-bold text-gray-900">
                         $185.00
                       </span>
-                      <span className="text-[10px] sm:text-xs text-blue-600">Ejemplo</span>
+                      <span className="text-[10px] sm:text-xs text-blue-600">
+                        Ejemplo
+                      </span>
                     </div>
                   </div>
 
@@ -680,6 +687,8 @@ const MenuManagement = () => {
                         ""
                       }
                       image={item.image_url || ""}
+                      availableBranches={item.availableBranches || []}
+                      selectedBranchId={selectedBranch?.id || null}
                       onEdit={handleEditClick}
                       onDelete={handleDeleteClick}
                       data-tour={
@@ -710,7 +719,7 @@ const MenuManagement = () => {
                   )}
                 </div>
               </div>
-            )
+            ),
           )
         )}
       </div>
