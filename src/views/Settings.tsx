@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import Joyride from 'react-joyride';
+import Joyride from "react-joyride";
 import {
   SaveIcon,
   Upload,
@@ -15,7 +15,11 @@ import { useRestaurant } from "../hooks/useRestaurant";
 import { ImageUploadService } from "../services/imageUploadService";
 import ImageCropModal from "../components/ImageCropModal";
 import { useAdminPortalApi } from "../services/adminPortalApi";
-import { useSettingsOnboarding, joyrideTheme, joyrideResponsiveCSS } from "../hooks/useSettingsOnboarding";
+import {
+  useSettingsOnboarding,
+  joyrideTheme,
+  joyrideResponsiveCSS,
+} from "../hooks/useSettingsOnboarding";
 
 interface SettingsData {
   name: string;
@@ -57,7 +61,8 @@ const Settings = () => {
   const [settings, setSettings] = useState<SettingsData | null>(null);
 
   // Settings onboarding tour
-  const { run, steps, handleJoyrideCallback, startOnboarding } = useSettingsOnboarding();
+  const { run, steps, handleJoyrideCallback, startOnboarding } =
+    useSettingsOnboarding();
 
   // Estados para servicios habilitados
   const [isPickNGoEnabled, setIsPickNGoEnabled] = useState(false);
@@ -102,7 +107,7 @@ const Settings = () => {
   const validateHours = (
     day: string,
     field: string,
-    value: string | boolean
+    value: string | boolean,
   ): string | null => {
     if (!settings) return null;
 
@@ -235,7 +240,7 @@ const Settings = () => {
 
         console.error("❌ [Settings] Error loading enabled services:", error);
         // En caso de error, asumir que no están habilitados
-        setIsPickNGoEnabled(false);
+        setIsPickNGoEnabled(true);
         setIsFlexBillEnabled(false);
         setIsTapOrderPayEnabled(false);
       } finally {
@@ -251,7 +256,7 @@ const Settings = () => {
       loadEnabledServices();
     } else if (!user || !isSignedIn) {
       // Si no hay usuario, resetear estados
-      setIsPickNGoEnabled(false);
+      setIsPickNGoEnabled(true);
       setIsFlexBillEnabled(false);
       setIsTapOrderPayEnabled(false);
       setServicesLoading(false);
@@ -290,7 +295,7 @@ const Settings = () => {
             defaultBranch.name,
             "(ID:",
             defaultBranch.id,
-            ")"
+            ")",
           );
         }
       } catch (error) {
@@ -321,7 +326,7 @@ const Settings = () => {
   useEffect(() => {
     if (branches.length > 0 && selectedBranch && settings) {
       const selectedBranchData = branches.find(
-        (branch) => branch.id === selectedBranch
+        (branch) => branch.id === selectedBranch,
       );
       if (selectedBranchData) {
         const branchAddress = selectedBranchData.address || "";
@@ -372,7 +377,7 @@ const Settings = () => {
                 tableCount: selectedBranchData.tables || 0,
                 openingHours: formattedOpeningHours,
               }
-            : null
+            : null,
         );
 
         setOriginalAddress(branchAddress);
@@ -403,7 +408,7 @@ const Settings = () => {
   }, [isLoading, isSignedIn, user?.id, startOnboarding]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
@@ -434,7 +439,7 @@ const Settings = () => {
 
     // Buscar la sucursal seleccionada
     const selectedBranchData = branches.find(
-      (branch) => branch.id === branchId
+      (branch) => branch.id === branchId,
     );
 
     if (selectedBranchData && settings) {
@@ -463,7 +468,7 @@ const Settings = () => {
 
       console.log(
         "⏰ [Settings] Raw opening hours from branch:",
-        branchOpeningHours
+        branchOpeningHours,
       );
 
       // Convertir formato de base de datos a formato del frontend
@@ -479,7 +484,7 @@ const Settings = () => {
 
       console.log(
         "✨ [Settings] Formatted opening hours for UI:",
-        formattedOpeningHours
+        formattedOpeningHours,
       );
 
       // Actualizar dirección, horarios y número de mesas con datos de la sucursal
@@ -491,7 +496,7 @@ const Settings = () => {
               tableCount: selectedBranchData.tables || 0,
               openingHours: formattedOpeningHours,
             }
-          : null
+          : null,
       );
 
       // Actualizar estados originales y resetear estados de cambio
@@ -508,12 +513,12 @@ const Settings = () => {
           address: branchAddress,
           tableCount: selectedBranchData.tables || 0,
           openingHours: formattedOpeningHours,
-        }
+        },
       );
     } else {
       console.warn(
         "⚠️ [Settings] Branch not found or settings not available:",
-        branchId
+        branchId,
       );
     }
   };
@@ -521,14 +526,14 @@ const Settings = () => {
   const handleHoursChange = (
     day: string,
     field: string,
-    value: string | null
+    value: string | null,
   ) => {
     if (!settings) return;
 
     const validationError = validateHours(
       day,
       field,
-      field === "closed" ? !settings.openingHours[day].closed : value!
+      field === "closed" ? !settings.openingHours[day].closed : value!,
     );
 
     // Actualizar errores de validación
@@ -610,7 +615,7 @@ const Settings = () => {
       const publicUrl = await ImageUploadService.updateImage(
         file,
         "logo",
-        logoPreview // Delete old image if exists
+        logoPreview, // Delete old image if exists
       );
 
       await updateRestaurant({ logo_url: publicUrl });
@@ -709,7 +714,7 @@ const Settings = () => {
 
       const response = await adminPortalApi.updateBranchAddress(
         selectedBranch,
-        settings.address
+        settings.address,
       );
 
       if (response.success) {
@@ -718,8 +723,8 @@ const Settings = () => {
           prev.map((branch) =>
             branch.id === selectedBranch
               ? { ...branch, address: settings.address }
-              : branch
-          )
+              : branch,
+          ),
         );
 
         // Actualizar dirección original y resetear estado de cambio
@@ -738,7 +743,7 @@ const Settings = () => {
   // Descartar cambios de dirección
   const handleDiscardAddressChanges = () => {
     setSettings((prev) =>
-      prev ? { ...prev, address: originalAddress } : null
+      prev ? { ...prev, address: originalAddress } : null,
     );
     setIsAddressChanged(false);
   };
@@ -764,12 +769,12 @@ const Settings = () => {
       console.log(
         "💾 [Settings] Saving opening hours for branch:",
         selectedBranch,
-        dbFormatHours
+        dbFormatHours,
       );
 
       const response = await adminPortalApi.updateBranchOpeningHours(
         selectedBranch,
-        dbFormatHours
+        dbFormatHours,
       );
 
       console.log("📡 [Settings] API Response:", response);
@@ -781,24 +786,24 @@ const Settings = () => {
 
       if (isSuccessfulResponse) {
         console.log(
-          "✅ Opening hours saved successfully, updating local state..."
+          "✅ Opening hours saved successfully, updating local state...",
         );
         console.log(
           "🔍 [Settings] Response detected as successful (format:",
           response.success ? "standard" : "branch object",
-          ")"
+          ")",
         );
         console.log(
           "🔍 [Settings] Current settings.openingHours before update:",
-          settings.openingHours
+          settings.openingHours,
         );
         console.log(
           "🔍 [Settings] Current originalOpeningHours before update:",
-          originalOpeningHours
+          originalOpeningHours,
         );
         console.log(
           "🔍 [Settings] Current areHoursChanged before update:",
-          areHoursChanged
+          areHoursChanged,
         );
 
         // Actualizar la branch en el estado local con los nuevos horarios
@@ -806,15 +811,15 @@ const Settings = () => {
           const updatedBranches = prev.map((branch) =>
             branch.id === selectedBranch
               ? { ...branch, opening_hours: dbFormatHours }
-              : branch
+              : branch,
           );
           console.log(
             "🔄 [Settings] Updated branches state with new opening hours for branch:",
-            selectedBranch
+            selectedBranch,
           );
           console.log(
             "🔍 [Settings] Updated branch data:",
-            updatedBranches.find((b) => b.id === selectedBranch)
+            updatedBranches.find((b) => b.id === selectedBranch),
           );
           return updatedBranches;
         });
@@ -822,7 +827,7 @@ const Settings = () => {
         // Actualizar horarios originales y resetear estado de cambio
         console.log(
           "🔄 [Settings] Setting originalOpeningHours to:",
-          settings.openingHours
+          settings.openingHours,
         );
         setOriginalOpeningHours(settings.openingHours);
 
@@ -831,7 +836,7 @@ const Settings = () => {
 
         // Recargar branches desde el servidor para obtener los datos más recientes
         console.log(
-          "🔄 [Settings] Reloading branches from server to get fresh data..."
+          "🔄 [Settings] Reloading branches from server to get fresh data...",
         );
         try {
           const freshBranchesResponse = await adminPortalApi.getBranches();
@@ -847,7 +852,7 @@ const Settings = () => {
         }
 
         console.log(
-          "✅ Horarios de apertura actualizados correctamente en estado local"
+          "✅ Horarios de apertura actualizados correctamente en estado local",
         );
       } else {
         console.error("❌ API returned error:", response);
@@ -863,7 +868,7 @@ const Settings = () => {
   const handleDiscardHoursChanges = () => {
     if (originalOpeningHours) {
       setSettings((prev) =>
-        prev ? { ...prev, openingHours: originalOpeningHours } : null
+        prev ? { ...prev, openingHours: originalOpeningHours } : null,
       );
       setAreHoursChanged(false);
 
@@ -915,7 +920,7 @@ const Settings = () => {
       };
       localStorage.setItem(
         "restaurantLocalSettings",
-        JSON.stringify(localSettings)
+        JSON.stringify(localSettings),
       );
 
       setSaveStatus("success");
@@ -990,7 +995,10 @@ const Settings = () => {
 
         <div className="flex items-center space-x-2">
           {/* Selector de Sucursal */}
-          <div className="flex items-center space-x-1.5 sm:space-x-2 mr-4 sm:mr-8" data-tour="branches-tables">
+          <div
+            className="flex items-center space-x-1.5 sm:space-x-2 mr-4 sm:mr-8"
+            data-tour="branches-tables"
+          >
             <label className="text-xs sm:text-sm font-medium text-gray-700">
               Sucursal:
             </label>
@@ -1021,7 +1029,10 @@ const Settings = () => {
       </div>
       <form onSubmit={handleSubmit} className="mt-6 space-y-8">
         {/* Restaurant Information */}
-        <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6" data-tour="restaurant-info">
+        <div
+          className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6"
+          data-tour="restaurant-info"
+        >
           <div className="md:grid md:grid-cols-3 md:gap-6">
             <div className="md:col-span-1">
               <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
@@ -1203,7 +1214,7 @@ const Settings = () => {
                           {selectedBranch !== "all"
                             ? (() => {
                                 const selectedBranchData = branches.find(
-                                  (b) => b.id === selectedBranch
+                                  (b) => b.id === selectedBranch,
                                 );
                                 return selectedBranchData ? (
                                   <>
@@ -1282,7 +1293,10 @@ const Settings = () => {
           </div>
         </div>
         {/* Opening Hours */}
-        <div className="bg-white shadow px-3 sm:px-4 py-4 sm:py-5 sm:rounded-lg sm:p-6" data-tour="opening-hours">
+        <div
+          className="bg-white shadow px-3 sm:px-4 py-4 sm:py-5 sm:rounded-lg sm:p-6"
+          data-tour="opening-hours"
+        >
           <div className="sm:grid sm:grid-cols-3 sm:gap-6">
             <div className="sm:col-span-1">
               <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
@@ -1295,7 +1309,10 @@ const Settings = () => {
             <div className="mt-4 sm:mt-0 sm:col-span-2">
               <div className="space-y-3 sm:space-y-4">
                 {Object.entries(days).map(([day, label]) => (
-                  <div key={day} className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 gap-x-4">
+                  <div
+                    key={day}
+                    className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 gap-x-4"
+                  >
                     {/* Línea 1 en móvil: Día + Checkbox */}
                     <div className="flex items-center gap-3 sm:gap-0 sm:contents">
                       <div className="w-16 sm:w-24">
@@ -1309,7 +1326,9 @@ const Settings = () => {
                           name={`closed-${day}`}
                           type="checkbox"
                           checked={settings.openingHours[day].closed}
-                          onChange={() => handleHoursChange(day, "closed", null)}
+                          onChange={() =>
+                            handleHoursChange(day, "closed", null)
+                          }
                           className="h-4 w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
                         />
                         <label
@@ -1337,7 +1356,9 @@ const Settings = () => {
                             className="block w-full shadow-sm text-xs sm:text-sm border-gray-300 rounded-md focus:ring-custom-green-500 focus:border-custom-green-500"
                           />
                         </div>
-                        <span className="text-xs sm:text-base text-gray-500">a</span>
+                        <span className="text-xs sm:text-base text-gray-500">
+                          a
+                        </span>
                         <div className="flex items-center">
                           <label htmlFor={`close-${day}`} className="sr-only">
                             Cierra
@@ -1422,7 +1443,10 @@ const Settings = () => {
           </div>
         </div>
         {/* Notifications */}
-        <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6" data-tour="notifications">
+        <div
+          className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6"
+          data-tour="notifications"
+        >
           <div className="md:grid md:grid-cols-3 md:gap-6">
             <div className="md:col-span-1">
               <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
@@ -1657,12 +1681,12 @@ const Settings = () => {
         steps={steps}
         styles={joyrideTheme}
         locale={{
-          back: 'Atrás',
-          close: 'Cerrar',
-          last: 'Finalizar',
-          next: 'Siguiente',
+          back: "Atrás",
+          close: "Cerrar",
+          last: "Finalizar",
+          next: "Siguiente",
           nextLabelWithProgress: `Siguiente {step} de {steps}`,
-          skip: 'Saltar tour',
+          skip: "Saltar tour",
         }}
       />
     </div>
