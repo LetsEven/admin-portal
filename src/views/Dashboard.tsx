@@ -16,6 +16,7 @@ import {
   CrownIcon,
   StarIcon,
   InfoIcon,
+  NotepadText,
 } from "lucide-react";
 import {
   LineChart,
@@ -1053,7 +1054,7 @@ const Dashboard = () => {
           ),
         );
         toast.success(
-          `Estado actualizado a "${nuevoEstadoSeleccionado === "delivered" ? "Entregado" : nuevoEstadoSeleccionado === "cooking" ? "Cocinando" : "Pendiente"}"`,
+          `Estado actualizado a "${nuevoEstadoSeleccionado === "delivered" ? "Entregado" : nuevoEstadoSeleccionado === "cooking" ? "Listo" : "Recibido"}"`,
         );
         // Recargar transacciones para actualizar el badge de entrega
         cargarTransacciones(filtroFechaTransacciones, paginaTransacciones);
@@ -2149,15 +2150,41 @@ const Dashboard = () => {
                 >
                   <div className="px-4 py-4 sm:px-6 rounded-lg">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-custom-green-600 truncate">
-                        {tx.orderIdentifier}
-                      </p>
-                      <div className="ml-2 flex-shrink-0 flex gap-2">
-                        <p className="px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      <div className="flex items-center gap-2">
+                        {tx.folio && (
+                          <span className="text-sm text-custom-green-600">
+                            #{tx.folio}
+                          </span>
+                        )}
+                        <p className="text-sm font-medium text-custom-green-600 truncate">
                           {tx.serviceType === "flex-bill"
-                            ? "FlexBill"
+                            ? tx.paymentsBreakdown &&
+                              tx.paymentsBreakdown.length > 0
+                              ? `${tx.paymentsBreakdown.length} usuario${tx.paymentsBreakdown.length > 1 ? "s" : ""}`
+                              : "Sin usuarios"
+                            : tx.customerName || "Cliente"}
+                        </p>
+                      </div>
+                      <div className="ml-2 flex-shrink-0 flex gap-2">
+                        <p
+                          className={`px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            tx.serviceType === "flex-bill"
+                              ? "bg-purple-100 text-purple-800"
+                              : tx.serviceType === "tap-order-pay"
+                                ? "bg-blue-100 text-blue-800"
+                                : tx.serviceType === "pick-n-go"
+                                  ? "bg-orange-100 text-orange-800"
+                                  : tx.serviceType === "room-service"
+                                    ? "bg-pink-100 text-pink-800"
+                                    : tx.serviceType === "tap-pay"
+                                      ? "bg-cyan-100 text-cyan-800"
+                                      : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {tx.serviceType === "flex-bill"
+                            ? "Flex Bill"
                             : tx.serviceType === "tap-order-pay"
-                              ? "Tap Order"
+                              ? "Tap Order & Pay"
                               : tx.serviceType === "pick-n-go"
                                 ? "Pick & Go"
                                 : tx.serviceType === "room-service"
@@ -2213,7 +2240,8 @@ const Dashboard = () => {
                         </p>
                         <p className="flex items-center text-xs text-custom-green-600 font-medium">
                           <ShoppingCartIcon className="flex-shrink-0 mr-1.5 h-3 w-3 text-custom-green-500" />
-                          Venta: ${tx.baseAmount?.toLocaleString() || 0}
+                          {tx.orderIdentifier} | Venta: $
+                          {tx.baseAmount?.toLocaleString() || 0}
                         </p>
                         {/* Campos adicionales para FlexBill */}
                         {tx.serviceType === "flex-bill" && (
@@ -2260,7 +2288,16 @@ const Dashboard = () => {
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <p>{new Date(tx.createdAt).toLocaleString("es-ES")}</p>
+                        <p>
+                          {new Date(tx.createdAt).toLocaleString("es-ES", {
+                            day: "numeric",
+                            month: "numeric",
+                            year: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true,
+                          })}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -2484,8 +2521,8 @@ const Dashboard = () => {
                               {item.estadoEntrega === "delivered"
                                 ? "Entregado"
                                 : item.estadoEntrega === "cooking"
-                                  ? "Cocinando"
-                                  : "Pendiente"}
+                                  ? "Listo"
+                                  : "Recibido"}
                             </span>
                           </div>
                         </div>
@@ -2695,7 +2732,7 @@ const Dashboard = () => {
 
               {/* Opciones de estado */}
               <div className="space-y-2">
-                {/* Pendiente */}
+                {/* Recibido */}
                 <button
                   onClick={() => setNuevoEstadoSeleccionado("pending")}
                   disabled={isUpdatingStatus}
@@ -2707,10 +2744,10 @@ const Dashboard = () => {
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-yellow-100 flex items-center justify-center">
-                      <ClockIcon className="h-4 w-4 text-yellow-600" />
+                      <NotepadText className="h-4 w-4 text-yellow-600" />
                     </div>
                     <p className="text-sm font-medium text-gray-900">
-                      Pendiente
+                      Recibido
                     </p>
                   </div>
                   {nuevoEstadoSeleccionado === "pending" && (
@@ -2718,7 +2755,7 @@ const Dashboard = () => {
                   )}
                 </button>
 
-                {/* Cocinando */}
+                {/* Listo */}
                 <button
                   onClick={() => setNuevoEstadoSeleccionado("cooking")}
                   disabled={isUpdatingStatus}
@@ -2730,11 +2767,9 @@ const Dashboard = () => {
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center">
-                      <RotateCcwIcon className="h-4 w-4 text-orange-600" />
+                      <ClockIcon className="h-4 w-4 text-orange-600" />
                     </div>
-                    <p className="text-sm font-medium text-gray-900">
-                      Cocinando
-                    </p>
+                    <p className="text-sm font-medium text-gray-900">Listo</p>
                   </div>
                   {nuevoEstadoSeleccionado === "cooking" && (
                     <CheckIcon className="h-4 w-4 text-orange-600" />

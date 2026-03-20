@@ -161,6 +161,8 @@ export interface RecentTransaction {
   noItems?: number | null;
   paidAmount?: number | null;
   remainingAmount?: number | null;
+  // Folio de la orden (POS o interno)
+  folio?: string | null;
 }
 
 // Filtros para transacciones recientes
@@ -663,7 +665,9 @@ export function useAnalytics(): UseAnalyticsReturn {
         const queryParams = buildQueryParams({
           ...filters,
           limit: filters.limit || 10,
-          offset: filters.offset ?? (reset ? 0 : transactionsPagination.currentOffset),
+          offset:
+            filters.offset ??
+            (reset ? 0 : transactionsPagination.currentOffset),
         });
 
         const response = await fetch(
