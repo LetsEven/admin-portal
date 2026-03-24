@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import ImageCropModal from './ImageCropModal';
 import BannerCropModal from './BannerCropModal';
 import BranchDropdown from './BranchDropdown';
+import SyncButton from './SyncButton';
 import { ImageUploadService } from '../services/imageUploadService';
 import { useUser } from '@clerk/nextjs';
 import { useAdminPortalApi } from '../services/adminPortalApi';
@@ -29,6 +30,7 @@ interface RestaurantHeaderProps {
   onViewMenuClick?: () => void;
   selectedBranch?: Branch | null;
   onBranchChange?: (branch: Branch | null) => void;
+  onSyncComplete?: () => void;
   'data-tour'?: string;
 }
 
@@ -45,6 +47,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
   onViewMenuClick,
   selectedBranch,
   onBranchChange,
+  onSyncComplete,
   'data-tour': dataTour
 }) => {
   const { user } = useUser();
@@ -520,7 +523,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
         <div className="flex flex-col space-y-1.5 sm:flex-row sm:space-y-0 sm:space-x-2">
           {/* Branch Selector */}
           {branches.length > 0 && (
-            <div className="sm:mr-3">
+            <div className="flex items-center space-x-2 sm:mr-3">
               <button
                 ref={branchButtonRef}
                 onClick={() => setShowBranchDropdown(!showBranchDropdown)}
@@ -536,6 +539,14 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({
                   showBranchDropdown ? 'rotate-180' : ''
                 }`} />
               </button>
+
+              {/* Sync Button - Solo visible si hay sucursal seleccionada */}
+              {selectedBranch && (
+                <SyncButton
+                  branchId={selectedBranch.id}
+                  onSyncComplete={onSyncComplete}
+                />
+              )}
             </div>
           )}
 

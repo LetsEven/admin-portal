@@ -574,6 +574,7 @@ const MenuManagement = () => {
         onViewMenuClick={() => setShowMobilePreview(true)}
         selectedBranch={selectedBranch}
         onBranchChange={setSelectedBranch}
+        onSyncComplete={loadData}
       />
 
       <div className="mt-4 sm:mt-6">
