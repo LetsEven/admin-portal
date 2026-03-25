@@ -154,7 +154,7 @@ export interface RecentTransaction {
   serviceType: string;
   orderIdentifier: string;
   orderStatus: string;
-  deliveryStatus: "none" | "partial" | "complete";
+  deliveryStatus: "none" | "preparing" | "partial_ready" | "ready" | "partial" | "complete";
   customerName?: string | null;
   paymentsBreakdown?: PaymentBreakdown[] | null;
   // Campos adicionales para FlexBill (desde table_order)

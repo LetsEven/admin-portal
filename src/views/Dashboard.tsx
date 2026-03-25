@@ -1014,7 +1014,7 @@ const Dashboard = () => {
   // Funciones para modal de cambio de estado de platillo
   const abrirModalEstado = (item: any) => {
     setItemSeleccionado(item);
-    setNuevoEstadoSeleccionado(item.estadoEntrega || "pending");
+    setNuevoEstadoSeleccionado(item.estadoEntrega || "preparing");
     setMostrarModalEstado(true);
   };
 
@@ -1030,7 +1030,8 @@ const Dashboard = () => {
 
     // No hacer nada si el estado es el mismo
     if (
-      nuevoEstadoSeleccionado === (itemSeleccionado.estadoEntrega || "pending")
+      nuevoEstadoSeleccionado ===
+      (itemSeleccionado.estadoEntrega || "preparing")
     ) {
       cerrarModalEstado();
       return;
@@ -1054,7 +1055,7 @@ const Dashboard = () => {
           ),
         );
         toast.success(
-          `Estado actualizado a "${nuevoEstadoSeleccionado === "delivered" ? "Entregado" : nuevoEstadoSeleccionado === "cooking" ? "Listo" : "Recibido"}"`,
+          `Estado actualizado a "${nuevoEstadoSeleccionado === "delivered" ? "Entregado" : nuevoEstadoSeleccionado === "ready" ? "Listo" : "Preparando"}"`,
         );
         // Recargar transacciones para actualizar el badge de entrega
         cargarTransacciones(filtroFechaTransacciones, paginaTransacciones);
@@ -2219,14 +2220,22 @@ const Dashboard = () => {
                               ? "bg-emerald-100 text-emerald-800"
                               : tx.deliveryStatus === "partial"
                                 ? "bg-amber-100 text-amber-800"
-                                : "bg-gray-100 text-gray-600"
+                                : tx.deliveryStatus === "ready"
+                                  ? "bg-cyan-100 text-cyan-800"
+                                  : tx.deliveryStatus === "partial_ready"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-gray-100 text-gray-600"
                           }`}
                         >
                           {tx.deliveryStatus === "complete"
                             ? "Entregado"
                             : tx.deliveryStatus === "partial"
                               ? "Entrega parcial"
-                              : "Sin entregar"}
+                              : tx.deliveryStatus === "ready"
+                                ? "Listo"
+                                : tx.deliveryStatus === "partial_ready"
+                                  ? "Parcialmente listo"
+                                  : "Preparando"}
                         </p>
                       </div>
                     </div>
@@ -2513,16 +2522,16 @@ const Dashboard = () => {
                               className={`mt-1 inline-block px-1.5 py-0.5 rounded text-xs font-medium ${
                                 item.estadoEntrega === "delivered"
                                   ? "bg-green-100 text-green-700"
-                                  : item.estadoEntrega === "cooking"
+                                  : item.estadoEntrega === "ready"
                                     ? "bg-orange-100 text-orange-700"
                                     : "bg-yellow-100 text-yellow-700"
                               }`}
                             >
                               {item.estadoEntrega === "delivered"
                                 ? "Entregado"
-                                : item.estadoEntrega === "cooking"
+                                : item.estadoEntrega === "ready"
                                   ? "Listo"
-                                  : "Recibido"}
+                                  : "Preparando"}
                             </span>
                           </div>
                         </div>
@@ -2732,12 +2741,12 @@ const Dashboard = () => {
 
               {/* Opciones de estado */}
               <div className="space-y-2">
-                {/* Recibido */}
+                {/* Preparando */}
                 <button
-                  onClick={() => setNuevoEstadoSeleccionado("pending")}
+                  onClick={() => setNuevoEstadoSeleccionado("preparing")}
                   disabled={isUpdatingStatus}
                   className={`w-full flex items-center justify-between p-2.5 rounded-lg border transition-all ${
-                    nuevoEstadoSeleccionado === "pending"
+                    nuevoEstadoSeleccionado === "preparing"
                       ? "border-yellow-500 bg-yellow-50"
                       : "border-gray-200 hover:border-yellow-300 hover:bg-yellow-50"
                   } ${isUpdatingStatus ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -2747,20 +2756,20 @@ const Dashboard = () => {
                       <NotepadText className="h-4 w-4 text-yellow-600" />
                     </div>
                     <p className="text-sm font-medium text-gray-900">
-                      Recibido
+                      Preparando
                     </p>
                   </div>
-                  {nuevoEstadoSeleccionado === "pending" && (
+                  {nuevoEstadoSeleccionado === "preparing" && (
                     <CheckIcon className="h-4 w-4 text-yellow-600" />
                   )}
                 </button>
 
                 {/* Listo */}
                 <button
-                  onClick={() => setNuevoEstadoSeleccionado("cooking")}
+                  onClick={() => setNuevoEstadoSeleccionado("ready")}
                   disabled={isUpdatingStatus}
                   className={`w-full flex items-center justify-between p-2.5 rounded-lg border transition-all ${
-                    nuevoEstadoSeleccionado === "cooking"
+                    nuevoEstadoSeleccionado === "ready"
                       ? "border-orange-500 bg-orange-50"
                       : "border-gray-200 hover:border-orange-300 hover:bg-orange-50"
                   } ${isUpdatingStatus ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -2771,7 +2780,7 @@ const Dashboard = () => {
                     </div>
                     <p className="text-sm font-medium text-gray-900">Listo</p>
                   </div>
-                  {nuevoEstadoSeleccionado === "cooking" && (
+                  {nuevoEstadoSeleccionado === "ready" && (
                     <CheckIcon className="h-4 w-4 text-orange-600" />
                   )}
                 </button>
