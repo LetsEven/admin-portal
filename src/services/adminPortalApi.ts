@@ -1,10 +1,11 @@
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from "@clerk/nextjs";
 
 // ===============================================
 // CONFIGURACIÓN DE LA API
 // ===============================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 const ADMIN_PORTAL_BASE = `${API_BASE_URL}/api/admin-portal`;
 
 // ===============================================
@@ -72,7 +73,7 @@ export interface MenuItem {
 
 export interface CustomField {
   id: string;
-  type: 'dropdown' | 'checkboxes' | 'dropdown-quantity';
+  type: "dropdown" | "checkboxes" | "dropdown-quantity";
   name: string;
   required: boolean;
   maxSelections?: number; // Para checkboxes: cantidad máxima seleccionable (1-4)
@@ -170,7 +171,7 @@ class AdminPortalApiService {
       // Por ahora retornamos null para manejar la autenticación externamente
       return null;
     } catch (error) {
-      console.error('Error getting auth token:', error);
+      console.error("Error getting auth token:", error);
       return null;
     }
   }
@@ -178,19 +179,19 @@ class AdminPortalApiService {
   private async makeRequest<T>(
     endpoint: string,
     options: RequestInit = {},
-    token?: string
+    token?: string,
   ): Promise<T> {
     try {
       const url = `${ADMIN_PORTAL_BASE}${endpoint}`;
 
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...((options.headers as Record<string, string>) || {}),
       };
 
       // Agregar token de autenticación si está disponible
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        headers["Authorization"] = `Bearer ${token}`;
       }
 
       const response = await fetch(url, {
@@ -200,13 +201,15 @@ class AdminPortalApiService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`,
+        );
       }
 
       const data = await response.json();
 
       if (!data.success) {
-        throw new Error(data.message || 'API request failed');
+        throw new Error(data.message || "API request failed");
       }
 
       return data.data;
@@ -220,24 +223,42 @@ class AdminPortalApiService {
   // MÉTODOS DE AUTENTICACIÓN Y USUARIO
   // ===============================================
 
-  async syncUserFromClerk(clerkUserData: any, token?: string): Promise<UserWithRestaurant> {
-    return this.makeRequest<UserWithRestaurant>('/auth/sync', {
-      method: 'POST',
-      body: JSON.stringify(clerkUserData),
-    }, token);
+  async syncUserFromClerk(
+    clerkUserData: any,
+    token?: string,
+  ): Promise<UserWithRestaurant> {
+    return this.makeRequest<UserWithRestaurant>(
+      "/auth/sync",
+      {
+        method: "POST",
+        body: JSON.stringify(clerkUserData),
+      },
+      token,
+    );
   }
 
   async getCurrentUser(token: string): Promise<UserWithRestaurant> {
-    return this.makeRequest<UserWithRestaurant>('/auth/me', {
-      method: 'GET',
-    }, token);
+    return this.makeRequest<UserWithRestaurant>(
+      "/auth/me",
+      {
+        method: "GET",
+      },
+      token,
+    );
   }
 
-  async updateUserProfile(updateData: Partial<AdminPortalUser>, token: string): Promise<AdminPortalUser> {
-    return this.makeRequest<AdminPortalUser>('/users/profile', {
-      method: 'PUT',
-      body: JSON.stringify(updateData),
-    }, token);
+  async updateUserProfile(
+    updateData: Partial<AdminPortalUser>,
+    token: string,
+  ): Promise<AdminPortalUser> {
+    return this.makeRequest<AdminPortalUser>(
+      "/users/profile",
+      {
+        method: "PUT",
+        body: JSON.stringify(updateData),
+      },
+      token,
+    );
   }
 
   // ===============================================
@@ -245,23 +266,41 @@ class AdminPortalApiService {
   // ===============================================
 
   async getRestaurant(token: string): Promise<Restaurant> {
-    return this.makeRequest<Restaurant>('/restaurant', {
-      method: 'GET',
-    }, token);
+    return this.makeRequest<Restaurant>(
+      "/restaurant",
+      {
+        method: "GET",
+      },
+      token,
+    );
   }
 
-  async createRestaurant(restaurantData: { name: string; description?: string }, token: string): Promise<Restaurant> {
-    return this.makeRequest<Restaurant>('/restaurant', {
-      method: 'POST',
-      body: JSON.stringify(restaurantData),
-    }, token);
+  async createRestaurant(
+    restaurantData: { name: string; description?: string },
+    token: string,
+  ): Promise<Restaurant> {
+    return this.makeRequest<Restaurant>(
+      "/restaurant",
+      {
+        method: "POST",
+        body: JSON.stringify(restaurantData),
+      },
+      token,
+    );
   }
 
-  async updateRestaurant(updateData: Partial<Restaurant>, token: string): Promise<Restaurant> {
-    return this.makeRequest<Restaurant>('/restaurant', {
-      method: 'PUT',
-      body: JSON.stringify(updateData),
-    }, token);
+  async updateRestaurant(
+    updateData: Partial<Restaurant>,
+    token: string,
+  ): Promise<Restaurant> {
+    return this.makeRequest<Restaurant>(
+      "/restaurant",
+      {
+        method: "PUT",
+        body: JSON.stringify(updateData),
+      },
+      token,
+    );
   }
 
   // ===============================================
@@ -269,9 +308,13 @@ class AdminPortalApiService {
   // ===============================================
 
   async getCompleteMenu(token: string): Promise<MenuSection[]> {
-    return this.makeRequest<MenuSection[]>('/menu', {
-      method: 'GET',
-    }, token);
+    return this.makeRequest<MenuSection[]>(
+      "/menu",
+      {
+        method: "GET",
+      },
+      token,
+    );
   }
 
   // ===============================================
@@ -279,9 +322,13 @@ class AdminPortalApiService {
   // ===============================================
 
   async getDashboardStats(token: string): Promise<DashboardStats> {
-    return this.makeRequest<DashboardStats>('/dashboard/stats', {
-      method: 'GET',
-    }, token);
+    return this.makeRequest<DashboardStats>(
+      "/dashboard/stats",
+      {
+        method: "GET",
+      },
+      token,
+    );
   }
 
   // ===============================================
@@ -291,21 +338,29 @@ class AdminPortalApiService {
   async setupUserAndRestaurant(
     userData: Partial<AdminPortalUser>,
     restaurantData: Partial<Restaurant>,
-    token: string
+    token: string,
   ): Promise<UserWithRestaurant> {
-    return this.makeRequest<UserWithRestaurant>('/setup', {
-      method: 'POST',
-      body: JSON.stringify({
-        user_data: userData,
-        restaurant_data: restaurantData,
-      }),
-    }, token);
+    return this.makeRequest<UserWithRestaurant>(
+      "/setup",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          user_data: userData,
+          restaurant_data: restaurantData,
+        }),
+      },
+      token,
+    );
   }
 
   async getSetupStatus(token: string): Promise<SetupStatus> {
-    return this.makeRequest<SetupStatus>('/setup/status', {
-      method: 'GET',
-    }, token);
+    return this.makeRequest<SetupStatus>(
+      "/setup/status",
+      {
+        method: "GET",
+      },
+      token,
+    );
   }
 
   // ===============================================
@@ -313,29 +368,100 @@ class AdminPortalApiService {
   // ===============================================
 
   async getEnabledServices(token: string): Promise<EnabledServices> {
-    return this.makeRequest<EnabledServices>('/services/enabled', {
-      method: 'GET',
-    }, token);
+    return this.makeRequest<EnabledServices>(
+      "/services/enabled",
+      {
+        method: "GET",
+      },
+      token,
+    );
   }
 
   async getBranches(token: string): Promise<ClientBranches> {
-    return this.makeRequest<ClientBranches>('/branches', {
-      method: 'GET',
-    }, token);
+    return this.makeRequest<ClientBranches>(
+      "/branches",
+      {
+        method: "GET",
+      },
+      token,
+    );
   }
 
-  async updateBranchAddress(branchId: string, address: string, token: string): Promise<UpdateBranchAddressResponse> {
-    return this.makeRequest<UpdateBranchAddressResponse>(`/branches/${branchId}/address`, {
-      method: 'PUT',
-      body: JSON.stringify({ address }),
-    }, token);
+  async updateBranchAddress(
+    branchId: string,
+    address: string,
+    token: string,
+  ): Promise<UpdateBranchAddressResponse> {
+    return this.makeRequest<UpdateBranchAddressResponse>(
+      `/branches/${branchId}/address`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ address }),
+      },
+      token,
+    );
   }
 
-  async updateBranchOpeningHours(branchId: string, openingHours: any, token: string): Promise<UpdateBranchOpeningHoursResponse> {
-    return this.makeRequest<UpdateBranchOpeningHoursResponse>(`/branches/${branchId}/opening-hours`, {
-      method: 'PUT',
-      body: JSON.stringify({ opening_hours: openingHours }),
-    }, token);
+  async updateBranchOpeningHours(
+    branchId: string,
+    openingHours: any,
+    token: string,
+  ): Promise<UpdateBranchOpeningHoursResponse> {
+    return this.makeRequest<UpdateBranchOpeningHoursResponse>(
+      `/branches/${branchId}/opening-hours`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ opening_hours: openingHours }),
+      },
+      token,
+    );
+  }
+
+  // ===============================================
+  // MÉTODOS DE POS INTEGRATION
+  // ===============================================
+
+  async getBranchPosIntegration(
+    branchId: string,
+    token: string,
+  ): Promise<{ provider_id: string; sync_token: string | null } | null> {
+    try {
+      const url = `${API_BASE_URL}/api/pos/branch/${branchId}/integration`;
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+
+      const response = await fetch(url, { headers });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        return null;
+      }
+
+      // Si no hay integración (hasIntegration es false), devolver null
+      if (!data.hasIntegration || !data.integration) {
+        return null;
+      }
+
+      // Si existe la integración, devolver el provider_id y el sync_token (puede ser null si no lo tiene)
+      return {
+        provider_id: data.integration.provider_id,
+        sync_token: data.integration.credentials?.sync_token || null,
+      };
+    } catch (error) {
+      console.error(
+        `Failed to fetch POS integration for branch ${branchId}:`,
+        error,
+      );
+      return null;
+    }
   }
 }
 
@@ -375,7 +501,7 @@ function setCachedData<T>(key: string, data: T, userId: string): void {
   cache.set(key, {
     data,
     timestamp: Date.now(),
-    userId
+    userId,
   });
 }
 
@@ -400,13 +526,15 @@ export function useAdminPortalApi() {
 
   const makeAuthenticatedRequest = async <T>(
     requestFn: (token: string) => Promise<T>,
-    cacheKey?: string
+    cacheKey?: string,
   ): Promise<T> => {
     try {
       const token = await getToken();
 
       if (!token || !userId) {
-        throw new Error(`User not authenticated - token: ${!!token}, userId: ${userId}`);
+        throw new Error(
+          `User not authenticated - token: ${!!token}, userId: ${userId}`,
+        );
       }
 
       // Verificar cache si se proporciona una clave
@@ -426,79 +554,110 @@ export function useAdminPortalApi() {
 
       return result;
     } catch (error) {
-      console.error('Authenticated request failed:', error);
+      console.error("Authenticated request failed:", error);
       throw error;
     }
   };
 
   return {
     // Métodos de usuario
-    getCurrentUser: () => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.getCurrentUser(token),
-      'getCurrentUser' // Cache key
-    ),
-    updateUserProfile: (data: Partial<AdminPortalUser>) => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.updateUserProfile(data, token)
-    ),
+    getCurrentUser: () =>
+      makeAuthenticatedRequest(
+        (token) => adminPortalApiService.getCurrentUser(token),
+        "getCurrentUser", // Cache key
+      ),
+    updateUserProfile: (data: Partial<AdminPortalUser>) =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.updateUserProfile(data, token),
+      ),
 
     // Métodos de restaurante
-    getRestaurant: () => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.getRestaurant(token)
-    ),
-    createRestaurant: (data: { name: string; description?: string }) => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.createRestaurant(data, token)
-    ),
-    updateRestaurant: (data: Partial<Restaurant>) => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.updateRestaurant(data, token)
-    ),
+    getRestaurant: () =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.getRestaurant(token),
+      ),
+    createRestaurant: (data: { name: string; description?: string }) =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.createRestaurant(data, token),
+      ),
+    updateRestaurant: (data: Partial<Restaurant>) =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.updateRestaurant(data, token),
+      ),
 
     // Métodos de menú
-    getCompleteMenu: () => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.getCompleteMenu(token)
-    ),
+    getCompleteMenu: () =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.getCompleteMenu(token),
+      ),
 
     // Métodos de dashboard
-    getDashboardStats: () => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.getDashboardStats(token)
-    ),
+    getDashboardStats: () =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.getDashboardStats(token),
+      ),
 
     // Métodos de configuración
-    setupUserAndRestaurant: (userData: Partial<AdminPortalUser>, restaurantData: Partial<Restaurant>) =>
-      makeAuthenticatedRequest(
-        (token) => adminPortalApiService.setupUserAndRestaurant(userData, restaurantData, token)
+    setupUserAndRestaurant: (
+      userData: Partial<AdminPortalUser>,
+      restaurantData: Partial<Restaurant>,
+    ) =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.setupUserAndRestaurant(
+          userData,
+          restaurantData,
+          token,
+        ),
       ),
-    getSetupStatus: () => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.getSetupStatus(token)
-    ),
+    getSetupStatus: () =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.getSetupStatus(token),
+      ),
 
     // Métodos de servicios
-    getEnabledServices: () => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.getEnabledServices(token)
-    ),
-    getBranches: () => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.getBranches(token)
-    ),
-    updateBranchAddress: (branchId: string, address: string) => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.updateBranchAddress(branchId, address, token)
-    ),
-    updateBranchOpeningHours: (branchId: string, openingHours: any) => makeAuthenticatedRequest(
-      (token) => adminPortalApiService.updateBranchOpeningHours(branchId, openingHours, token)
-    ),
+    getEnabledServices: () =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.getEnabledServices(token),
+      ),
+    getBranches: () =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.getBranches(token),
+      ),
+    updateBranchAddress: (branchId: string, address: string) =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.updateBranchAddress(branchId, address, token),
+      ),
+    updateBranchOpeningHours: (branchId: string, openingHours: any) =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.updateBranchOpeningHours(
+          branchId,
+          openingHours,
+          token,
+        ),
+      ),
+    getBranchPosIntegration: (branchId: string) =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.getBranchPosIntegration(branchId, token),
+      ),
 
     // Sincronización inicial (puede no requerir auth)
     syncUserFromClerk: async (clerkUserData: any) => {
       try {
         const token = await getToken();
-        return adminPortalApiService.syncUserFromClerk(clerkUserData, token || undefined);
+        return adminPortalApiService.syncUserFromClerk(
+          clerkUserData,
+          token || undefined,
+        );
       } catch (error) {
-        console.error('Sync user from Clerk failed:', error);
+        console.error("Sync user from Clerk failed:", error);
         throw error;
       }
     },
 
     // Métodos de cache
     clearCache: () => clearCache(),
-    clearUserCache: (targetUserId?: string) => clearUserCache(targetUserId || userId || '')
+    clearUserCache: (targetUserId?: string) =>
+      clearUserCache(targetUserId || userId || ""),
   };
 }
 
@@ -516,29 +675,31 @@ export default adminPortalApiService;
 let authHook: (() => { getToken: () => Promise<string | null> }) | null = null;
 let authHookInitialized = false;
 
-export function setAuthHook(hook: () => { getToken: () => Promise<string | null> }) {
+export function setAuthHook(
+  hook: () => { getToken: () => Promise<string | null> },
+) {
   if (authHookInitialized) {
-    console.log('Auth hook already initialized, skipping...');
+    console.log("Auth hook already initialized, skipping...");
     return;
   }
 
-  console.log('Initializing auth hook...');
+  console.log("Initializing auth hook...");
   authHook = hook;
   authHookInitialized = true;
 }
 
 export async function getAuthToken(): Promise<string | null> {
   if (!authHook) {
-    throw new Error('Auth hook not initialized. Call setAuthHook first.');
+    throw new Error("Auth hook not initialized. Call setAuthHook first.");
   }
 
   const { getToken } = authHook();
   const token = await getToken();
 
   if (token) {
-    console.log('Auth token obtained successfully');
+    console.log("Auth token obtained successfully");
   } else {
-    console.warn('No auth token available');
+    console.warn("No auth token available");
   }
 
   return token;

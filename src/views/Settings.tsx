@@ -9,6 +9,8 @@ import {
   ExternalLink,
   Copy,
   Check,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { useRestaurant } from "../hooks/useRestaurant";
@@ -51,6 +53,13 @@ interface BranchData {
   active: boolean;
   created_at: string;
   updated_at: string;
+  opening_hours?: {
+    [key: string]: {
+      open_time: string;
+      close_time: string;
+      is_closed: boolean;
+    };
+  };
 }
 
 const Settings = () => {
@@ -173,13 +182,25 @@ const Settings = () => {
 
   // Upload states
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const [saveStatus, setSaveStatus] = useState(null);
+  const [saveStatus, setSaveStatus] = useState<
+    "saving" | "success" | "error" | null
+  >(null);
   const [validationErrors, setValidationErrors] = useState<{
     [key: string]: string;
   }>({});
 
   // Pick & Go URL state
   const [copySuccess, setCopySuccess] = useState(false);
+
+  // POS Integration state
+  const [posIntegration, setPosIntegration] = useState<{
+    providerId: string;
+    syncToken: string | null;
+  } | null>(null);
+  const [posIntegrationLoading, setPosIntegrationLoading] = useState(false);
+  const [copySuccessBranchId, setCopySuccessBranchId] = useState(false);
+  const [copySuccessToken, setCopySuccessToken] = useState(false);
+  const [showToken, setShowToken] = useState(false);
 
   // Sincronizar estado local con datos del restaurante
   useEffect(() => {
@@ -282,7 +303,7 @@ const Settings = () => {
         if (!isMounted) return;
 
         console.log("✅ [Settings] Branches loaded:", response);
-        const loadedBranches = response.branches || [];
+        const loadedBranches = (response.branches || []) as BranchData[];
         setBranches(loadedBranches);
 
         // Establecer primera sucursal activa como predeterminada si no hay ninguna seleccionada
@@ -359,7 +380,9 @@ const Settings = () => {
         };
 
         // Convertir formato de base de datos a formato del frontend
-        const formattedOpeningHours = {};
+        const formattedOpeningHours: {
+          [key: string]: { open: string; close: string; closed: boolean };
+        } = {};
         Object.keys(branchOpeningHours).forEach((day) => {
           const dayData = branchOpeningHours[day];
           formattedOpeningHours[day] = {
@@ -406,6 +429,64 @@ const Settings = () => {
       return () => clearTimeout(timer);
     }
   }, [isLoading, isSignedIn, user?.id, startOnboarding]);
+
+  // Cargar integración POS cuando cambie la sucursal seleccionada
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPosIntegration = async () => {
+      if (!selectedBranch || !user || !isSignedIn) {
+        setPosIntegration(null);
+        setShowToken(false);
+        return;
+      }
+
+      try {
+        setPosIntegrationLoading(true);
+        setShowToken(false); // Ocultar token al cambiar de sucursal
+        console.log(
+          "🔍 [Settings] Loading POS integration for branch:",
+          selectedBranch,
+        );
+
+        const integration =
+          await adminPortalApi.getBranchPosIntegration(selectedBranch);
+
+        if (!isMounted) return;
+
+        if (integration) {
+          setPosIntegration({
+            providerId: integration.provider_id,
+            syncToken: integration.sync_token || null,
+          });
+          console.log(
+            "✅ [Settings] POS integration loaded:",
+            integration.provider_id,
+            "- Token:",
+            integration.sync_token ? "presente" : "no requerido",
+          );
+        } else {
+          setPosIntegration(null);
+          console.log("ℹ️ [Settings] No POS integration found for this branch");
+        }
+      } catch (error) {
+        if (!isMounted) return;
+
+        console.error("❌ [Settings] Error loading POS integration:", error);
+        setPosIntegration(null);
+      } finally {
+        if (isMounted) {
+          setPosIntegrationLoading(false);
+        }
+      }
+    };
+
+    loadPosIntegration();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedBranch, user?.id, isSignedIn]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -472,7 +553,9 @@ const Settings = () => {
       );
 
       // Convertir formato de base de datos a formato del frontend
-      const formattedOpeningHours = {};
+      const formattedOpeningHours: {
+        [key: string]: { open: string; close: string; closed: boolean };
+      } = {};
       Object.keys(branchOpeningHours).forEach((day) => {
         const dayData = branchOpeningHours[day];
         formattedOpeningHours[day] = {
@@ -580,7 +663,7 @@ const Settings = () => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    input.onchange = async (e) => {
+    input.onchange = async (e: Event) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         try {
@@ -694,6 +777,61 @@ const Settings = () => {
     }
   };
 
+  // Copiar Branch ID al portapapeles
+  const copyBranchId = async () => {
+    if (!selectedBranch) return;
+
+    try {
+      await navigator.clipboard.writeText(selectedBranch);
+      setCopySuccessBranchId(true);
+      setTimeout(() => setCopySuccessBranchId(false), 2000);
+    } catch (error) {
+      console.error("Error copying branch ID:", error);
+      // Fallback
+      const textArea = document.createElement("textarea");
+      textArea.value = selectedBranch;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        setCopySuccessBranchId(true);
+        setTimeout(() => setCopySuccessBranchId(false), 2000);
+      } catch (fallbackError) {
+        console.error("Fallback copy failed:", fallbackError);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  // Copiar Token POS al portapapeles
+  const copyPosToken = async () => {
+    const token = posIntegration?.syncToken;
+    if (!token) return;
+
+    try {
+      await navigator.clipboard.writeText(token);
+      setCopySuccessToken(true);
+      setTimeout(() => setCopySuccessToken(false), 2000);
+    } catch (error) {
+      console.error("Error copying POS token:", error);
+      // Fallback
+      const textArea = document.createElement("textarea");
+      textArea.value = token;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        setCopySuccessToken(true);
+        setTimeout(() => setCopySuccessToken(false), 2000);
+      } catch (fallbackError) {
+        console.error("Fallback copy failed:", fallbackError);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
   // Manejar cambios en el input de dirección
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newAddress = e.target.value;
@@ -756,7 +894,13 @@ const Settings = () => {
       setIsUpdatingHours(true);
 
       // Convertir formato del frontend al formato de base de datos
-      const dbFormatHours = {};
+      const dbFormatHours: {
+        [key: string]: {
+          open_time: string;
+          close_time: string;
+          is_closed: boolean;
+        };
+      } = {};
       Object.keys(settings.openingHours).forEach((day) => {
         const dayData = settings.openingHours[day];
         dbFormatHours[day] = {
@@ -781,8 +925,10 @@ const Settings = () => {
 
       // Manejar diferentes formatos de respuesta del API
       const isSuccessfulResponse =
-        response.success === true ||
-        (response.id && response.name && response.opening_hours); // Si es un objeto branch directamente
+        (response as any).success === true ||
+        ((response as any).id &&
+          (response as any).name &&
+          (response as any).opening_hours); // Si es un objeto branch directamente
 
       if (isSuccessfulResponse) {
         console.log(
@@ -841,11 +987,11 @@ const Settings = () => {
         try {
           const freshBranchesResponse = await adminPortalApi.getBranches();
           if (
-            freshBranchesResponse.success &&
-            freshBranchesResponse.data?.branches
+            (freshBranchesResponse as any).success &&
+            (freshBranchesResponse as any).data?.branches
           ) {
             console.log("✅ [Settings] Fresh branches loaded from server");
-            setBranches(freshBranchesResponse.data.branches);
+            setBranches((freshBranchesResponse as any).data.branches);
           }
         } catch (error) {
           console.error("❌ [Settings] Error reloading branches:", error);
@@ -880,7 +1026,7 @@ const Settings = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!settings) return;
@@ -1292,6 +1438,141 @@ const Settings = () => {
             </div>
           </div>
         </div>
+
+        {/* POS Integration Info */}
+        {selectedBranch && posIntegrationLoading && (
+          <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+            <div className="flex items-center justify-center py-4">
+              <div className="h-6 w-6 border-2 border-custom-green-500 border-t-transparent rounded-full animate-spin mr-3"></div>
+              <span className="text-sm text-gray-600">
+                Cargando información de integración...
+              </span>
+            </div>
+          </div>
+        )}
+
+        {selectedBranch && !posIntegrationLoading && !posIntegration && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 sm:px-5 sm:py-4">
+            <p className="text-xs sm:text-sm text-blue-700">
+              Esta sucursal no tiene integración POS configurada. Puedes
+              solicitarla al equipo de Xquisito.
+            </p>
+          </div>
+        )}
+
+        {selectedBranch && !posIntegrationLoading && posIntegration && (
+          <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+            <div className="md:grid md:grid-cols-3 md:gap-6">
+              <div className="md:col-span-1">
+                <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
+                  Información de integración POS
+                </h3>
+                <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                  Datos de conexión con el sistema punto de venta.
+                </p>
+              </div>
+              <div className="mt-5 md:mt-0 md:col-span-2">
+                <div className="space-y-4">
+                  {/* Branch ID */}
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                      ID de Sucursal
+                    </label>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                      <div className="flex-1 bg-gray-50 border border-gray-300 rounded-md px-2.5 sm:px-3 py-1.5 sm:py-2 min-w-0">
+                        <code className="text-xs sm:text-sm text-gray-700 break-all">
+                          {selectedBranch}
+                        </code>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={copyBranchId}
+                        className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors flex-shrink-0"
+                        title="Copiar ID"
+                      >
+                        {copySuccessBranchId ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 mr-1" />
+                            <span className="text-green-500">¡Copiado!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+                            Copiar
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* POS Token */}
+                  {posIntegration.syncToken ? (
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                        Token de Sincronización
+                      </label>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                        <div className="flex-1 bg-gray-50 border border-gray-300 rounded-md px-2.5 sm:px-3 py-1.5 sm:py-2 min-w-0">
+                          <code className="text-xs sm:text-sm text-gray-700 break-all">
+                            {showToken
+                              ? posIntegration.syncToken
+                              : "••••••••••••••••••••••••"}
+                          </code>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setShowToken(!showToken)}
+                            className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
+                            title={
+                              showToken ? "Ocultar token" : "Mostrar token"
+                            }
+                          >
+                            {showToken ? (
+                              <EyeOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            ) : (
+                              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={copyPosToken}
+                            className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
+                            title="Copiar Token"
+                          >
+                            {copySuccessToken ? (
+                              <>
+                                <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 mr-1" />
+                                <span className="text-green-500">
+                                  ¡Copiado!
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+                                Copiar
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Este token se utiliza para sincronizar órdenes con el
+                        sistema POS.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-xs sm:text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
+                      ℹ️ Esta integración POS no requiere token de
+                      sincronización.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Opening Hours */}
         <div
           className="bg-white shadow px-3 sm:px-4 py-4 sm:py-5 sm:rounded-lg sm:p-6"
