@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { Check, ExternalLink } from "lucide-react";
 import Image from "next/image";
@@ -6,7 +8,6 @@ interface PaymentProvider {
   id: string;
   name: string;
   description: string;
-  features: string[];
   logo: string;
   gradient: string;
   headerBg: string;
@@ -21,12 +22,6 @@ const paymentProviders: PaymentProvider[] = [
     name: "eCartPay",
     description:
       "Solución de pagos integrada con Xquisito. Acepta tarjetas, transferencias y más.",
-    features: [
-      "Hasta 18 MSI",
-      "2.9% de comisión",
-      "Soporte 24/7 en español",
-      "Integración Apple Pay & Google Pay",
-    ],
     logo: "/ecartpay_logo.webp",
     gradient: "from-emerald-500 to-teal-600",
     headerBg: "bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700",
@@ -38,12 +33,6 @@ const paymentProviders: PaymentProvider[] = [
     name: "Clip",
     description:
       "Pasarela de pago líder en México. Acepta todas las tarjetas y ofrece múltiples opciones de cobro.",
-    features: [
-      "Hasta 24 MSI",
-      "3.6% de comisión",
-      "Acepta todas las tarjetas",
-      "Pagos sin contacto (NFC)",
-    ],
     logo: "/clip_logo.png",
     gradient: "from-orange-500 to-amber-600",
     headerBg: "bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-600",
@@ -52,8 +41,9 @@ const paymentProviders: PaymentProvider[] = [
   },
 ];
 
-const Pvp = () => {
+const Pdp = () => {
   const [isHovering, setIsHovering] = useState<string | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<string>("ecartpay");
 
   const handleOpenWebsite = (url: string) => {
     window.open(url, "_blank", "noopener,noreferrer");
@@ -77,18 +67,28 @@ const Pvp = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         {paymentProviders.map((provider) => {
           const isHovered = isHovering === provider.id;
+          const isSelected = selectedProvider === provider.id;
 
           return (
             <div
               key={provider.id}
               onMouseEnter={() => setIsHovering(provider.id)}
               onMouseLeave={() => setIsHovering(null)}
+              onClick={() => !provider.comingSoon && setSelectedProvider(provider.id)}
               className={`
                   relative overflow-hidden rounded-2xl transition-all duration-300 group
-                  ${provider.comingSoon ? "opacity-60" : ""}
-                  shadow-lg
+                  ${provider.comingSoon ? "opacity-60" : "cursor-pointer"}
+                  ${isSelected ? "ring-4 ring-offset-2 ring-emerald-500" : ""}
+                  shadow-lg hover:shadow-xl
                 `}
             >
+              {/* Selected Indicator */}
+              {isSelected && (
+                <div className="absolute top-4 right-4 z-10 bg-white rounded-full p-1.5 shadow-lg">
+                  <Check className="w-5 h-5 text-emerald-600" />
+                </div>
+              )}
+
               {/* Card Header with Gradient and Logo */}
               <div
                 className={`${provider.headerBg} p-6 sm:p-8 relative overflow-hidden`}
@@ -139,40 +139,35 @@ const Pvp = () => {
                   {provider.description}
                 </p>
 
-                {/* Features List */}
-                <div className="space-y-3">
-                  {provider.features.map((feature, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 group/feature"
-                    >
-                      <div
-                        className={`
-                          flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center
-                          transition-all duration-200
-                          ${
-                            provider.accentColor === "emerald"
-                              ? "bg-emerald-100 text-emerald-600"
-                              : "bg-orange-100 text-orange-600"
-                          }
-                        `}
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="text-sm text-gray-700 font-medium">
-                        {feature}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                {/* Action Buttons */}
+                <div className="mt-8 flex flex-col gap-3">
+                  {/* Selection Status */}
+                  <div
+                    className={`
+                      w-full py-3 px-6 rounded-xl font-semibold text-sm sm:text-base
+                      flex items-center justify-center gap-2 transition-all duration-300
+                      ${isSelected
+                        ? "bg-emerald-50 text-emerald-700 border-2 border-emerald-500"
+                        : "bg-gray-100 text-gray-600 border-2 border-transparent"
+                      }
+                    `}
+                  >
+                    {isSelected ? (
+                      <>
+                        <Check className="w-5 h-5" />
+                        Seleccionado
+                      </>
+                    ) : (
+                      "Clic para seleccionar"
+                    )}
+                  </div>
 
-                {/* Action Button */}
-                <div className="mt-8">
+                  {/* Website Button */}
                   <button
-                    onClick={() =>
-                      !provider.comingSoon &&
-                      handleOpenWebsite(provider.websiteUrl)
-                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      !provider.comingSoon && handleOpenWebsite(provider.websiteUrl);
+                    }}
                     disabled={provider.comingSoon}
                     className={`
                         w-full py-3.5 px-6 rounded-xl font-semibold text-sm sm:text-base
@@ -188,7 +183,7 @@ const Pvp = () => {
                       "Próximamente"
                     ) : (
                       <>
-                        Configurar {provider.name}
+                        Visitar {provider.name}
                         <ExternalLink
                           className={`w-5 h-5 transition-transform duration-300 ${isHovered ? "translate-x-0.5 -translate-y-0.5" : ""}`}
                         />
@@ -205,4 +200,4 @@ const Pvp = () => {
   );
 };
 
-export default Pvp;
+export default Pdp;

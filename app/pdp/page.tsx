@@ -1,14 +1,14 @@
 "use client";
 
 import Layout from "@/components/Layout";
-import Pvp from "@/views/Pvp";
+import Pdp from "@/views/Pdp";
 
-const PvpPage = () => {
+const PdpPage = () => {
   return (
     <Layout>
-      <Pvp />
+      <Pdp />
     </Layout>
   );
 };
 
-export default PvpPage;
+export default PdpPage;

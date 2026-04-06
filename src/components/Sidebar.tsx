@@ -137,8 +137,8 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
           </span>
         </Link>
         <Link
-          href="/pvp"
-          className={`group flex items-center text-sm font-medium rounded-lg transition-all duration-200 ${mobile || isExpanded ? "px-3 py-3" : "px-0 py-3 justify-center"} ${pathname === "/pvp" ? "bg-custom-green-100 text-custom-green-900 shadow-sm" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"}`}
+          href="/pdp"
+          className={`group flex items-center text-sm font-medium rounded-lg transition-all duration-200 ${mobile || isExpanded ? "px-3 py-3" : "px-0 py-3 justify-center"} ${pathname === "/pdp" ? "bg-custom-green-100 text-custom-green-900 shadow-sm" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"}`}
         >
           <DollarSign
             className={`flex-shrink-0 h-5 w-5 ${mobile || isExpanded ? "mr-3 text-custom-green-600" : "mx-auto text-gray-500"} transition-all duration-200`}
@@ -146,7 +146,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
           <span
             className={`${!mobile && !isExpanded ? "hidden" : "block"} transition-opacity duration-200`}
           >
-            PVP
+            PDP
           </span>
         </Link>
         <Link
