@@ -18,6 +18,11 @@ import {
   joyrideResponsiveCSS,
 } from "../hooks/useMenuOnboarding";
 
+interface NewSection {
+  name: string;
+  clasificacion: number;
+}
+
 interface Branch {
   id: string;
   name: string;
@@ -307,7 +312,7 @@ const MenuManagement = () => {
   };
   const handleSectionFormSubmit = async (
     reorderedSections: MenuSection[],
-    newSectionNames: string[],
+    newSections: NewSection[],
   ) => {
     const loadingToast = toast.loading("Guardando cambios...");
 
@@ -409,25 +414,27 @@ const MenuManagement = () => {
       }
 
       // 3. Handle new section creation
-      for (const name of newSectionNames) {
+      for (const section of newSections) {
         try {
           await menuApi.sections.create({
-            name,
+            name: section.name,
+            clasificacion: section.clasificacion,
             display_order:
-              reorderedSections.length + newSectionNames.indexOf(name),
+              reorderedSections.length + newSections.indexOf(section),
           });
         } catch (apiError) {
           console.error("❌ Failed to create section:", apiError);
           toast.dismiss(loadingToast);
-          toast.error(`Error al crear la sección "${name}"`);
+          toast.error(`Error al crear la sección "${section.name}"`);
           // Fallback to localStorage if API fails
           const newSection = {
-            id: Date.now() + newSectionNames.indexOf(name),
+            id: Date.now() + newSections.indexOf(section),
             restaurant_id: restaurant?.id || 0,
-            name,
+            name: section.name,
+            clasificacion: section.clasificacion,
             is_active: true,
             display_order:
-              reorderedSections.length + newSectionNames.indexOf(name),
+              reorderedSections.length + newSections.indexOf(section),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };

@@ -50,6 +50,7 @@ export interface MenuSection {
   name: string;
   is_active: boolean;
   display_order: number;
+  clasificacion?: number | null; // 1: ALIMENTOS, 2: BEBIDAS, 3: OTROS
   created_at: string;
   updated_at: string;
   items?: MenuItem[];
