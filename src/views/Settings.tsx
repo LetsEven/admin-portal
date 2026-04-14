@@ -17,6 +17,8 @@ import { useRestaurant } from "../hooks/useRestaurant";
 import { ImageUploadService } from "../services/imageUploadService";
 import ImageCropModal from "../components/ImageCropModal";
 import { useAdminPortalApi } from "../services/adminPortalApi";
+import { usePosApi } from "../services/posApi";
+import PrinterSettings from "../components/PrinterSettings";
 import {
   useSettingsOnboarding,
   joyrideTheme,
@@ -192,12 +194,15 @@ const Settings = () => {
   // Pick & Go URL state
   const [copySuccess, setCopySuccess] = useState(false);
 
+  const posApi = usePosApi();
+
   // POS Integration state
   const [posIntegration, setPosIntegration] = useState<{
     providerId: string;
     syncToken: string | null;
   } | null>(null);
   const [posIntegrationLoading, setPosIntegrationLoading] = useState(false);
+  const [agentConnected, setAgentConnected] = useState(false);
   const [copySuccessBranchId, setCopySuccessBranchId] = useState(false);
   const [copySuccessToken, setCopySuccessToken] = useState(false);
   const [showToken, setShowToken] = useState(false);
@@ -468,6 +473,14 @@ const Settings = () => {
         } else {
           setPosIntegration(null);
           console.log("ℹ️ [Settings] No POS integration found for this branch");
+        }
+
+        // Verificar si el agente está conectado
+        try {
+          const agentStatus = await posApi.getAgentStatus(selectedBranch);
+          if (isMounted) setAgentConnected(agentStatus.isAgentConnected);
+        } catch {
+          if (isMounted) setAgentConnected(false);
         }
       } catch (error) {
         if (!isMounted) return;
@@ -1834,6 +1847,14 @@ const Settings = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Printer Settings */}
+        {selectedBranch && (
+          <PrinterSettings
+            branchId={selectedBranch}
+            agentConnected={agentConnected}
+          />
         )}
 
         {/* Regional Settings */}

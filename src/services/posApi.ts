@@ -11,6 +11,18 @@ const POS_BASE = `${API_BASE_URL}/api/pos`;
 // TIPOS TYPESCRIPT
 // ===============================================
 
+export interface Printer {
+  id: string;
+  branch_id: string;
+  ip: string;
+  port: number;
+  name: string | null;
+  role: 'bar' | 'kitchen' | 'other' | 'all' | null;
+  is_active: boolean;
+  last_seen_at: string;
+  created_at: string;
+}
+
 export interface AgentStatus {
   hasIntegration: boolean;
   isActive: boolean;
@@ -119,6 +131,34 @@ export function usePosApi() {
     getIntegration: async (branchId: string) => {
       const response = await fetchWithAuth(`/branch/${branchId}/integration`);
       return response;
+    },
+
+    // Impresoras
+    getPrinters: async (branchId: string): Promise<{ printers: Printer[] }> => {
+      return fetchWithAuth(`/branch/${branchId}/printers`);
+    },
+
+    scanPrinters: async (branchId: string): Promise<{ found: number; printers: Printer[] }> => {
+      return fetchWithAuth(`/branch/${branchId}/printers/scan`, { method: 'POST' });
+    },
+
+    updatePrinter: async (
+      branchId: string,
+      printerId: string,
+      data: { name?: string; role?: Printer['role']; is_active?: boolean }
+    ): Promise<{ printer: Printer }> => {
+      return fetchWithAuth(`/branch/${branchId}/printers/${printerId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    },
+
+    deletePrinter: async (branchId: string, printerId: string): Promise<void> => {
+      await fetchWithAuth(`/branch/${branchId}/printers/${printerId}`, { method: 'DELETE' });
+    },
+
+    testPrinter: async (branchId: string, printerId: string): Promise<{ success: boolean; error?: string }> => {
+      return fetchWithAuth(`/branch/${branchId}/printers/${printerId}/test`, { method: 'POST' });
     },
   };
 }
