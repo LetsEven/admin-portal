@@ -70,10 +70,16 @@ export default function Page() {
   const { user } = useUser();
   const isInvited = searchParams.get('invited') === 'true';
   const emailFromUrl = searchParams.get('email');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     if (isInvited && emailFromUrl) {
-      // Guardar email de invitación en localStorage para el Layout
       localStorage.setItem('invitation_email', emailFromUrl);
       validateEmailAccess(emailFromUrl);
     } else {
@@ -84,7 +90,7 @@ export default function Page() {
         clientName: ''
       });
     }
-  }, [isInvited, emailFromUrl]);
+  }, [mounted, isInvited, emailFromUrl]);
 
   const validateEmailAccess = async (email: string) => {
     try {
@@ -212,9 +218,11 @@ export default function Page() {
                       required
                       type="email"
                       autoComplete="username email"
-                      className="w-full pl-10 pr-3 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a8b9b] focus:border-transparent"
+                      className="w-full pl-10 pr-3 py-2 text-gray-500 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
                       placeholder="Email"
-                      defaultValue={emailFromUrl || ''}
+                      value={emailFromUrl || ''}
+                      readOnly
+                      disabled
                     />
                   </div>
                   <FieldError className="text-rose-400 text-xs" />

@@ -3,7 +3,7 @@
 import { useUser, useSignIn } from '@clerk/nextjs'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mail, KeyRound } from 'lucide-react'
+import { Mail, KeyRound, Eye, EyeOff } from 'lucide-react'
 import { Field, Input, FieldError } from "@clerk/elements/common"
 import { Root, Step, Action, Strategy } from "@clerk/elements/sign-in"
 import { SignIn } from '@clerk/nextjs'
@@ -18,6 +18,8 @@ export default function Page() {
   const [resetError, setResetError] = useState('')
   const [verificationCode, setVerificationCode] = useState('')
   const [newPassword, setNewPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
@@ -214,15 +216,23 @@ export default function Page() {
                     <div className="relative">
                       <KeyRound className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
                       <input
-                        type="password"
+                        type={showNewPassword ? 'text' : 'password'}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a8b9b] focus:border-transparent"
+                        className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a8b9b] focus:border-transparent"
                         placeholder="Nueva contraseña"
                         required
                         disabled={resetStatus === 'resetting'}
                         minLength={8}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(v => !v)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        tabIndex={-1}
+                      >
+                        {showNewPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
                       <label className="block text-xs text-gray-600 mt-1">Mínimo 8 caracteres</label>
                     </div>
                   </div>
@@ -314,11 +324,19 @@ export default function Page() {
                     <KeyRound className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
                     <Input
                       required
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       autoComplete="current-password"
-                      className="w-full pl-10 pr-3 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a8b9b] focus:border-transparent"
+                      className="w-full pl-10 pr-10 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a8b9b] focus:border-transparent"
                       placeholder="Contraseña"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(v => !v)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
                   </div>
                   <FieldError className="text-rose-400 text-xs" />
                 </Field>
