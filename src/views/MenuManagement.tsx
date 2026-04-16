@@ -139,6 +139,7 @@ const MenuManagement = () => {
   ]);
 
   const [deletingItemId, setDeletingItemId] = useState<number | null>(null);
+  const [isSubmittingSections, setIsSubmittingSections] = useState(false);
   const [showItemForm, setShowItemForm] = useState(false);
   const [showSectionForm, setShowSectionForm] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
@@ -317,6 +318,7 @@ const MenuManagement = () => {
     reorderedSections: MenuSection[],
     newSections: NewSection[],
   ) => {
+    setIsSubmittingSections(true);
     const loadingToast = toast.loading("Guardando cambios...");
 
     try {
@@ -468,6 +470,8 @@ const MenuManagement = () => {
       setError(
         error instanceof Error ? error.message : "Failed to update sections",
       );
+    } finally {
+      setIsSubmittingSections(false);
     }
   };
 
@@ -749,6 +753,7 @@ const MenuManagement = () => {
           sections={sections}
           onSubmit={handleSectionFormSubmit}
           onCancel={() => setShowSectionForm(false)}
+          isSubmitting={isSubmittingSections}
         />
       )}
       {showMobilePreview && (

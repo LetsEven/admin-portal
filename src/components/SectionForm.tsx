@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { XIcon, PlusIcon, TrashIcon, GripIcon } from "lucide-react";
+import {
+  XIcon,
+  PlusIcon,
+  TrashIcon,
+  GripIcon,
+  Loader2Icon,
+} from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { MenuSection } from "../services/adminPortalApi";
 
@@ -13,12 +19,14 @@ interface SectionFormProps {
   onSubmit: (sections: MenuSection[], newSections: NewSection[]) => void;
   onCancel: () => void;
   fixedCategory?: string;
+  isSubmitting?: boolean;
 }
 const SectionForm: React.FC<SectionFormProps> = ({
   sections,
   onSubmit,
   onCancel,
   fixedCategory,
+  isSubmitting = false,
 }) => {
   // Manage sections as complete objects to preserve order and IDs
   const [orderedSections, setOrderedSections] = useState<MenuSection[]>([
@@ -254,9 +262,11 @@ const SectionForm: React.FC<SectionFormProps> = ({
             </button>
             <button
               type="submit"
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 sm:px-4 py-2 bg-custom-green-600 text-xs sm:text-sm font-medium text-white hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500"
+              disabled={isSubmitting}
+              className="w-full inline-flex justify-center items-center gap-2 rounded-md border border-transparent shadow-sm px-3 sm:px-4 py-2 bg-custom-green-600 text-xs sm:text-sm font-medium text-white hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Guardar
+              {isSubmitting && <Loader2Icon className="h-4 w-4 animate-spin" />}
+              {isSubmitting ? "Guardando..." : "Guardar"}
             </button>
           </div>
         </form>
