@@ -138,6 +138,7 @@ const MenuManagement = () => {
     startOnboarding,
   ]);
 
+  const [deletingItemId, setDeletingItemId] = useState<number | null>(null);
   const [showItemForm, setShowItemForm] = useState(false);
   const [showSectionForm, setShowSectionForm] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
@@ -209,30 +210,32 @@ const MenuManagement = () => {
 
     if (window.confirm("¿Estás seguro de que deseas eliminar este platillo?")) {
       const loadingToast = toast.loading(`Eliminando "${itemName}"...`);
+      setDeletingItemId(id);
 
       try {
         await menuApi.items.delete(id);
         await loadData();
 
-        toast.dismiss(loadingToast);
         toast.success(`"${itemName}" eliminado correctamente`, {
+          id: loadingToast,
           duration: 3000,
         });
       } catch (error) {
         console.error("❌ Error deleting item:", error);
 
-        toast.dismiss(loadingToast);
         toast.error(
           `Error al eliminar "${itemName}". Por favor intenta de nuevo.`,
           {
+            id: loadingToast,
             duration: 4000,
-            icon: "❌",
           },
         );
 
         setError(
           error instanceof Error ? error.message : "Failed to delete item",
         );
+      } finally {
+        setDeletingItemId(null);
       }
     }
   };
@@ -360,8 +363,9 @@ const MenuManagement = () => {
           console.warn(
             "⚠️ No valid sections to reorder (all have temporary IDs)",
           );
-          toast.dismiss(loadingToast);
-          toast.success("Cambios guardados correctamente");
+          toast.success("Cambios guardados correctamente", {
+            id: loadingToast,
+          });
           return;
         }
 
@@ -374,8 +378,7 @@ const MenuManagement = () => {
           await menuApi.sections.reorder(reorderData);
         } catch (apiError) {
           console.error("❌ Failed to reorder sections:", apiError);
-          toast.dismiss(loadingToast);
-          toast.error("Error al reordenar secciones");
+          toast.error("Error al reordenar secciones", { id: loadingToast });
           // Update local state anyway for better UX
           const updatedSections = reorderedSections.map((section, index) => ({
             ...section,
@@ -398,8 +401,9 @@ const MenuManagement = () => {
           await menuApi.sections.delete(section.id);
         } catch (apiError) {
           console.error("❌ Failed to delete section:", apiError);
-          toast.dismiss(loadingToast);
-          toast.error(`Error al eliminar la sección "${section.name}"`);
+          toast.error(`Error al eliminar la sección "${section.name}"`, {
+            id: loadingToast,
+          });
           const updatedSections = sections.filter((s) => s.id !== section.id);
           setSections(updatedSections);
 
@@ -424,8 +428,9 @@ const MenuManagement = () => {
           });
         } catch (apiError) {
           console.error("❌ Failed to create section:", apiError);
-          toast.dismiss(loadingToast);
-          toast.error(`Error al crear la sección "${section.name}"`);
+          toast.error(`Error al crear la sección "${section.name}"`, {
+            id: loadingToast,
+          });
           // Fallback to localStorage if API fails
           const newSection = {
             id: Date.now() + newSections.indexOf(section),
@@ -454,14 +459,12 @@ const MenuManagement = () => {
 
       await loadData();
 
-      toast.dismiss(loadingToast);
-      toast.success("Cambios guardados correctamente");
+      toast.success("Cambios guardados correctamente", { id: loadingToast });
 
       setShowSectionForm(false);
     } catch (error) {
       console.error("❌ Error updating sections:", error);
-      toast.dismiss(loadingToast);
-      toast.error("Error al guardar los cambios");
+      toast.error("Error al guardar los cambios", { id: loadingToast });
       setError(
         error instanceof Error ? error.message : "Failed to update sections",
       );
@@ -699,6 +702,7 @@ const MenuManagement = () => {
                       selectedBranchId={selectedBranch?.id || null}
                       onEdit={handleEditClick}
                       onDelete={handleDeleteClick}
+                      isDeleting={deletingItemId === item.id}
                       data-tour={
                         categoryIndex === 0 && itemIndex === 0
                           ? "menu-item-card"

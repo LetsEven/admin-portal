@@ -1,5 +1,5 @@
 import React from "react";
-import { PencilIcon, TrashIcon } from "lucide-react";
+import { PencilIcon, TrashIcon, Loader2Icon } from "lucide-react";
 interface MenuItemCardProps {
   id: number;
   name: string;
@@ -10,6 +10,7 @@ interface MenuItemCardProps {
   image: string;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
+  isDeleting?: boolean;
   availableBranches?: string[];
   selectedBranchId?: string | null;
   "data-tour"?: string;
@@ -24,6 +25,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
   image,
   onEdit,
   onDelete,
+  isDeleting = false,
   availableBranches = [],
   selectedBranchId = null,
   "data-tour": dataTour,
@@ -85,9 +87,14 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
           </button>
           <button
             onClick={() => onDelete(id)}
-            className="bg-white p-1.5 sm:p-2 rounded-full shadow hover:bg-red-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+            disabled={isDeleting}
+            className="bg-white p-1.5 sm:p-2 rounded-full shadow hover:bg-red-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <TrashIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600" />
+            {isDeleting ? (
+              <Loader2Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-400 animate-spin" />
+            ) : (
+              <TrashIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600" />
+            )}
           </button>
         </div>
         <div className="absolute bottom-0 left-0 bg-custom-green-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium">
