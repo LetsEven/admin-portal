@@ -693,8 +693,12 @@ const Dashboard = () => {
   useEffect(() => {
     if (socketRefreshTrigger > 0 && currentRestaurantId) {
       cargarDatosDashboard(currentRestaurantId);
-      cargarTransacciones(filtroFechaTransacciones, 1);
-      setPaginaTransacciones(1);
+      // Delay para dar tiempo al backend a registrar la transacción antes de consultarla
+      const timer = setTimeout(() => {
+        cargarTransacciones(filtroFechaTransacciones, 1);
+        setPaginaTransacciones(1);
+      }, 1500);
+      return () => clearTimeout(timer);
     }
   }, [socketRefreshTrigger]);
 
