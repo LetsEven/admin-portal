@@ -14,13 +14,15 @@ const POS_BASE = `${API_BASE_URL}/api/pos`;
 export interface Printer {
   id: string;
   branch_id: string;
-  ip: string;
-  port: number;
+  ip: string | null;
+  port: number | null;
   name: string | null;
   role: 'bar' | 'kitchen' | 'other' | 'all' | null;
   is_active: boolean;
   last_seen_at: string;
   created_at: string;
+  connection_type: 'wifi' | 'usb' | null;
+  usb_device_name: string | null;
 }
 
 export interface AgentStatus {
@@ -159,6 +161,10 @@ export function usePosApi() {
 
     testPrinter: async (branchId: string, printerId: string): Promise<{ success: boolean; error?: string }> => {
       return fetchWithAuth(`/branch/${branchId}/printers/${printerId}/test`, { method: 'POST' });
+    },
+
+    scanUsbPrinters: async (branchId: string): Promise<{ found: number; printers: Printer[] }> => {
+      return fetchWithAuth(`/branch/${branchId}/printers/scan-usb`, { method: 'POST' });
     },
   };
 }
