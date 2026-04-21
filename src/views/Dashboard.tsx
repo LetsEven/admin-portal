@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   BarChart2Icon,
   UsersIcon,
   ShoppingBagIcon,
-  TrendingUpIcon,
   ChevronDownIcon,
   MapPinIcon,
   CheckIcon,
@@ -14,7 +13,6 @@ import {
   ShoppingCartIcon,
   RotateCcwIcon,
   CrownIcon,
-  StarIcon,
   InfoIcon,
   NotepadText,
 } from "lucide-react";
@@ -250,6 +248,7 @@ const Dashboard = () => {
 
   // Estado para disparar refresh desde eventos de socket
   const [socketRefreshTrigger, setSocketRefreshTrigger] = useState(0);
+  const socketDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [sucursalSeleccionada, setSucursalSeleccionada] =
     useState<SucursalSeleccionada>(sucursalesDefault[0]);
@@ -691,24 +690,19 @@ const Dashboard = () => {
     onFullRefresh: handleRealtimeFullRefresh,
   });
 
-  // Efecto para recargar datos cuando llega un evento de socket
+  // Efecto para recargar datos cuando llega un evento de socket (debounced)
   useEffect(() => {
     if (socketRefreshTrigger > 0 && currentRestaurantId) {
-      // Delay unificado: da tiempo al backend a escribir en DB antes de consultar
-      const timer = setTimeout(() => {
+      if (socketDebounceRef.current) clearTimeout(socketDebounceRef.current);
+      socketDebounceRef.current = setTimeout(() => {
         cargarDatosDashboard(currentRestaurantId);
         cargarTransacciones(filtroFechaTransacciones, 1);
         setPaginaTransacciones(1);
-      }, 1500);
-      return () => clearTimeout(timer);
+        socketDebounceRef.current = null;
+      }, 1000);
     }
-  }, [
-    socketRefreshTrigger,
-    currentRestaurantId,
-    cargarDatosDashboard,
-    cargarTransacciones,
-    filtroFechaTransacciones,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socketRefreshTrigger]);
 
   // Filtrar opciones de servicio según los habilitados
   const opcionesServicioFiltradas = opcionesServicio.filter(
