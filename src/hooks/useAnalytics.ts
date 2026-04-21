@@ -88,6 +88,20 @@ export interface TopSellingItem {
 }
 
 // Tipos para item de orden
+export interface CustomFieldOption {
+  optionId: string;
+  optionName: string;
+  price: number;
+  quantity: number;
+}
+
+export interface CustomField {
+  fieldId: string;
+  fieldName: string;
+  fieldType: string;
+  selectedOptions?: CustomFieldOption[];
+}
+
 export interface OrderItem {
   id: number;
   nombre: string;
@@ -98,6 +112,7 @@ export interface OrderItem {
   estadoEntrega?: string;
   imagen?: string | null;
   guestName?: string | null;
+  customFields?: CustomField[] | null;
 }
 
 // Tipos para orden activa

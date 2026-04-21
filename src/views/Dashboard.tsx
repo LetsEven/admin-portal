@@ -33,6 +33,8 @@ import {
   type AnalyticsFilters,
   type RecentTransaction,
   type ActiveOrder,
+  type CustomField,
+  type CustomFieldOption,
 } from "../hooks/useAnalytics";
 import { useRealtimeDashboard } from "../hooks/useRealtimeDashboard";
 import { useRestaurant } from "../hooks/useRestaurant";
@@ -692,15 +694,21 @@ const Dashboard = () => {
   // Efecto para recargar datos cuando llega un evento de socket
   useEffect(() => {
     if (socketRefreshTrigger > 0 && currentRestaurantId) {
-      cargarDatosDashboard(currentRestaurantId);
-      // Delay para dar tiempo al backend a registrar la transacción antes de consultarla
+      // Delay unificado: da tiempo al backend a escribir en DB antes de consultar
       const timer = setTimeout(() => {
+        cargarDatosDashboard(currentRestaurantId);
         cargarTransacciones(filtroFechaTransacciones, 1);
         setPaginaTransacciones(1);
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [socketRefreshTrigger]);
+  }, [
+    socketRefreshTrigger,
+    currentRestaurantId,
+    cargarDatosDashboard,
+    cargarTransacciones,
+    filtroFechaTransacciones,
+  ]);
 
   // Filtrar opciones de servicio según los habilitados
   const opcionesServicioFiltradas = opcionesServicio.filter(
@@ -2511,6 +2519,33 @@ const Dashboard = () => {
                                   <UserIcon className="h-3 w-3" />
                                   {item.guestName}
                                 </p>
+                              )}
+                            {/* Custom fields */}
+                            {Array.isArray(item.customFields) &&
+                              item.customFields.length > 0 && (
+                                <div className="mt-1">
+                                  {(item.customFields as CustomField[]).flatMap(
+                                    (f: CustomField) =>
+                                      (f.selectedOptions ?? []).map(
+                                        (o: CustomFieldOption, oi: number) => {
+                                          const qty = o.quantity ?? 1;
+                                          const val =
+                                            f.fieldType ===
+                                              "dropdown-quantity" && qty > 1
+                                              ? `x${qty} ${o.optionName}`
+                                              : o.optionName;
+                                          return (
+                                            <p
+                                              key={`${f.fieldId}-${oi}`}
+                                              className="text-xs text-gray-400"
+                                            >
+                                              {f.fieldName}: {val}
+                                            </p>
+                                          );
+                                        },
+                                      ),
+                                  )}
+                                </div>
                               )}
                           </div>
                           <div className="text-right flex-shrink-0">
