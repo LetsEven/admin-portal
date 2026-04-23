@@ -1,6 +1,7 @@
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from "@clerk/nextjs";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 const BASE = `${API_BASE_URL}/api/payment-providers`;
 
 export interface PaymentProvider {
@@ -27,14 +28,16 @@ export function usePaymentProviderApi() {
     const response = await fetch(`${BASE}${endpoint}`, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
         ...options.headers,
       },
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
+      const error = await response
+        .json()
+        .catch(() => ({ error: "Error desconocido" }));
       throw new Error(error.error || `Error ${response.status}`);
     }
 
@@ -43,12 +46,17 @@ export function usePaymentProviderApi() {
 
   return {
     // Lista todos los proveedores disponibles
-    getProviders: async (): Promise<{ success: boolean; providers: PaymentProvider[] }> => {
-      return fetchWithAuth('/');
+    getProviders: async (): Promise<{
+      success: boolean;
+      providers: PaymentProvider[];
+    }> => {
+      return fetchWithAuth("/");
     },
 
     // Proveedor activo del restaurante por client UUID
-    getClientProvider: async (clientId: string): Promise<{
+    getClientProvider: async (
+      clientId: string,
+    ): Promise<{
       success: boolean;
       integration: PaymentIntegration | null;
       provider: string | null;
@@ -57,14 +65,46 @@ export function usePaymentProviderApi() {
     },
 
     // Guardar/cambiar el proveedor del restaurante
-    setClientProvider: async (clientId: string, providerCode: string): Promise<{
+    setClientProvider: async (
+      clientId: string,
+      providerCode: string,
+    ): Promise<{
       success: boolean;
       integration: PaymentIntegration;
       provider: string;
     }> => {
       return fetchWithAuth(`/client/${clientId}`, {
-        method: 'PUT',
+        method: "PUT",
         body: JSON.stringify({ providerCode }),
+      });
+    },
+
+    // Obtener API keys del cliente (devuelve masked)
+    getClientSettings: async (
+      clientId: string,
+    ): Promise<{
+      success: boolean;
+      settings: {
+        public_key?: string;
+        secret_key?: string;
+        environment?: string;
+      } | null;
+    }> => {
+      return fetchWithAuth(`/client/${clientId}/settings`);
+    },
+
+    // Guardar API keys del cliente
+    saveClientSettings: async (
+      clientId: string,
+      settings: {
+        public_key: string;
+        secret_key: string;
+        environment?: string;
+      },
+    ): Promise<{ success: boolean }> => {
+      return fetchWithAuth(`/client/${clientId}/settings`, {
+        method: "PUT",
+        body: JSON.stringify({ settings }),
       });
     },
   };
