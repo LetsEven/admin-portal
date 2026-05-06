@@ -284,6 +284,10 @@ interface UseAnalyticsReturn {
     status: string,
     serviceType: string,
   ) => Promise<boolean>;
+  updatePickAndGoOrderCookingStatus: (
+    orderId: string,
+    status: string,
+  ) => Promise<boolean>;
 
   // Utilidades
   clearError: () => void;
@@ -835,6 +839,31 @@ export function useAnalytics(): UseAnalyticsReturn {
     [getToken],
   );
 
+  const updatePickAndGoOrderCookingStatus = useCallback(
+    async (orderId: string, status: string): Promise<boolean> => {
+      try {
+        const token = await getToken();
+        const response = await fetch(
+          `${API_BASE_URL}/api/pick-and-go/orders/${orderId}/cooking-status`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ cooking_status: status }),
+          },
+        );
+        const data = await response.json();
+        return data.success === true;
+      } catch (error) {
+        console.error("Error al actualizar cooking status:", error);
+        return false;
+      }
+    },
+    [getToken],
+  );
+
   // Cargar restaurantes al inicializar
   useEffect(() => {
     if (user) {
@@ -885,6 +914,7 @@ export function useAnalytics(): UseAnalyticsReturn {
     loadMoreTransactions,
     getOrderItems,
     updateDishDeliveryStatus,
+    updatePickAndGoOrderCookingStatus,
 
     // Utilidades
     clearError,

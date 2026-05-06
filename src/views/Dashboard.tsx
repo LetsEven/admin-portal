@@ -230,6 +230,7 @@ const Dashboard = () => {
     getRecentTransactions,
     getOrderItems,
     updateDishDeliveryStatus,
+    updatePickAndGoOrderCookingStatus,
     clearError,
   } = useAnalytics();
 
@@ -1034,35 +1035,60 @@ const Dashboard = () => {
     if (!itemSeleccionado || !pedidoSeleccionado || !nuevoEstadoSeleccionado)
       return;
 
+    const isPickAndGo = pedidoSeleccionado.serviceType === "pick-n-go";
+    const currentStatus = itemSeleccionado.estadoEntrega || "preparing";
+
     // No hacer nada si el estado es el mismo
-    if (
-      nuevoEstadoSeleccionado ===
-      (itemSeleccionado.estadoEntrega || "preparing")
-    ) {
+    if (nuevoEstadoSeleccionado === currentStatus) {
       cerrarModalEstado();
       return;
     }
 
     setIsUpdatingStatus(true);
     try {
-      const success = await updateDishDeliveryStatus(
-        itemSeleccionado.id.toString(),
-        nuevoEstadoSeleccionado,
-        pedidoSeleccionado.serviceType,
-      );
+      let success: boolean;
+
+      if (isPickAndGo) {
+        // Para Pick & Go: actualizar cooking_status del pedido completo
+        success = await updatePickAndGoOrderCookingStatus(
+          pedidoSeleccionado.id,
+          nuevoEstadoSeleccionado,
+        );
+        if (success) {
+          // Actualizar todos los items del pedido con el nuevo estado
+          setItemsPedido((prevItems) =>
+            prevItems.map((item) => ({
+              ...item,
+              estadoEntrega: nuevoEstadoSeleccionado,
+            })),
+          );
+        }
+      } else {
+        // Para otros servicios: actualizar status del platillo individual
+        success = await updateDishDeliveryStatus(
+          itemSeleccionado.id.toString(),
+          nuevoEstadoSeleccionado,
+          pedidoSeleccionado.serviceType,
+        );
+        if (success) {
+          setItemsPedido((prevItems) =>
+            prevItems.map((item) =>
+              item.id === itemSeleccionado.id
+                ? { ...item, estadoEntrega: nuevoEstadoSeleccionado }
+                : item,
+            ),
+          );
+        }
+      }
 
       if (success) {
-        // Actualizar el item en la lista local
-        setItemsPedido((prevItems) =>
-          prevItems.map((item) =>
-            item.id === itemSeleccionado.id
-              ? { ...item, estadoEntrega: nuevoEstadoSeleccionado }
-              : item,
-          ),
-        );
-        toast.success(
-          `Estado actualizado a "${nuevoEstadoSeleccionado === "delivered" ? "Entregado" : nuevoEstadoSeleccionado === "ready" ? "Listo" : "Preparando"}"`,
-        );
+        const statusLabel =
+          nuevoEstadoSeleccionado === "delivered"
+            ? "Entregado"
+            : nuevoEstadoSeleccionado === "ready"
+              ? "Listo"
+              : "Preparando";
+        toast.success(`Estado actualizado a "${statusLabel}"`);
         // Recargar transacciones para actualizar el badge de entrega
         cargarTransacciones(filtroFechaTransacciones, paginaTransacciones);
         // Recargar métricas del dashboard para actualizar Órdenes Activas
@@ -2461,6 +2487,30 @@ const Dashboard = () => {
                       : "Tiempo no disponible"}
                   </span>
                 </div>
+
+                {/* Badge de estado de cocina para Pick & Go (nivel de orden) */}
+                {pedidoSeleccionado.serviceType === "pick-n-go" &&
+                  !isLoadingItems &&
+                  itemsPedido.length > 0 && (
+                    <div className="flex items-center mb-2">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium cursor-pointer ${
+                          itemsPedido[0]?.estadoEntrega === "delivered"
+                            ? "bg-green-100 text-green-700"
+                            : itemsPedido[0]?.estadoEntrega === "ready"
+                              ? "bg-orange-100 text-orange-700"
+                              : "bg-yellow-100 text-yellow-700"
+                        }`}
+                        onClick={() => abrirModalEstado(itemsPedido[0])}
+                      >
+                        {itemsPedido[0]?.estadoEntrega === "delivered"
+                          ? "Entregado"
+                          : itemsPedido[0]?.estadoEntrega === "ready"
+                            ? "Listo"
+                            : "Preparando"}
+                      </span>
+                    </div>
+                  )}
               </div>
 
               {/* Items del Pedido */}
@@ -2478,8 +2528,8 @@ const Dashboard = () => {
                     itemsPedido.map((item: any, index: number) => (
                       <div
                         key={index}
-                        className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={() => abrirModalEstado(item)}
+                        className={`bg-gray-50 rounded-lg p-3 transition-colors ${pedidoSeleccionado?.serviceType !== "pick-n-go" ? "cursor-pointer hover:bg-gray-100" : ""}`}
+                        onClick={pedidoSeleccionado?.serviceType !== "pick-n-go" ? () => abrirModalEstado(item) : undefined}
                       >
                         <div className="flex items-center gap-3">
                           {item.imagen ? (
@@ -2550,22 +2600,24 @@ const Dashboard = () => {
                                 : (item.precio * item.cantidad).toFixed(2)}
                             </p>
                             <p className="text-xs text-gray-500">Total</p>
-                            {/* Estado de entrega del item */}
-                            <span
-                              className={`mt-1 inline-block px-1.5 py-0.5 rounded text-xs font-medium ${
-                                item.estadoEntrega === "delivered"
-                                  ? "bg-green-100 text-green-700"
+                            {/* Estado de entrega del item (solo para servicios con status por platillo) */}
+                            {pedidoSeleccionado?.serviceType !== "pick-n-go" && (
+                              <span
+                                className={`mt-1 inline-block px-1.5 py-0.5 rounded text-xs font-medium ${
+                                  item.estadoEntrega === "delivered"
+                                    ? "bg-green-100 text-green-700"
+                                    : item.estadoEntrega === "ready"
+                                      ? "bg-orange-100 text-orange-700"
+                                      : "bg-yellow-100 text-yellow-700"
+                                }`}
+                              >
+                                {item.estadoEntrega === "delivered"
+                                  ? "Entregado"
                                   : item.estadoEntrega === "ready"
-                                    ? "bg-orange-100 text-orange-700"
-                                    : "bg-yellow-100 text-yellow-700"
-                              }`}
-                            >
-                              {item.estadoEntrega === "delivered"
-                                ? "Entregado"
-                                : item.estadoEntrega === "ready"
-                                  ? "Listo"
-                                  : "Preparando"}
-                            </span>
+                                    ? "Listo"
+                                    : "Preparando"}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2736,7 +2788,9 @@ const Dashboard = () => {
             <div className="px-4 py-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold text-gray-900">
-                  Cambiar Estado
+                  {pedidoSeleccionado?.serviceType === "pick-n-go"
+                    ? "Cambiar Estado del Pedido"
+                    : "Cambiar Estado"}
                 </h3>
                 <button
                   onClick={cerrarModalEstado}
@@ -2749,28 +2803,30 @@ const Dashboard = () => {
 
             {/* Contenido del Modal */}
             <div className="px-4 py-3">
-              {/* Info del platillo */}
-              <div className="flex items-center gap-2 mb-4 p-2 bg-gray-50 rounded-lg">
-                {itemSeleccionado.imagen ? (
-                  <img
-                    src={itemSeleccionado.imagen}
-                    alt={itemSeleccionado.nombre}
-                    className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
-                    <ShoppingBagIcon className="h-4 w-4 text-gray-400" />
+              {/* Info del platillo (solo para servicios con status por platillo) */}
+              {pedidoSeleccionado?.serviceType !== "pick-n-go" && (
+                <div className="flex items-center gap-2 mb-4 p-2 bg-gray-50 rounded-lg">
+                  {itemSeleccionado.imagen ? (
+                    <img
+                      src={itemSeleccionado.imagen}
+                      alt={itemSeleccionado.nombre}
+                      className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+                      <ShoppingBagIcon className="h-4 w-4 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {itemSeleccionado.nombre || "Producto sin nombre"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Cantidad: {itemSeleccionado.cantidad || 0}
+                    </p>
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {itemSeleccionado.nombre || "Producto sin nombre"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Cantidad: {itemSeleccionado.cantidad || 0}
-                  </p>
                 </div>
-              </div>
+              )}
 
               {/* Opciones de estado */}
               <div className="space-y-2">
