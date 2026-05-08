@@ -35,6 +35,7 @@ interface SettingsData {
       open: string;
       close: string;
       closed: boolean;
+      allDay?: boolean;
     };
   };
   logo: string;
@@ -60,6 +61,7 @@ interface BranchData {
       open_time: string;
       close_time: string;
       is_closed: boolean;
+      is_all_day?: boolean;
     };
   };
 }
@@ -124,8 +126,7 @@ const Settings = () => {
 
     const dayHours = settings.openingHours[day];
 
-    if (field === "closed") {
-      // Si se está marcando como cerrado, limpiar errores de ese día
+    if (field === "closed" || field === "allDay") {
       if (value === true) {
         const newErrors = { ...validationErrors };
         delete newErrors[`${day}_time`];
@@ -134,41 +135,28 @@ const Settings = () => {
       return null;
     }
 
-    // Si el día está cerrado, no validar horarios
-    if (dayHours.closed) return null;
+    // Si el día está cerrado o es todo el día, no validar horarios
+    if (dayHours.closed || dayHours.allDay) return null;
 
     let openTime = dayHours.open;
     let closeTime = dayHours.close;
 
-    // Actualizar con el nuevo valor
     if (field === "open") openTime = value as string;
     if (field === "close") closeTime = value as string;
 
-    // Validar que hora de apertura sea menor que hora de cierre
     if (openTime && closeTime) {
-      const open = new Date(`2000-01-01T${openTime}:00`);
-      const close = new Date(`2000-01-01T${closeTime}:00`);
+      let openDate = new Date(`2000-01-01T${openTime}:00`);
+      let closeDate = new Date(`2000-01-01T${closeTime}:00`);
 
-      if (open >= close) {
-        return "La hora de apertura debe ser menor que la hora de cierre";
+      // Si cierre <= apertura, el restaurante cierra al día siguiente (horario nocturno)
+      if (closeDate <= openDate) {
+        closeDate = new Date(`2000-01-02T${closeTime}:00`);
       }
 
-      // Validar duración mínima (1 hora)
-      const diffHours = (close.getTime() - open.getTime()) / (1000 * 60 * 60);
+      const diffHours =
+        (closeDate.getTime() - openDate.getTime()) / (1000 * 60 * 60);
       if (diffHours < 1) {
         return "El restaurante debe estar abierto al menos 1 hora";
-      }
-
-      // Validar horarios realistas (entre 5 AM y 2 AM del día siguiente)
-      const openHour = open.getHours();
-      const closeHour = close.getHours();
-
-      if (openHour < 5) {
-        return "Hora de apertura muy temprana (mínimo 5:00 AM)";
-      }
-
-      if (closeHour > 2 && closeHour < 5) {
-        return "Hora de cierre muy tarde (máximo 2:00 AM)";
       }
     }
 
@@ -217,13 +205,48 @@ const Settings = () => {
         phone: restaurant.phone || "",
         email: restaurant.email || "",
         openingHours: restaurant.openingHours || {
-          monday: { open: "09:00", close: "22:00", closed: false },
-          tuesday: { open: "09:00", close: "22:00", closed: false },
-          wednesday: { open: "09:00", close: "22:00", closed: false },
-          thursday: { open: "09:00", close: "22:00", closed: false },
-          friday: { open: "09:00", close: "23:00", closed: false },
-          saturday: { open: "10:00", close: "23:00", closed: false },
-          sunday: { open: "10:00", close: "20:00", closed: false },
+          monday: {
+            open: "09:00",
+            close: "22:00",
+            closed: false,
+            allDay: false,
+          },
+          tuesday: {
+            open: "09:00",
+            close: "22:00",
+            closed: false,
+            allDay: false,
+          },
+          wednesday: {
+            open: "09:00",
+            close: "22:00",
+            closed: false,
+            allDay: false,
+          },
+          thursday: {
+            open: "09:00",
+            close: "22:00",
+            closed: false,
+            allDay: false,
+          },
+          friday: {
+            open: "09:00",
+            close: "23:00",
+            closed: false,
+            allDay: false,
+          },
+          saturday: {
+            open: "10:00",
+            close: "23:00",
+            closed: false,
+            allDay: false,
+          },
+          sunday: {
+            open: "10:00",
+            close: "20:00",
+            closed: false,
+            allDay: false,
+          },
         },
         logo: restaurant.logo_url || "",
         orderNotifications: restaurant.orderNotifications ?? true,
@@ -386,7 +409,12 @@ const Settings = () => {
 
         // Convertir formato de base de datos a formato del frontend
         const formattedOpeningHours: {
-          [key: string]: { open: string; close: string; closed: boolean };
+          [key: string]: {
+            open: string;
+            close: string;
+            closed: boolean;
+            allDay: boolean;
+          };
         } = {};
         Object.keys(branchOpeningHours).forEach((day) => {
           const dayData = branchOpeningHours[day];
@@ -394,6 +422,7 @@ const Settings = () => {
             open: dayData.open_time || "09:00",
             close: dayData.close_time || "22:00",
             closed: dayData.is_closed || false,
+            allDay: dayData.is_all_day || false,
           };
         });
 
@@ -567,7 +596,12 @@ const Settings = () => {
 
       // Convertir formato de base de datos a formato del frontend
       const formattedOpeningHours: {
-        [key: string]: { open: string; close: string; closed: boolean };
+        [key: string]: {
+          open: string;
+          close: string;
+          closed: boolean;
+          allDay: boolean;
+        };
       } = {};
       Object.keys(branchOpeningHours).forEach((day) => {
         const dayData = branchOpeningHours[day];
@@ -575,6 +609,7 @@ const Settings = () => {
           open: dayData.open_time || "09:00",
           close: dayData.close_time || "22:00",
           closed: dayData.is_closed || false,
+          allDay: dayData.is_all_day || false,
         };
       });
 
@@ -647,7 +682,11 @@ const Settings = () => {
       [day]: {
         ...settings.openingHours[day],
         [field]:
-          field === "closed" ? !settings.openingHours[day].closed : value,
+          field === "closed"
+            ? !settings.openingHours[day].closed
+            : field === "allDay"
+              ? !settings.openingHours[day].allDay
+              : value,
       },
     };
 
@@ -912,6 +951,7 @@ const Settings = () => {
           open_time: string;
           close_time: string;
           is_closed: boolean;
+          is_all_day: boolean;
         };
       } = {};
       Object.keys(settings.openingHours).forEach((day) => {
@@ -920,6 +960,7 @@ const Settings = () => {
           open_time: dayData.open,
           close_time: dayData.close,
           is_closed: dayData.closed,
+          is_all_day: dayData.allDay || false,
         };
       });
 
@@ -1473,68 +1514,99 @@ const Settings = () => {
                     key={day}
                     className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 gap-x-4"
                   >
-                    {/* Línea 1 en móvil: Día + Checkbox */}
+                    {/* Línea 1 en móvil: Día + Checkboxes */}
                     <div className="flex items-center gap-3 sm:gap-0 sm:contents">
                       <div className="w-16 sm:w-24">
                         <span className="text-xs sm:text-sm font-medium text-gray-700">
                           {label}
                         </span>
                       </div>
-                      <div className="flex items-center">
-                        <input
-                          id={`closed-${day}`}
-                          name={`closed-${day}`}
-                          type="checkbox"
-                          checked={settings.openingHours[day].closed}
-                          onChange={() =>
-                            handleHoursChange(day, "closed", null)
-                          }
-                          className="h-4 w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
-                        />
-                        <label
-                          htmlFor={`closed-${day}`}
-                          className="ml-1.5 sm:ml-2 text-xs sm:text-sm text-gray-700"
-                        >
-                          Cerrado
-                        </label>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center">
+                          <input
+                            id={`closed-${day}`}
+                            name={`closed-${day}`}
+                            type="checkbox"
+                            checked={settings.openingHours[day].closed}
+                            onChange={() =>
+                              handleHoursChange(day, "closed", null)
+                            }
+                            className="h-4 w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
+                          />
+                          <label
+                            htmlFor={`closed-${day}`}
+                            className="ml-1.5 text-xs sm:text-sm text-gray-700"
+                          >
+                            Cerrado
+                          </label>
+                        </div>
+                        {!settings.openingHours[day].closed && (
+                          <div className="flex items-center">
+                            <input
+                              id={`allday-${day}`}
+                              name={`allday-${day}`}
+                              type="checkbox"
+                              checked={
+                                settings.openingHours[day].allDay || false
+                              }
+                              onChange={() =>
+                                handleHoursChange(day, "allDay", null)
+                              }
+                              className="h-4 w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
+                            />
+                            <label
+                              htmlFor={`allday-${day}`}
+                              className="ml-1.5 text-xs sm:text-sm text-gray-700"
+                            >
+                              Todo el día
+                            </label>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    {/* Línea 2 en móvil: Inputs de hora */}
-                    {!settings.openingHours[day].closed && (
-                      <div className="flex items-center gap-2 sm:gap-0 sm:contents mt-1.5 sm:mt-0 pl-0 sm:pl-0">
-                        <div className="flex items-center">
-                          <label htmlFor={`open-${day}`} className="sr-only">
-                            Abre
-                          </label>
-                          <input
-                            type="time"
-                            id={`open-${day}`}
-                            value={settings.openingHours[day].open}
-                            onChange={(e) =>
-                              handleHoursChange(day, "open", e.target.value)
-                            }
-                            className="block w-full shadow-sm text-xs sm:text-sm border-gray-300 rounded-md focus:ring-custom-green-500 focus:border-custom-green-500"
-                          />
+                    {/* Línea 2 en móvil: Inputs de hora o badge 24 hrs */}
+                    {!settings.openingHours[day].closed &&
+                      (settings.openingHours[day].allDay ? (
+                        <div className="mt-1.5 sm:mt-0">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                            24 hrs
+                          </span>
                         </div>
-                        <span className="text-xs sm:text-base text-gray-500">
-                          a
-                        </span>
-                        <div className="flex items-center">
-                          <label htmlFor={`close-${day}`} className="sr-only">
-                            Cierra
-                          </label>
-                          <input
-                            type="time"
-                            id={`close-${day}`}
-                            value={settings.openingHours[day].close}
-                            onChange={(e) =>
-                              handleHoursChange(day, "close", e.target.value)
-                            }
-                            className="block w-full shadow-sm text-xs sm:text-sm border-gray-300 rounded-md focus:ring-custom-green-500 focus:border-custom-green-500"
-                          />
+                      ) : (
+                        <div className="flex items-center gap-2 sm:gap-0 sm:contents mt-1.5 sm:mt-0 pl-0 sm:pl-0">
+                          <div className="flex items-center">
+                            <label htmlFor={`open-${day}`} className="sr-only">
+                              Abre
+                            </label>
+                            <input
+                              type="time"
+                              id={`open-${day}`}
+                              value={settings.openingHours[day].open}
+                              onChange={(e) =>
+                                handleHoursChange(day, "open", e.target.value)
+                              }
+                              className="block w-full shadow-sm text-xs sm:text-sm border-gray-300 rounded-md focus:ring-custom-green-500 focus:border-custom-green-500"
+                            />
+                          </div>
+                          <span className="text-xs sm:text-base text-gray-500">
+                            a
+                          </span>
+                          <div className="flex items-center">
+                            <label htmlFor={`close-${day}`} className="sr-only">
+                              Cierra
+                            </label>
+                            <input
+                              type="time"
+                              id={`close-${day}`}
+                              value={settings.openingHours[day].close}
+                              onChange={(e) =>
+                                handleHoursChange(day, "close", e.target.value)
+                              }
+                              className="block w-full shadow-sm text-xs sm:text-sm border-gray-300 rounded-md focus:ring-custom-green-500 focus:border-custom-green-500"
+                            />
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      ))}
                     {/* Mostrar error de validación si existe */}
                     {validationErrors[`${day}_time`] && (
                       <div className="w-full sm:w-auto">
