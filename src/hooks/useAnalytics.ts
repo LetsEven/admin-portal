@@ -169,7 +169,13 @@ export interface RecentTransaction {
   serviceType: string;
   orderIdentifier: string;
   orderStatus: string;
-  deliveryStatus: "none" | "preparing" | "partial_ready" | "ready" | "partial" | "complete";
+  deliveryStatus:
+    | "none"
+    | "preparing"
+    | "partial_ready"
+    | "ready"
+    | "partial"
+    | "complete";
   customerName?: string | null;
   paymentsBreakdown?: PaymentBreakdown[] | null;
   // Campos adicionales para FlexBill (desde table_order)
@@ -229,6 +235,8 @@ interface UseAnalyticsReturn {
   allServicesData: AllServicesDashboardData | null;
   activeOrders: ActiveOrder[];
   topSellingItem: TopSellingItem | null;
+  sellingItemsRanking: TopSellingItem[];
+  isLoadingRanking: boolean;
   userRestaurants: Restaurant[];
   recentTransactions: RecentTransaction[];
 
@@ -288,6 +296,7 @@ interface UseAnalyticsReturn {
     orderId: string,
     status: string,
   ) => Promise<boolean>;
+  getAllSellingItems: (filters: AnalyticsFilters) => Promise<void>;
 
   // Utilidades
   clearError: () => void;
@@ -310,6 +319,10 @@ export function useAnalytics(): UseAnalyticsReturn {
   const [topSellingItem, setTopSellingItem] = useState<TopSellingItem | null>(
     null,
   );
+  const [sellingItemsRanking, setSellingItemsRanking] = useState<
+    TopSellingItem[]
+  >([]);
+  const [isLoadingRanking, setIsLoadingRanking] = useState(false);
   const [userRestaurants, setUserRestaurants] = useState<Restaurant[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<
     RecentTransaction[]
@@ -871,6 +884,32 @@ export function useAnalytics(): UseAnalyticsReturn {
     }
   }, [user, getUserRestaurants]);
 
+  const getAllSellingItems = useCallback(
+    async (filters: AnalyticsFilters) => {
+      try {
+        setIsLoadingRanking(true);
+        const token = await getAuthToken();
+        const queryParams = buildQueryParams(filters);
+        const response = await fetch(
+          `${API_BASE_URL}/api/analytics/dashboard/all-selling-items?${queryParams}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        const data = await handleApiResponse<TopSellingItem[]>(response);
+        setSellingItemsRanking(data);
+      } catch (error) {
+        console.error("❌ Error obteniendo ranking de platillos:", error);
+      } finally {
+        setIsLoadingRanking(false);
+      }
+    },
+    [getAuthToken],
+  );
+
   // Función para limpiar errores
   const clearError = useCallback(() => {
     setError(null);
@@ -882,6 +921,8 @@ export function useAnalytics(): UseAnalyticsReturn {
     allServicesData,
     activeOrders,
     topSellingItem,
+    sellingItemsRanking,
+    isLoadingRanking,
     userRestaurants,
     recentTransactions,
 
@@ -908,6 +949,7 @@ export function useAnalytics(): UseAnalyticsReturn {
     getActiveOrders,
     loadMoreOrders,
     getTopSellingItem,
+    getAllSellingItems,
     getUserRestaurants,
     getDashboardSummary,
     getRecentTransactions,

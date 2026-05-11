@@ -15,6 +15,7 @@ import {
   CrownIcon,
   InfoIcon,
   NotepadText,
+  TrendingUpIcon,
 } from "lucide-react";
 import {
   LineChart,
@@ -225,6 +226,9 @@ const Dashboard = () => {
     getActiveOrders,
     loadMoreOrders,
     getTopSellingItem,
+    getAllSellingItems,
+    sellingItemsRanking,
+    isLoadingRanking,
     getUserRestaurants,
     getDashboardSummary,
     getRecentTransactions,
@@ -286,6 +290,9 @@ const Dashboard = () => {
   ); // Día por defecto
   const [dropdownGranularidadAbierto, setDropdownGranularidadAbierto] =
     useState(false);
+
+  const [mostrarRankingModal, setMostrarRankingModal] = useState(false);
+  const [lastUsedFilters, setLastUsedFilters] = useState<any>(null);
 
   // Estado para controlar toasts
   const [previousLoadingState, setPreviousLoadingState] = useState(false);
@@ -500,7 +507,7 @@ const Dashboard = () => {
     const genderFilter = customFilters.gender || generoSeleccionado.id;
     const ageFilter = customFilters.age_range || edadSeleccionada.id;
 
-    getDashboardMetricsAllServices({
+    const filtersParaDashboard = {
       restaurant_id: restaurantId,
       branch_id: sucursalAUtilizar?.id || null,
       start_date: startDate ? formatearFechaLocal(startDate) : null,
@@ -509,7 +516,9 @@ const Dashboard = () => {
       service_type: serviceType,
       gender: genderFilter as any,
       age_range: ageFilter as any,
-    });
+    };
+    setLastUsedFilters(filtersParaDashboard);
+    getDashboardMetricsAllServices(filtersParaDashboard);
 
     // Nota: Ya no llamamos a getCompleteDashboardData porque getDashboardMetricsAllServices
     // ahora soporta todos los filtros (género, edad, servicio, sucursal, etc.)
@@ -2038,16 +2047,27 @@ const Dashboard = () => {
           </div>
 
           {/* Artículo más vendido */}
-          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          <button
+            className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg  cursor-pointer text-left w-full group"
+            onClick={() => {
+              setMostrarRankingModal(true);
+              getAllSellingItems({
+                restaurant_id: lastUsedFilters?.restaurant_id,
+                branch_id: lastUsedFilters?.branch_id,
+                start_date: lastUsedFilters?.start_date,
+                end_date: lastUsedFilters?.end_date,
+              });
+            }}
+          >
             <div className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-amber-100 p-1.5 sm:p-2 rounded-full">
+                <div className="flex-shrink-0 bg-amber-100 p-1.5 sm:p-2 rounded-full transition-colors">
                   <CrownIcon className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
                 </div>
                 <div className="ml-2 sm:ml-4 w-0 flex-1">
                   <dl>
-                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                      Más vendido
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate flex items-center gap-1">
+                      Ventas por platillo
                     </dt>
                     <dd>
                       <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
@@ -2060,14 +2080,14 @@ const Dashboard = () => {
                       <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">
                         {isLoadingTopItem || isLoadingAllServices
                           ? ""
-                          : `${datosUnificados?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades`}
+                          : `${datosUnificados?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades · Ver más`}
                       </div>
                     </dd>
                   </dl>
                 </div>
               </div>
             </div>
-          </div>
+          </button>
 
           {/* Ticket Promedio */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
@@ -2384,6 +2404,86 @@ const Dashboard = () => {
         )}
       </div>
 
+      {/* Modal de Ranking de Artículos */}
+      {mostrarRankingModal && (
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]"
+            onClick={() => setMostrarRankingModal(false)}
+          />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="bg-amber-100 p-2 rounded-full">
+                  <CrownIcon className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-gray-900">
+                    Ventas por platillo
+                  </h2>
+                </div>
+              </div>
+              <button
+                onClick={() => setMostrarRankingModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
+              >
+                <XIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Lista */}
+            <div className="overflow-y-auto flex-1 p-4 space-y-2">
+              {isLoadingRanking ? (
+                <div className="flex items-center justify-center py-12 text-gray-400">
+                  <div className="animate-spin h-6 w-6 border-2 border-amber-400 border-t-transparent rounded-full mr-3" />
+                  Cargando ranking...
+                </div>
+              ) : sellingItemsRanking.length === 0 ? (
+                <p className="text-center text-gray-400 py-12">
+                  Sin datos disponibles
+                </p>
+              ) : (
+                (() => {
+                  const maxUnidades =
+                    sellingItemsRanking[0]?.unidades_vendidas || 1;
+                  return sellingItemsRanking.map((item, index) => (
+                    <div
+                      key={item.nombre}
+                      className="flex items-center gap-3 group"
+                    >
+                      <span
+                        className={`text-xs font-bold w-5 text-right shrink-0 ${index === 0 ? "text-amber-500" : "text-gray-400"}`}
+                      >
+                        {index + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-800 truncate pr-2">
+                            {item.nombre}
+                          </span>
+                          <span className="text-xs text-gray-500 shrink-0">
+                            {item.unidades_vendidas} uds.
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${index === 0 ? "bg-amber-400" : "bg-gray-300"}`}
+                            style={{
+                              width: `${(item.unidades_vendidas / maxUnidades) * 100}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })()
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Detalles del Pedido */}
       {mostrarModal && pedidoSeleccionado && (
         <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
@@ -2529,7 +2629,11 @@ const Dashboard = () => {
                       <div
                         key={index}
                         className={`bg-gray-50 rounded-lg p-3 transition-colors ${pedidoSeleccionado?.serviceType !== "pick-n-go" ? "cursor-pointer hover:bg-gray-100" : ""}`}
-                        onClick={pedidoSeleccionado?.serviceType !== "pick-n-go" ? () => abrirModalEstado(item) : undefined}
+                        onClick={
+                          pedidoSeleccionado?.serviceType !== "pick-n-go"
+                            ? () => abrirModalEstado(item)
+                            : undefined
+                        }
                       >
                         <div className="flex items-center gap-3">
                           {item.imagen ? (
@@ -2601,7 +2705,8 @@ const Dashboard = () => {
                             </p>
                             <p className="text-xs text-gray-500">Total</p>
                             {/* Estado de entrega del item (solo para servicios con status por platillo) */}
-                            {pedidoSeleccionado?.serviceType !== "pick-n-go" && (
+                            {pedidoSeleccionado?.serviceType !==
+                              "pick-n-go" && (
                               <span
                                 className={`mt-1 inline-block px-1.5 py-0.5 rounded text-xs font-medium ${
                                   item.estadoEntrega === "delivered"
