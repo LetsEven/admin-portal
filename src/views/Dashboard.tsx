@@ -522,6 +522,12 @@ const Dashboard = () => {
     };
     setLastUsedFilters(filtersParaDashboard);
     getDashboardMetricsAllServices(filtersParaDashboard);
+    getAllSellingItems({
+      restaurant_id: filtersParaDashboard.restaurant_id,
+      branch_id: filtersParaDashboard.branch_id,
+      start_date: filtersParaDashboard.start_date,
+      end_date: filtersParaDashboard.end_date,
+    });
 
     // Nota: Ya no llamamos a getCompleteDashboardData porque getDashboardMetricsAllServices
     // ahora soporta todos los filtros (género, edad, servicio, sucursal, etc.)
@@ -2124,16 +2130,14 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
-                        {isLoadingTopItem || isLoadingAllServices
+                        {isLoadingRanking || isLoadingAllServices
                           ? "..."
-                          : datosUnificados?.articulo_mas_vendido?.nombre ||
-                            topSellingItem?.nombre ||
-                            "Sin datos"}
+                          : sellingItemsRanking[0]?.nombre || "Sin datos"}
                       </div>
                       <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">
-                        {isLoadingTopItem || isLoadingAllServices
+                        {isLoadingRanking || isLoadingAllServices
                           ? ""
-                          : `${datosUnificados?.articulo_mas_vendido?.unidades_vendidas || topSellingItem?.unidades_vendidas || 0} unidades · Ver más`}
+                          : `${sellingItemsRanking[0]?.unidades_vendidas || 0} unidades · Ver más`}
                       </div>
                     </dd>
                   </dl>
@@ -2475,6 +2479,15 @@ const Dashboard = () => {
                   <h2 className="text-base font-semibold text-gray-900">
                     Ventas por platillo
                   </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {sellingItemsRanking
+                      .reduce(
+                        (sum, item) => sum + (item.unidades_vendidas || 0),
+                        0,
+                      )
+                      .toLocaleString()}{" "}
+                    unidades en total
+                  </p>
                 </div>
               </div>
               <button
