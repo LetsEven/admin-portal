@@ -206,36 +206,22 @@ const Dashboard = () => {
   const {
     dashboardData,
     allServicesData,
-    activeOrders,
-    topSellingItem,
     userRestaurants,
     isLoading,
     isLoadingAllServices,
-    isLoadingOrders,
-    isLoadingMoreOrders,
-    isLoadingTopItem,
-    isLoadingRestaurants,
     isLoadingTransactions,
-    ordersPagination,
     transactionsPagination,
     recentTransactions,
     error,
-    getDashboardMetrics,
-    getCompleteDashboardData,
     getDashboardMetricsAllServices,
     getActiveOrders,
-    loadMoreOrders,
-    getTopSellingItem,
     getAllSellingItems,
     sellingItemsRanking,
     isLoadingRanking,
-    getUserRestaurants,
-    getDashboardSummary,
     getRecentTransactions,
     getOrderItems,
     updateDishDeliveryStatus,
     updatePickAndGoOrderCookingStatus,
-    clearError,
   } = useAnalytics();
 
   // Hook para onboarding
@@ -2129,15 +2115,21 @@ const Dashboard = () => {
                       Ventas por platillo
                     </dt>
                     <dd>
-                      <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
+                      <div className="text-sm sm:text-lg font-medium text-gray-900">
                         {isLoadingRanking || isLoadingAllServices
                           ? "..."
-                          : sellingItemsRanking[0]?.nombre || "Sin datos"}
+                          : sellingItemsRanking
+                              .reduce(
+                                (sum, item) =>
+                                  sum + (item.unidades_vendidas || 0),
+                                0,
+                              )
+                              .toLocaleString()}
                       </div>
                       <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">
                         {isLoadingRanking || isLoadingAllServices
                           ? ""
-                          : `${sellingItemsRanking[0]?.unidades_vendidas || 0} unidades · Ver más`}
+                          : "Ver más"}
                       </div>
                     </dd>
                   </dl>
