@@ -428,6 +428,9 @@ const Dashboard = () => {
       startDate = new Date(startDateISO);
 
       endDate = new Date(fechaBase);
+      if (rangoActual[1] < rangoActual[0]) {
+        endDate.setDate(endDate.getDate() + 1);
+      }
       endDate.setHours(rangoActual[1], 59, 59, 999);
     }
     // Si la granularidad es "día", usar el mes seleccionado
@@ -804,32 +807,22 @@ const Dashboard = () => {
   };
 
   const cambiarHoraInicio = (nuevaHora: number) => {
-    if (nuevaHora < rangoHoras[1]) {
-      const nuevoRango = [nuevaHora, rangoHoras[1]];
-      setRangoHoras(nuevoRango);
+    const nuevoRango = [nuevaHora, rangoHoras[1]];
+    setRangoHoras(nuevoRango);
 
-      if (
-        granularidadSeleccionada.id === "hora" &&
-        userRestaurants.length > 0
-      ) {
-        const restaurantId = userRestaurants[0]?.id;
-        cargarDatosDashboard(restaurantId, {}, nuevoRango);
-      }
+    if (granularidadSeleccionada.id === "hora" && userRestaurants.length > 0) {
+      const restaurantId = userRestaurants[0]?.id;
+      cargarDatosDashboard(restaurantId, {}, nuevoRango);
     }
   };
 
   const cambiarHoraFin = (nuevaHora: number) => {
-    if (nuevaHora > rangoHoras[0]) {
-      const nuevoRango = [rangoHoras[0], nuevaHora];
-      setRangoHoras(nuevoRango);
+    const nuevoRango = [rangoHoras[0], nuevaHora];
+    setRangoHoras(nuevoRango);
 
-      if (
-        granularidadSeleccionada.id === "hora" &&
-        userRestaurants.length > 0
-      ) {
-        const restaurantId = userRestaurants[0]?.id;
-        cargarDatosDashboard(restaurantId, {}, nuevoRango);
-      }
+    if (granularidadSeleccionada.id === "hora" && userRestaurants.length > 0) {
+      const restaurantId = userRestaurants[0]?.id;
+      cargarDatosDashboard(restaurantId, {}, nuevoRango);
     }
   };
 
@@ -842,7 +835,16 @@ const Dashboard = () => {
       const datosOriginales = datosUnificados.grafico;
       const datosCompletos = [];
 
-      for (let hora = rangoHoras[0]; hora <= rangoHoras[1]; hora++) {
+      const horasSecuencia: number[] = [];
+      if (rangoHoras[1] >= rangoHoras[0]) {
+        for (let h = rangoHoras[0]; h <= rangoHoras[1]; h++)
+          horasSecuencia.push(h);
+      } else {
+        for (let h = rangoHoras[0]; h <= 23; h++) horasSecuencia.push(h);
+        for (let h = 0; h <= rangoHoras[1]; h++) horasSecuencia.push(h);
+      }
+
+      for (const hora of horasSecuencia) {
         const datoExistente = datosOriginales.find(
           (item) => item.hora === hora,
         );
@@ -1547,49 +1549,94 @@ const Dashboard = () => {
       {/* Selector de granularidad y controles específicos */}
       <div className="mb-4 sm:mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 mb-3 sm:mb-4">
-          {/* Selector de Granularidad a la izquierda */}
-          <div className="relative">
-            <button
-              onClick={() =>
-                setDropdownGranularidadAbierto(!dropdownGranularidadAbierto)
-              }
-              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
-            >
-              <ClockIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
-              <span className="text-xs sm:text-sm text-gray-600">
-                Granularidad:
-              </span>
-              <span className="text-xs sm:text-sm font-medium text-gray-800">
-                {granularidadSeleccionada.label}
-              </span>
-              <ChevronDownIcon
-                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${dropdownGranularidadAbierto ? "transform rotate-180" : ""}`}
-              />
-            </button>
-            {dropdownGranularidadAbierto && (
-              <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
-                <div className="px-3 py-2 border-b border-gray-100">
-                  <p className="text-xs font-medium text-gray-500 uppercase">
-                    Seleccionar granularidad
-                  </p>
+          {/* Selector de Granularidad + Desde/Hasta a la izquierda */}
+          <div className="flex items-end gap-2 sm:gap-3">
+            <div className="relative">
+              <button
+                onClick={() =>
+                  setDropdownGranularidadAbierto(!dropdownGranularidadAbierto)
+                }
+                className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              >
+                <ClockIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+                <span className="text-xs sm:text-sm text-gray-600">
+                  Granularidad:
+                </span>
+                <span className="text-xs sm:text-sm font-medium text-gray-800">
+                  {granularidadSeleccionada.label}
+                </span>
+                <ChevronDownIcon
+                  className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 transition-transform duration-200 ${dropdownGranularidadAbierto ? "transform rotate-180" : ""}`}
+                />
+              </button>
+              {dropdownGranularidadAbierto && (
+                <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 animate-in fade-in duration-100 ease-out">
+                  <div className="px-3 py-2 border-b border-gray-100">
+                    <p className="text-xs font-medium text-gray-500 uppercase">
+                      Seleccionar granularidad
+                    </p>
+                  </div>
+                  <ul className="py-1">
+                    {opcionesGranularidad.map((granularidad) => (
+                      <li key={granularidad.id}>
+                        <button
+                          onClick={() => cambiarGranularidad(granularidad)}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
+                        >
+                          <span className="text-sm text-gray-800">
+                            {granularidad.label}
+                          </span>
+                          {granularidadSeleccionada.id === granularidad.id && (
+                            <CheckIcon className="h-4 w-4 text-custom-green-600" />
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="py-1">
-                  {opcionesGranularidad.map((granularidad) => (
-                    <li key={granularidad.id}>
-                      <button
-                        onClick={() => cambiarGranularidad(granularidad)}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between"
-                      >
-                        <span className="text-sm text-gray-800">
-                          {granularidad.label}
-                        </span>
-                        {granularidadSeleccionada.id === granularidad.id && (
-                          <CheckIcon className="h-4 w-4 text-custom-green-600" />
-                        )}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+              )}
+            </div>
+
+            {/* Selectores Desde/Hasta inline junto a granularidad */}
+            {granularidadSeleccionada.id === "hora" && (
+              <div className="flex items-end gap-2">
+                <div>
+                  <label className="text-[10px] sm:text-xs text-gray-500 block mb-1">
+                    Desde
+                  </label>
+                  <select
+                    value={rangoHoras[0]}
+                    onChange={(e) => cambiarHoraInicio(Number(e.target.value))}
+                    className="text-xs sm:text-sm p-1 sm:p-1.5 border border-gray-200 rounded bg-white"
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {String(i).padStart(2, "0")}:00
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] sm:text-xs text-gray-500 block mb-1">
+                    Hasta
+                  </label>
+                  <select
+                    value={rangoHoras[1]}
+                    onChange={(e) => cambiarHoraFin(Number(e.target.value))}
+                    className="text-xs sm:text-sm p-1 sm:p-1.5 border border-gray-200 rounded bg-white"
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {String(i).padStart(2, "0")}:00
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {rangoHoras[1] < rangoHoras[0] && (
+                  <span className="text-[10px] sm:text-xs bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full mb-1">
+                    +1 día
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -1917,7 +1964,9 @@ const Dashboard = () => {
 
       {/* Tarjetas de métricas */}
       <div data-tour="indicadores-clave">
-        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 mb-4 sm:mb-6">
+        <div
+          className={`grid grid-cols-2 gap-3 sm:gap-5 mb-4 sm:mb-6 ${servicesLoaded && !enabledServices.includes("flex-bill") && !enabledServices.includes("tap-pay") ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}
+        >
           {/* Ventas totales */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
             <div className="p-3 sm:p-8">
@@ -1968,30 +2017,34 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Pedidos */}
-          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-3 sm:p-8">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-amber-100 p-2 sm:p-3 rounded-full">
-                  <ShoppingBagIcon className="h-4 w-4 sm:h-6 sm:w-6 text-amber-600" />
-                </div>
-                <div className="ml-2 sm:ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                      Pedidos
-                    </dt>
-                    <dd>
-                      <div className="text-sm sm:text-lg font-medium text-gray-900">
-                        {isLoading || isLoadingAllServices
-                          ? "..."
-                          : datosUnificados?.metricas?.pedidos || "0"}
-                      </div>
-                    </dd>
-                  </dl>
+          {/* Pedidos — solo para FlexBill o Tap & Pay */}
+          {(!servicesLoaded ||
+            enabledServices.includes("flex-bill") ||
+            enabledServices.includes("tap-pay")) && (
+            <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+              <div className="p-3 sm:p-8">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 bg-amber-100 p-2 sm:p-3 rounded-full">
+                    <ShoppingBagIcon className="h-4 w-4 sm:h-6 sm:w-6 text-amber-600" />
+                  </div>
+                  <div className="ml-2 sm:ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                        Pedidos
+                      </dt>
+                      <dd>
+                        <div className="text-sm sm:text-lg font-medium text-gray-900">
+                          {isLoading || isLoadingAllServices
+                            ? "..."
+                            : datosUnificados?.metricas?.pedidos || "0"}
+                        </div>
+                      </dd>
+                    </dl>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Órdenes Totales */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
