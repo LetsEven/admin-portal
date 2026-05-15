@@ -9,8 +9,8 @@ import "../src/index.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Admin Portal - Xquisito",
-  description: "Portal de Administración Xquisito",
+  title: "Admin Portal - Even",
+  description: "Portal de Administración Even",
   icons: {
     icon: [
       {
@@ -39,36 +39,36 @@ export default function RootLayout({
             <body className={inter.className}>
               {children}
               <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 3000,
-                style: {
-                  background: "#fff",
-                  color: "#333",
-                  borderRadius: "8px",
-                  border: "1px solid #e5e7eb",
-                  fontSize: "14px",
-                },
-                success: {
+                position="top-right"
+                toastOptions={{
+                  duration: 3000,
                   style: {
-                    border: "1px solid #10b981",
+                    background: "#fff",
+                    color: "#333",
+                    borderRadius: "8px",
+                    border: "1px solid #e5e7eb",
+                    fontSize: "14px",
                   },
-                  iconTheme: {
-                    primary: "#10b981",
-                    secondary: "#fff",
+                  success: {
+                    style: {
+                      border: "1px solid #10b981",
+                    },
+                    iconTheme: {
+                      primary: "#10b981",
+                      secondary: "#fff",
+                    },
                   },
-                },
-                error: {
-                  style: {
-                    border: "1px solid #ef4444",
+                  error: {
+                    style: {
+                      border: "1px solid #ef4444",
+                    },
+                    iconTheme: {
+                      primary: "#ef4444",
+                      secondary: "#fff",
+                    },
                   },
-                  iconTheme: {
-                    primary: "#ef4444",
-                    secondary: "#fff",
-                  },
-                },
-              }}
-            />
+                }}
+              />
             </body>
           </html>
         </SocketProvider>

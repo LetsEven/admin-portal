@@ -48,7 +48,7 @@ export const PRE_APPROVED_TEMPLATES: WhatsAppTemplate[] = [
       variables: ["discount", "product_name", "codigo"],
     },
     buttons: [
-      { type: "url", text: "Ver menú", url: "https://xquisito.ai/menu" },
+      { type: "url", text: "Ver menú", url: "https://letseven.io/menu" },
     ],
     estimatedCost: "~$0.005 USD",
     description: "Template versátil para promociones generales con descuento",
@@ -87,7 +87,7 @@ export const PRE_APPROVED_TEMPLATES: WhatsAppTemplate[] = [
       variables: ["offer_name", "discount", "codigo"],
     },
     buttons: [
-      { type: "url", text: "Canjear ahora", url: "https://xquisito.ai/redeem" },
+      { type: "url", text: "Canjear ahora", url: "https://letseven.io/redeem" },
     ],
     estimatedCost: "~$0.005 USD",
     description: "Crear urgencia para ofertas próximas a expirar",
@@ -124,7 +124,7 @@ export const PRE_APPROVED_TEMPLATES: WhatsAppTemplate[] = [
       variables: ["dish_name", "discount", "codigo"],
     },
     buttons: [
-      { type: "url", text: "Ordenar ahora", url: "https://xquisito.ai/order" },
+      { type: "url", text: "Ordenar ahora", url: "https://letseven.io/order" },
     ],
     estimatedCost: "~$0.005 USD",
     description: "Recomendación basada en historial del cliente",
@@ -134,28 +134,37 @@ export const PRE_APPROVED_TEMPLATES: WhatsAppTemplate[] = [
 /**
  * Encuentra un template por su ID
  */
-export function getTemplateById(templateId: string): WhatsAppTemplate | undefined {
-  return PRE_APPROVED_TEMPLATES.find(t => t.id === templateId);
+export function getTemplateById(
+  templateId: string,
+): WhatsAppTemplate | undefined {
+  return PRE_APPROVED_TEMPLATES.find((t) => t.id === templateId);
 }
 
 /**
  * Extrae la URL de la imagen del header de un template de WhatsApp
  */
-export function extractImageFromWhatsAppTemplate(variables?: Record<string, string>): string | null {
+export function extractImageFromWhatsAppTemplate(
+  variables?: Record<string, string>,
+): string | null {
   if (!variables) return null;
 
   // Buscar en las variables comunes para imágenes
-  return variables.image_url ||
-         variables.birthday_image ||
-         variables.recommended_dish_image ||
-         null;
+  return (
+    variables.image_url ||
+    variables.birthday_image ||
+    variables.recommended_dish_image ||
+    null
+  );
 }
 
 /**
  * Convierte un template de WhatsApp a formato de texto plano
  * para guardarlo en custom_variables
  */
-export function whatsAppTemplateToText(template: WhatsAppTemplate, variables?: Record<string, string>): string {
+export function whatsAppTemplateToText(
+  template: WhatsAppTemplate,
+  variables?: Record<string, string>,
+): string {
   let text = "";
 
   // Header
@@ -189,7 +198,7 @@ export function whatsAppTemplateToText(template: WhatsAppTemplate, variables?: R
   // Buttons
   if (template.buttons && template.buttons.length > 0) {
     text += "\n\n---\n";
-    template.buttons.forEach(button => {
+    template.buttons.forEach((button) => {
       if (button.type === "url") {
         text += `🔗 ${button.text}: ${button.url}\n`;
       } else if (button.type === "phone") {

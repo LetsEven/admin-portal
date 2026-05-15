@@ -1,51 +1,51 @@
-// Tema centralizado de Joyride para Xquisito
+// Tema centralizado de Joyride para Even
 // Usado por todos los hooks de onboarding (Dashboard, Settings, Menu, Rewards, Services, Pepper)
 
 export const joyrideTheme = {
   options: {
-    primaryColor: '#2A5A62',
-    backgroundColor: '#ffffff',
-    textColor: '#173E44',
-    overlayColor: 'rgba(23, 62, 68, 0.4)',
-    arrowColor: '#2A5A62',
+    primaryColor: "#2A5A62",
+    backgroundColor: "#ffffff",
+    textColor: "#173E44",
+    overlayColor: "rgba(23, 62, 68, 0.4)",
+    arrowColor: "#2A5A62",
     zIndex: 10000,
     width: undefined, // Controlado por CSS responsive
-    beaconSize: 36
+    beaconSize: 36,
   },
   tooltip: {
     borderRadius: 12,
-    padding: '16px 16px',
-    maxWidth: '92vw',
+    padding: "16px 16px",
+    maxWidth: "92vw",
   },
   tooltipContent: {
-    padding: '12px 0'
+    padding: "12px 0",
   },
   tooltipTitle: {
-    color: '#173E44',
-    fontSize: '1rem',
-    fontWeight: '600',
-    marginBottom: '6px'
+    color: "#173E44",
+    fontSize: "1rem",
+    fontWeight: "600",
+    marginBottom: "6px",
   },
   tooltipBody: {
-    color: '#555555',
-    fontSize: '0.875rem',
-    lineHeight: '1.5'
+    color: "#555555",
+    fontSize: "0.875rem",
+    lineHeight: "1.5",
   },
   buttonNext: {
-    backgroundColor: '#2A5A62',
-    fontSize: '0.8rem',
-    padding: '8px 16px',
-    borderRadius: '8px'
+    backgroundColor: "#2A5A62",
+    fontSize: "0.8rem",
+    padding: "8px 16px",
+    borderRadius: "8px",
   },
   buttonBack: {
-    color: '#2A5A62',
-    fontSize: '0.8rem',
-    padding: '8px 16px'
+    color: "#2A5A62",
+    fontSize: "0.8rem",
+    padding: "8px 16px",
   },
   buttonSkip: {
-    color: '#888888',
-    fontSize: '0.8rem'
-  }
+    color: "#888888",
+    fontSize: "0.8rem",
+  },
 };
 
 // CSS responsive para los tooltips de Joyride

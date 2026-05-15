@@ -51,7 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
           {/* Full logo for expanded state */}
           <img
             src="/logo-green.webp"
-            alt="Xquisito Logo"
+            alt="Even Logo"
             className={`h-8 w-auto max-w-full transition-opacity ${mobile || isExpanded ? "duration-[800ms]" : "duration-0"} ease-out ${mobile || isExpanded ? "opacity-100" : "opacity-0 absolute"}`}
           />
           {/* Compact logo for collapsed state */}
@@ -60,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
           >
             <img
               src="/logo-short-green.webp"
-              alt="Xquisito Logo"
+              alt="Even Logo"
               className="h-8 w-auto object-contain"
             />
           </div>

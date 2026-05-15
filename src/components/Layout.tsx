@@ -137,7 +137,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="flex-1 flex justify-center">
             <img
               src="/logo-short-green.webp"
-              alt="Xquisito Logo"
+              alt="Even Logo"
               className="h-8 w-auto"
             />
           </div>

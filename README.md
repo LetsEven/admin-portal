@@ -1,26 +1,30 @@
-# Xquisito Admin Portal
+# Even Admin Portal
 
-Portal de administración para la gestión de restaurantes Xquisito. Aplicación Next.js con TypeScript que permite administrar sucursales, menús, promociones, recompensas y análisis de datos.
+Portal de administración para la gestión de restaurantes Even. Aplicación Next.js con TypeScript que permite administrar sucursales, menús, promociones, recompensas y análisis de datos.
 
 ## 🚀 Características
 
 ### Dashboard Dinámico
+
 - **Datos por sucursal**: Métricas específicas que cambian según la ubicación seleccionada
 - **Gestión de pedidos**: Vista detallada de pedidos con información del cliente y canal
 - **Actividad reciente**: Lista actualizable de actividades con botón de refresh
 - **Análisis en tiempo real**: Gráficos y estadísticas interactivas
 
 ### Gestión de Scala (Recompensas)
+
 - **Vista previa de email**: Contenido completo con funcionalidad de canje
 - **Modal de precios**: Diseño glassmorphism con efectos visuales modernos
 - **Gestión de campañas**: Control completo de promociones y recompensas
 
-### Gestión de Dine (Promociones)  
+### Gestión de Dine (Promociones)
+
 - **Administración simplificada**: Toggles sin animaciones problemáticas
 - **Drag & drop**: Reordenamiento intuitivo de elementos
 - **Vista móvil optimizada**: Interfaz responsive para todos los dispositivos
 
 ### Gestión de Menú
+
 - **Header personalizable**: Sección tipo LinkedIn con banner, logo circular y nombre editable
 - **Sistema de recorte avanzado**: Modal con zoom dinámico -300% a 300% para logos
 - **Editor visual**: Interfaz intuitiva para modificar menús con persistencia localStorage
@@ -33,6 +37,7 @@ Portal de administración para la gestión de restaurantes Xquisito. Aplicación
   - **Lista desplegable con cantidad**: Selección con control de cantidad
 
 ### Pepper AI Chat
+
 - **Interfaz de chat inteligente**: Sistema de conversación con IA integrado
 - **Posicionamiento dinámico**: La UI se adapta automáticamente al estado de conversación
 - **Animaciones fluidas**: Transiciones suaves cuando se expande/contrae el sidebar
@@ -45,7 +50,7 @@ Portal de administración para la gestión de restaurantes Xquisito. Aplicación
 - **Framework**: Next.js 14 con App Router
 - **Lenguaje**: TypeScript
 - **Estilos**: Tailwind CSS
-- **Íconos**: Lucide React  
+- **Íconos**: Lucide React
 - **Gráficos**: Recharts
 - **Drag & Drop**: React Beautiful DND
 - **Recorte de imágenes**: react-easy-crop
@@ -56,7 +61,7 @@ Portal de administración para la gestión de restaurantes Xquisito. Aplicación
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/XquisitoAI/admin-portal.git
+git clone https://github.com/LetsEven/admin-portal.git
 cd admin-portal
 
 # Instalar dependencias
@@ -72,7 +77,7 @@ La aplicación estará disponible en [http://localhost:3000](http://localhost:30
 
 ```bash
 npm run dev          # Servidor de desarrollo
-npm run build        # Build de producción  
+npm run build        # Build de producción
 npm run start        # Servidor de producción
 npm run lint         # Verificar código con ESLint
 npm run type-check   # Verificar tipos de TypeScript
@@ -105,11 +110,13 @@ src/
 ## 🎨 Guía de Estilos
 
 ### Colores
+
 - **Verde principal**: `#173E44`
 - **Verde Tailwind**: `green-400`, `green-500`, `green-600`
 - **Glassmorphism**: `backdrop-blur-sm` con transparencias
 
 ### Componentes
+
 - **Modales**: Efectos glassmorphism con `backdrop-blur`
 - **Botones**: Esquinas redondeadas con hover effects
 - **Tarjetas**: Sombras sutiles y bordes suaves
@@ -118,24 +125,28 @@ src/
 ## 🔄 Funcionalidades Principales
 
 ### Dashboard Interactivo
+
 - Cambio de datos según sucursal seleccionada
 - Modales detallados para cada pedido
 - Información de canal (Tap Order & Pay, Pick N Go)
 - Botón de actualización para actividad reciente
 
 ### Email Marketing
+
 - Vista previa completa con scroll
 - Botón de canje funcional con alertas
 - Contenido realista con testimonios y promociones
 - Diseño optimizado para móvil y desktop
 
 ### Gestión Simplificada
+
 - Toggles sin animaciones complejas
 - Cambios de estado inmediatos
 - Interfaz limpia y moderna
 - Feedback visual claro
 
 ### Sistema Pepper AI
+
 - **Detección de sidebar**: JavaScript detecta expansión/contracción automáticamente
 - **Posicionamiento dinámico**: Elementos se mueven con transiciones de 300ms
 - **Video loops**: Logo animado con `/video-icon-pepper.webm` en reproducción continua
@@ -174,8 +185,8 @@ git push origin main         # Push a main branch
 
 ## 📄 Licencia
 
-Proyecto privado de Xquisito AI - Todos los derechos reservados.
+Proyecto privado de Even AI - Todos los derechos reservados.
 
 ---
 
-Desarrollado con ❤️ para **Xquisito** | Contacto: contacto@xquisito.ai
+Desarrollado con ❤️ para **Even** | Contacto: contacto@letseven.io

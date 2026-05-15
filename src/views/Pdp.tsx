@@ -22,7 +22,7 @@ const paymentProviders: PaymentProvider[] = [
   {
     id: "ecartpay",
     name: "eCartPay",
-    description: "Solución de pagos integrada con Xquisito.",
+    description: "Solución de pagos integrada con Even.",
     logo: "/ecartpay_logo.webp",
     gradient: "from-emerald-500 to-teal-600",
     headerBg: "bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700",

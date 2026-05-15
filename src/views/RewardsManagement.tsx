@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import Joyride from 'react-joyride';
+import Joyride from "react-joyride";
 import SegmentModal from "../components/SegmentModal";
 import NewCampaignModal from "../components/NewCampaignModal";
 import DeliveryMethodModal from "../components/DeliveryMethodModal";
@@ -12,7 +12,11 @@ import { setAuthHook, useAdminPortalApi } from "../services/adminPortalApi";
 import { useCampaignsApi } from "../services/campaignsApi";
 import { useSubscriptionsApi } from "../services/subscriptionsApi";
 import { useAuth } from "@clerk/nextjs";
-import { useRewardsOnboarding, joyrideTheme, joyrideResponsiveCSS } from "../hooks/useRewardsOnboarding";
+import {
+  useRewardsOnboarding,
+  joyrideTheme,
+  joyrideResponsiveCSS,
+} from "../hooks/useRewardsOnboarding";
 import {
   PlusIcon,
   AwardIcon,
@@ -34,11 +38,11 @@ import toast from "react-hot-toast";
 import {
   getTemplateById,
   whatsAppTemplateToText,
-  extractImageFromWhatsAppTemplate
+  extractImageFromWhatsAppTemplate,
 } from "../utils/whatsappTemplates";
 import {
   renderSmsTemplateToText,
-  extractImageFromBlocks
+  extractImageFromBlocks,
 } from "../utils/smsTemplateUtils";
 
 // Saved segments fallback (will be replaced by API data)
@@ -493,7 +497,7 @@ const EmailPreview: React.FC<EmailPreviewProps> = ({ campaign, onClose }) => {
                           alert(
                             "¡Promoción canjeada exitosamente! 🎉\nSe ha descontado " +
                               campaign.pointsRequired +
-                              " puntos de tu cuenta Xquisito."
+                              " puntos de tu cuenta Even.",
                           );
                         }}
                         className="bg-[#FF9800] hover:bg-[#F57C00] text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all text-xs mx-auto flex items-center"
@@ -712,7 +716,8 @@ const RewardsManagement = () => {
   const { restaurant, loading: restaurantLoading } = useRestaurant();
 
   // Rewards onboarding tour
-  const { run, steps, handleJoyrideCallback, startOnboarding } = useRewardsOnboarding();
+  const { run, steps, handleJoyrideCallback, startOnboarding } =
+    useRewardsOnboarding();
 
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
@@ -741,7 +746,7 @@ const RewardsManagement = () => {
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [templatesError, setTemplatesError] = useState<string | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<SmsTemplate | null>(
-    null
+    null,
   );
 
   // API hooks
@@ -782,7 +787,7 @@ const RewardsManagement = () => {
     } catch (error) {
       console.error("Error loading SMS templates:", error);
       setTemplatesError(
-        error instanceof Error ? error.message : "Failed to load templates"
+        error instanceof Error ? error.message : "Failed to load templates",
       );
     } finally {
       setTemplatesLoading(false);
@@ -827,18 +832,20 @@ const RewardsManagement = () => {
       console.log("Loading plan info for restaurant:", restaurantId);
       const [subscription, plans] = await Promise.all([
         subscriptionsApi.getCurrentSubscription(),
-        subscriptionsApi.getPlans()
+        subscriptionsApi.getPlans(),
       ]);
 
       console.log("Current subscription:", subscription);
       setCurrentPlan(subscription);
 
       if (subscription && plans) {
-        const planConfig = plans.find(p => p.id === subscription.plan_type);
+        const planConfig = plans.find((p) => p.id === subscription.plan_type);
         if (planConfig) {
           setPlanLimits(planConfig.limits);
           console.log("Plan limits loaded:", planConfig.limits);
-          console.log(`✅ Plan: ${subscription.plan_type}, Campaigns limit: ${planConfig.limits.campaigns_per_month}`);
+          console.log(
+            `✅ Plan: ${subscription.plan_type}, Campaigns limit: ${planConfig.limits.campaigns_per_month}`,
+          );
         }
       }
     } catch (error) {
@@ -874,7 +881,8 @@ const RewardsManagement = () => {
         const durationInDays = Math.ceil(durationInMs / (1000 * 60 * 60 * 24));
 
         // Extract image from templates if available
-        let campaignImage = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60";
+        let campaignImage =
+          "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60";
 
         if (campaign.templates && campaign.templates.length > 0) {
           // Iterate through templates to find an image
@@ -882,7 +890,7 @@ const RewardsManagement = () => {
             if (template.template_data?.blocks) {
               // Find first image block
               const imageBlock = template.template_data.blocks.find(
-                (block: any) => block.type === 'image' && block.content
+                (block: any) => block.type === "image" && block.content,
               );
 
               if (imageBlock?.content) {
@@ -930,7 +938,7 @@ const RewardsManagement = () => {
       setCampaignUsage(transformedCampaigns.length);
       console.log(
         "Campaigns loaded successfully:",
-        transformedCampaigns.length
+        transformedCampaigns.length,
       );
     } catch (error: any) {
       console.error("Error loading campaigns:", error);
@@ -996,13 +1004,13 @@ const RewardsManagement = () => {
   // Get counts for KPI buttons
   const allCount = campaigns.length;
   const activeCount = campaigns.filter(
-    (c: any) => c.status === "active"
+    (c: any) => c.status === "active",
   ).length;
   const pausedCount = campaigns.filter(
-    (c: any) => c.status === "paused"
+    (c: any) => c.status === "paused",
   ).length;
   const expiredCount = campaigns.filter(
-    (c: any) => c.status === "expired"
+    (c: any) => c.status === "expired",
   ).length;
   const handleToggleActive = async (id: string, status: string) => {
     if (!restaurantId) {
@@ -1023,7 +1031,7 @@ const RewardsManagement = () => {
       const apiStatus = apiStatusMap[status] || "paused";
 
       // Find the campaign to check if it has been sent
-      const campaign = campaigns.find(c => c.id === id);
+      const campaign = campaigns.find((c) => c.id === id);
 
       // Update campaign status via API
       await campaignsApi.updateCampaignStatus(id, apiStatus, restaurantId);
@@ -1034,12 +1042,17 @@ const RewardsManagement = () => {
 
         try {
           await campaignsApi.sendCampaign(id, restaurantId);
-          toast.success("Campaña activada y enviada exitosamente", { id: loadingToast });
-        } catch (sendError: any) {
-          console.error("Error sending campaign:", sendError);
-          toast.error(`Campaña activada pero error al enviar: ${sendError.message}`, {
+          toast.success("Campaña activada y enviada exitosamente", {
             id: loadingToast,
           });
+        } catch (sendError: any) {
+          console.error("Error sending campaign:", sendError);
+          toast.error(
+            `Campaña activada pero error al enviar: ${sendError.message}`,
+            {
+              id: loadingToast,
+            },
+          );
         }
       } else {
         toast.success("Estado actualizado exitosamente", { id: loadingToast });
@@ -1051,11 +1064,13 @@ const RewardsManagement = () => {
       console.error("Error updating campaign status:", error);
 
       // Check if it's a campaign limit error
-      if (error.message?.includes('límite de campañas') ||
-          error.response?.data?.error_code === 'CAMPAIGN_LIMIT_EXCEEDED') {
+      if (
+        error.message?.includes("límite de campañas") ||
+        error.response?.data?.error_code === "CAMPAIGN_LIMIT_EXCEEDED"
+      ) {
         toast.error(
-          'Has alcanzado el límite de campañas activas de tu plan. Pausa otra campaña o actualiza tu plan.',
-          { id: loadingToast, duration: 6000 }
+          "Has alcanzado el límite de campañas activas de tu plan. Pausa otra campaña o actualiza tu plan.",
+          { id: loadingToast, duration: 6000 },
         );
         setShowPricingModal(true);
       } else {
@@ -1125,7 +1140,7 @@ const RewardsManagement = () => {
     if (!canCreateCampaign()) {
       const remaining = getRemainingCampaigns();
       toast.error(
-        `Has alcanzado el límite de campañas de tu plan. Campañas restantes: ${remaining}. ¡Actualiza tu plan para crear más campañas!`
+        `Has alcanzado el límite de campañas de tu plan. Campañas restantes: ${remaining}. ¡Actualiza tu plan para crear más campañas!`,
       );
       setShowPricingModal(true);
       return;
@@ -1176,12 +1191,12 @@ const RewardsManagement = () => {
       "restaurantId:",
       restaurantId,
       "restaurantLoading:",
-      restaurantLoading
+      restaurantLoading,
     );
     if (!restaurantId || !restaurant) {
       console.error("No restaurant ID available for creating segment");
       setSegmentsError(
-        "Error: No se puede crear segmento sin restaurant ID válido"
+        "Error: No se puede crear segmento sin restaurant ID válido",
       );
       return;
     }
@@ -1191,7 +1206,7 @@ const RewardsManagement = () => {
   const handleDesignTemplate = (
     template?: SmsTemplate,
     promoCode?: string,
-    discountPercentage?: string
+    discountPercentage?: string,
   ) => {
     // Update newCampaignData with the promo values if provided
     if (promoCode !== undefined || discountPercentage !== undefined) {
@@ -1263,7 +1278,7 @@ const RewardsManagement = () => {
       console.error("Error saving template:", error);
       toast.error(
         error instanceof Error ? error.message : "Error al guardar template",
-        { id: loadingToast }
+        { id: loadingToast },
       );
     }
   };
@@ -1285,7 +1300,7 @@ const RewardsManagement = () => {
       console.error("Error deleting template:", error);
       toast.error(
         error instanceof Error ? error.message : "Error al eliminar template",
-        { id: loadingToast }
+        { id: loadingToast },
       );
     }
   };
@@ -1296,7 +1311,7 @@ const RewardsManagement = () => {
     selectedWhatsAppTemplate?: any,
     deliveryMethods?: { whatsapp: boolean; sms: boolean },
     promoCode?: string,
-    discountPercentage?: string
+    discountPercentage?: string,
   ) => {
     // Store campaign data and proceed to details screen
     setNewCampaignData({
@@ -1334,7 +1349,8 @@ const RewardsManagement = () => {
 
       // Procesar discount value (opcional)
       const discountValue = parseFloat(
-        newCampaignData.discountPercentage || campaignDetails.discountPercentage
+        newCampaignData.discountPercentage ||
+          campaignDetails.discountPercentage,
       );
       const hasValidDiscount =
         discountValue && !isNaN(discountValue) && discountValue > 0;
@@ -1348,7 +1364,7 @@ const RewardsManagement = () => {
         reward_type: campaignDetails.rewardType || "discount_percentage",
         start_date: campaignDetails.startDate,
         end_date: campaignDetails.endDate,
-        status: campaignDetails.status || 'running',
+        status: campaignDetails.status || "running",
         delivery_methods: Object.entries(campaignDetails.deliveryMethods || {})
           .filter(([_, enabled]) => enabled)
           .map(([method]) => method),
@@ -1391,19 +1407,25 @@ const RewardsManagement = () => {
           newCampaignData.selectedTemplate?.id &&
           campaignDetails.deliveryMethods?.sms
         ) {
-          const promoCode = newCampaignData.promoCode || campaignDetails.rewardCode || "";
-          const discountPercentage = newCampaignData.discountPercentage || campaignDetails.discountPercentage || "";
+          const promoCode =
+            newCampaignData.promoCode || campaignDetails.rewardCode || "";
+          const discountPercentage =
+            newCampaignData.discountPercentage ||
+            campaignDetails.discountPercentage ||
+            "";
 
           // Renderizar template a texto con variables
           const templateText = renderSmsTemplateToText(
             newCampaignData.selectedTemplate.blocks || [],
             newCampaignData.name,
             promoCode,
-            discountPercentage
+            discountPercentage,
           );
 
           // Extraer imagen si existe
-          const templateImage = extractImageFromBlocks(newCampaignData.selectedTemplate.blocks || []);
+          const templateImage = extractImageFromBlocks(
+            newCampaignData.selectedTemplate.blocks || [],
+          );
 
           console.log(
             "Associating SMS template:",
@@ -1411,7 +1433,7 @@ const RewardsManagement = () => {
             "with blocks:",
             newCampaignData.selectedTemplate.blocks,
             "rendered text:",
-            templateText
+            templateText,
           );
 
           templates.push({
@@ -1437,21 +1459,28 @@ const RewardsManagement = () => {
         ) {
           console.log(
             "Associating WhatsApp template:",
-            newCampaignData.selectedWhatsAppTemplate.id
+            newCampaignData.selectedWhatsAppTemplate.id,
           );
 
           // Obtener el template completo desde utils
-          const fullWhatsAppTemplate = getTemplateById(newCampaignData.selectedWhatsAppTemplate.id);
+          const fullWhatsAppTemplate = getTemplateById(
+            newCampaignData.selectedWhatsAppTemplate.id,
+          );
 
           // Preparar variables para el template
           // Primero usar las variables seleccionadas por el usuario en el modal
           const templateVariables: Record<string, string> = {
-            discount: newCampaignData.discountPercentage || campaignDetails.discountPercentage || "",
-            codigo: newCampaignData.promoCode || campaignDetails.rewardCode || "",
+            discount:
+              newCampaignData.discountPercentage ||
+              campaignDetails.discountPercentage ||
+              "",
+            codigo:
+              newCampaignData.promoCode || campaignDetails.rewardCode || "",
             product_name: newCampaignData.name,
             offer_name: newCampaignData.name,
             dish_name: newCampaignData.name,
-            ...(newCampaignData.selectedWhatsAppTemplate.selectedVariables || {}), // Variables del modal
+            ...(newCampaignData.selectedWhatsAppTemplate.selectedVariables ||
+              {}), // Variables del modal
             ...(campaignDetails.whatsappTemplate?.variables || {}),
           };
 
@@ -1461,9 +1490,15 @@ const RewardsManagement = () => {
             : "";
 
           // Extraer imagen de las variables
-          const whatsappImage = extractImageFromWhatsAppTemplate(templateVariables);
+          const whatsappImage =
+            extractImageFromWhatsAppTemplate(templateVariables);
 
-          console.log("WhatsApp template variables:", templateVariables, "Image:", whatsappImage);
+          console.log(
+            "WhatsApp template variables:",
+            templateVariables,
+            "Image:",
+            whatsappImage,
+          );
 
           templates.push({
             template_id: newCampaignData.selectedWhatsAppTemplate.id,
@@ -1499,12 +1534,17 @@ const RewardsManagement = () => {
 
         try {
           await campaignsApi.sendCampaign(createdCampaign.id, restaurantId);
-          toast.success("Campaña creada y enviada exitosamente", { id: loadingToast });
-        } catch (sendError: any) {
-          console.error("Error sending campaign:", sendError);
-          toast.error(`Campaña creada pero error al enviar: ${sendError.message}`, {
+          toast.success("Campaña creada y enviada exitosamente", {
             id: loadingToast,
           });
+        } catch (sendError: any) {
+          console.error("Error sending campaign:", sendError);
+          toast.error(
+            `Campaña creada pero error al enviar: ${sendError.message}`,
+            {
+              id: loadingToast,
+            },
+          );
         }
       } else {
         toast.success("Campaña creada exitosamente", { id: loadingToast });
@@ -1529,12 +1569,17 @@ const RewardsManagement = () => {
       console.error("Error creating campaign:", error);
 
       // Check if it's a campaign limit error
-      if (error.message?.includes('límite de campañas') ||
-          error.response?.data?.error_code === 'CAMPAIGN_LIMIT_EXCEEDED') {
-        toast.error('¡Límite de campañas alcanzado! Actualiza tu plan para crear más campañas.', {
-          id: loadingToast,
-          duration: 6000
-        });
+      if (
+        error.message?.includes("límite de campañas") ||
+        error.response?.data?.error_code === "CAMPAIGN_LIMIT_EXCEEDED"
+      ) {
+        toast.error(
+          "¡Límite de campañas alcanzado! Actualiza tu plan para crear más campañas.",
+          {
+            id: loadingToast,
+            duration: 6000,
+          },
+        );
         setShowPricingModal(true);
       } else {
         toast.error(error.message || "Error al crear campaña", {
@@ -1558,19 +1603,28 @@ const RewardsManagement = () => {
               </p>
               {/* Plan info */}
               {currentPlan && planLimits ? (
-                <div className="mt-2 flex flex-wrap items-center gap-2 sm:space-x-4 text-[10px] sm:text-xs text-gray-500" data-tour="plan-info">
+                <div
+                  className="mt-2 flex flex-wrap items-center gap-2 sm:space-x-4 text-[10px] sm:text-xs text-gray-500"
+                  data-tour="plan-info"
+                >
                   <span className="bg-blue-100 text-blue-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium">
                     Plan {currentPlan.plan_type}
                   </span>
                   <span>
-                    Campañas: {campaignUsage}/{planLimits.campaigns_per_month === -1 ? '∞' : planLimits.campaigns_per_month}
+                    Campañas: {campaignUsage}/
+                    {planLimits.campaigns_per_month === -1
+                      ? "∞"
+                      : planLimits.campaigns_per_month}
                   </span>
                   {getRemainingCampaigns() !== null && (
-                    <span className={`${
-                      typeof getRemainingCampaigns() === 'number' && getRemainingCampaigns() <= 1
-                        ? 'text-red-600 font-medium'
-                        : 'text-green-600'
-                    }`}>
+                    <span
+                      className={`${
+                        typeof getRemainingCampaigns() === "number" &&
+                        getRemainingCampaigns() <= 1
+                          ? "text-red-600 font-medium"
+                          : "text-green-600"
+                      }`}
+                    >
                       Restantes: {getRemainingCampaigns()}
                     </span>
                   )}
@@ -1583,16 +1637,15 @@ const RewardsManagement = () => {
                       Ejemplo para tour guiado
                     </span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:space-x-4 text-[10px] sm:text-xs text-gray-500" data-tour="plan-info">
+                  <div
+                    className="flex flex-wrap items-center gap-2 sm:space-x-4 text-[10px] sm:text-xs text-gray-500"
+                    data-tour="plan-info"
+                  >
                     <span className="bg-blue-100 text-blue-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium">
                       Plan Básico
                     </span>
-                    <span>
-                      Campañas: 0/1
-                    </span>
-                    <span className="text-green-600">
-                      Restantes: 1
-                    </span>
+                    <span>Campañas: 0/1</span>
+                    <span className="text-green-600">Restantes: 1</span>
                   </div>
                 </div>
               ) : null}
@@ -1611,8 +1664,8 @@ const RewardsManagement = () => {
                 disabled={!canCreateCampaign()}
                 className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-md transition-colors flex items-center ${
                   canCreateCampaign()
-                    ? 'bg-custom-green-600 text-white hover:bg-custom-green-700'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? "bg-custom-green-600 text-white hover:bg-custom-green-700"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
               >
                 <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
@@ -1624,7 +1677,10 @@ const RewardsManagement = () => {
         </div>
 
         {/* KPI Buttons */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-8" data-tour="kpi-filters">
+        <div
+          className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-8"
+          data-tour="kpi-filters"
+        >
           <KpiButton
             label="Todas"
             count={allCount}
@@ -1637,26 +1693,35 @@ const RewardsManagement = () => {
             count={activeCount}
             active={activeFilter === "active"}
             onClick={() => setActiveFilter("active")}
-            icon={<CheckCircleIcon className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />}
+            icon={
+              <CheckCircleIcon className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />
+            }
           />
           <KpiButton
             label="Pausadas"
             count={pausedCount}
             active={activeFilter === "paused"}
             onClick={() => setActiveFilter("paused")}
-            icon={<ClockIcon className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />}
+            icon={
+              <ClockIcon className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />
+            }
           />
           <KpiButton
             label="Expiradas"
             count={expiredCount}
             active={activeFilter === "expired"}
             onClick={() => setActiveFilter("expired")}
-            icon={<AlertCircleIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500" />}
+            icon={
+              <AlertCircleIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500" />
+            }
           />
         </div>
 
         {/* Campaigns Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6" data-tour="campaigns-grid">
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6"
+          data-tour="campaigns-grid"
+        >
           {filteredCampaigns.map((campaign: any) => (
             <div
               key={campaign.id}
@@ -1808,12 +1873,12 @@ const RewardsManagement = () => {
         steps={steps}
         styles={joyrideTheme}
         locale={{
-          back: 'Atrás',
-          close: 'Cerrar',
-          last: 'Finalizar',
-          next: 'Siguiente',
+          back: "Atrás",
+          close: "Cerrar",
+          last: "Finalizar",
+          next: "Siguiente",
           nextLabelWithProgress: `Siguiente {step} de {steps}`,
-          skip: 'Saltar tour',
+          skip: "Saltar tour",
         }}
       />
     </div>

@@ -790,7 +790,7 @@ const Settings = () => {
   // Generar URL de Pick & Go
   const getPickAndGoUrl = () => {
     if (!restaurant?.id) return "";
-    return `https://pickandgo.xquisito.ai/${restaurant.id}/menu`;
+    return `https://pg.letseven.io/${restaurant.id}/menu`;
   };
 
   // Copiar URL al portapapeles
@@ -1803,7 +1803,7 @@ const Settings = () => {
           <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 sm:px-5 sm:py-4">
             <p className="text-xs sm:text-sm text-blue-700">
               Esta sucursal no tiene integración POS configurada. Puedes
-              solicitarla al equipo de Xquisito.
+              solicitarla al equipo de Even.
             </p>
           </div>
         )}

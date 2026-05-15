@@ -1,8 +1,9 @@
-# Claude Configuration for Xquisito Admin Portal
+# Claude Configuration for Even Admin Portal
 
 ## Project Commands
 
 ### Development
+
 ```bash
 npm run dev          # Start development server at localhost:3000
 npm run build        # Build production version
@@ -12,6 +13,7 @@ npm run type-check   # Run TypeScript type checking
 ```
 
 ### Git Operations
+
 ```bash
 git status           # Check git status
 git add .            # Stage all changes
@@ -22,6 +24,7 @@ git push origin main # Push to main branch
 ## Project Structure
 
 ### Key Components
+
 - `src/pages/Dashboard.tsx` - Main dashboard with dynamic branch data and order management
 - `src/pages/RewardsManagement.tsx` - Rewards/Scala management with email preview and pricing modal
 - `src/pages/PromotionsManagement.tsx` - Dine package management with simplified toggles
@@ -34,6 +37,7 @@ git push origin main # Push to main branch
 - `src/components/MenuItemForm.tsx` - Menu item form with advanced customization fields and optimized field order
 
 ### Recent Features Implemented
+
 - Dynamic dashboard data based on selected branch/location
 - Enhanced email preview with comprehensive content and redeem functionality
 - Interactive order detail modals with customer information and channel tracking
@@ -55,6 +59,7 @@ git push origin main # Push to main branch
 ## Development Notes
 
 ### Tech Stack
+
 - Next.js 14 with TypeScript
 - React 18 with Hooks
 - Tailwind CSS for styling
@@ -65,18 +70,22 @@ git push origin main # Push to main branch
 - Canvas API for image processing
 
 ### Styling Conventions
+
 - Use Tailwind CSS classes
 - Green theme color: `#173E44` or standard Tailwind green variants
 - Glassmorphism effects with `backdrop-blur` and transparency
 - Mobile-responsive design with appropriate breakpoints
 
 ### Git Configuration
-- Repository: https://github.com/XquisitoAI/admin-portal.git
-- User: XquisitoAI <contacto@xquisito.ai>
+
+- Repository: https://github.com/LetsEven/admin-portal.git
+- User: Even <contacto@letseven.io>
 - Main branch: main
 
 ## Testing & Quality
+
 Always run these commands before committing:
+
 - `npm run lint` - Check code quality
 - `npm run type-check` - Verify TypeScript types
 - `npm run build` - Ensure production build works
@@ -84,6 +93,7 @@ Always run these commands before committing:
 ## Image Cropping System
 
 ### Key Features
+
 - Dynamic zoom range: -300% to 300% visual representation
 - Circular crop shape with 140px radius for logo optimization
 - react-easy-crop integration with percentage-based zoom mapping
@@ -91,6 +101,7 @@ Always run these commands before committing:
 - Direct modal access when no logo exists (bypasses file picker)
 
 ### Zoom Calculation Formula
+
 ```typescript
 const zoomToPercent = (zoomValue: number) => {
   const midZoom = (minZoom + maxZoom) / 2;
@@ -103,10 +114,11 @@ const zoomToPercent = (zoomValue: number) => {
 ```
 
 ### SSR Hydration Pattern
+
 ```typescript
 const [isHydrated, setIsHydrated] = useState(false);
 useEffect(() => {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     // Safe localStorage access after hydration
     setIsHydrated(true);
   }
@@ -116,7 +128,9 @@ useEffect(() => {
 ## MenuItemForm System
 
 ### Form Field Order
+
 The menu item form follows an optimized, intuitive order:
+
 1. **Imagen del platillo** - Image upload with preview (appears first for visual hierarchy)
 2. **Nombre** - Item name
 3. **Descripción** - Item description
@@ -125,31 +139,37 @@ The menu item form follows an optimized, intuitive order:
 6. **Descuento** - Discount percentage
 
 ### Customization Field Types
+
 Three types of customization fields available in Spanish:
 
 **Lista Desplegable** (`dropdown`)
+
 - Single selection dropdown
 - Ideal for: sizes, preparation methods, cooking levels
 
 **Opciones Casillas** (`checkboxes`)
+
 - Multiple selection checkboxes
 - Ideal for: toppings, extras, add-ons
 
 **Lista desplegable con cantidad** (`dropdown-quantity`)
+
 - Dropdown with quantity selector
 - Ideal for: portioned items, extras with counts
 
 ### Implementation Example
+
 ```typescript
 interface CustomField {
   id: string;
   name: string;
-  type: 'dropdown' | 'checkboxes' | 'dropdown-quantity';
+  type: "dropdown" | "checkboxes" | "dropdown-quantity";
   options?: string[];
 }
 ```
 
 ### Key Features
+
 - Dynamic field addition with `Add Field` button
 - Individual field removal with trash icon
 - Option management (add/remove options per field)
@@ -159,6 +179,7 @@ interface CustomField {
 ## Pepper AI Chat System
 
 ### Key Features
+
 - **Dynamic Positioning**: Empty state centers input bar, conversation state moves it to bottom
 - **Sidebar Integration**: Smooth animations when sidebar expands/contracts
 - **Video Integration**: Animated Pepper logo with WebM video loops
@@ -166,6 +187,7 @@ interface CustomField {
 - **Customizable Spacing**: Pixel-perfect control over all UI elements
 
 ### Positioning System
+
 All major elements use inline styles for precise control:
 
 ```typescript
@@ -192,6 +214,7 @@ style={{
 ```
 
 ### Video Implementation
+
 ```typescript
 <video
   src="/video-icon-pepper.webm"
@@ -204,19 +227,20 @@ style={{
 ```
 
 ### Sidebar Detection
+
 ```typescript
 useEffect(() => {
-  const sidebar = document.querySelector('.hidden.md\\:flex .group');
+  const sidebar = document.querySelector(".hidden.md\\:flex .group");
   if (sidebar) {
     const handleMouseEnter = () => setSidebarExpanded(true);
     const handleMouseLeave = () => setSidebarExpanded(false);
 
-    sidebar.addEventListener('mouseenter', handleMouseEnter);
-    sidebar.addEventListener('mouseleave', handleMouseLeave);
+    sidebar.addEventListener("mouseenter", handleMouseEnter);
+    sidebar.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
-      sidebar.removeEventListener('mouseenter', handleMouseEnter);
-      sidebar.removeEventListener('mouseleave', handleMouseLeave);
+      sidebar.removeEventListener("mouseenter", handleMouseEnter);
+      sidebar.removeEventListener("mouseleave", handleMouseLeave);
     };
   }
 }, []);
