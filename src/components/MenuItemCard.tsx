@@ -12,6 +12,7 @@ interface MenuItemCardProps {
   onDelete: (id: number) => void;
   isDeleting?: boolean;
   availableBranches?: string[];
+  outOfStockBranches?: string[];
   selectedBranchId?: string | null;
   "data-tour"?: string;
 }
@@ -27,6 +28,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
   onDelete,
   isDeleting = false,
   availableBranches = [],
+  outOfStockBranches = [],
   selectedBranchId = null,
   "data-tour": dataTour,
 }) => {
@@ -36,12 +38,17 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
   const hasDiscount = discount && discount > 0;
   const discountedPrice = hasDiscount ? price * (1 - discount / 100) : price;
 
-  // Verificar si el producto está agotado en la sucursal seleccionada
+  // Item no asignado a la sucursal seleccionada → opacidad reducida
+  const isUnavailable =
+    selectedBranchId &&
+    availableBranches.length > 0 &&
+    !availableBranches.includes(selectedBranchId);
+  // Item asignado pero agotado en la sucursal seleccionada → badge "AGOTADO"
   const isOutOfStock =
-    selectedBranchId && !availableBranches.includes(selectedBranchId);
+    selectedBranchId && outOfStockBranches.includes(selectedBranchId);
   return (
     <div
-      className={`bg-white overflow-hidden shadow rounded-lg transition-all duration-200 hover:shadow-md border border-gray-100 ${isOutOfStock ? "opacity-75" : ""}`}
+      className={`bg-white overflow-hidden shadow rounded-lg transition-all duration-200 hover:shadow-md border border-gray-100 ${isUnavailable || isOutOfStock ? "opacity-75" : ""}`}
       data-tour={dataTour}
     >
       <div className="relative h-40 sm:h-56 w-full overflow-hidden">

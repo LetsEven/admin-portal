@@ -197,6 +197,7 @@ const MenuManagement = () => {
         image: itemToEdit.image_url || "",
         customFields: customFields,
         availableBranches: itemToEdit.availableBranches || [],
+        outOfStockBranches: itemToEdit.outOfStockBranches || [],
       };
 
       setCurrentItem(adaptedItem);
@@ -299,6 +300,7 @@ const MenuManagement = () => {
         custom_fields: customFields,
         display_order: 0,
         availableBranches: values.availableBranches || [],
+        outOfStockBranches: values.outOfStockBranches || [],
       };
 
       if (values.id) {
@@ -703,6 +705,7 @@ const MenuManagement = () => {
                       }
                       image={item.image_url || ""}
                       availableBranches={item.availableBranches || []}
+                      outOfStockBranches={item.outOfStockBranches || []}
                       selectedBranchId={selectedBranch?.id || null}
                       onEdit={handleEditClick}
                       onDelete={handleDeleteClick}
