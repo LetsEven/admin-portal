@@ -39,6 +39,7 @@ export interface CreateItemRequest {
   custom_fields?: CustomField[];
   display_order?: number;
   availableBranches?: string[]; // Array de branch IDs donde estará disponible
+  outOfStockBranches?: string[]; // Array de branch IDs donde estará agotado
 }
 
 export interface UpdateItemRequest {
@@ -52,6 +53,7 @@ export interface UpdateItemRequest {
   is_available?: boolean;
   display_order?: number;
   availableBranches?: string[]; // Array de branch IDs donde estará disponible
+  outOfStockBranches?: string[]; // Array de branch IDs donde estará agotado
 }
 
 // ===============================================

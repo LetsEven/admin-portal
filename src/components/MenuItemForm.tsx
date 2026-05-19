@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { XIcon, UploadIcon, PlusIcon, TrashIcon, MapPin, CheckIcon } from "lucide-react";
+import { XIcon, UploadIcon, PlusIcon, TrashIcon, MapPin, CheckIcon, AlertTriangle } from "lucide-react";
 import { ImageUploadService } from "../services/imageUploadService";
 import { useUser } from "@clerk/nextjs";
 import { useAdminPortalApi, MenuSection } from "../services/adminPortalApi";
@@ -39,6 +39,7 @@ interface MenuItemFormProps {
     image: string;
     customFields?: CustomField[];
     availableBranches?: string[]; // Array de branch IDs donde está disponible
+    outOfStockBranches?: string[]; // Array de branch IDs donde está agotado
   };
   onSubmit: (values: any) => void;
   onCancel: () => void;
@@ -55,6 +56,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     image: "",
     customFields: [],
     availableBranches: [],
+    outOfStockBranches: [],
   },
   onSubmit,
   onCancel,
@@ -79,6 +81,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   // Branch availability state
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranches, setSelectedBranches] = useState<string[]>(initialValues.availableBranches || []);
+  const [outOfStockBranches, setOutOfStockBranches] = useState<string[]>(initialValues.outOfStockBranches || []);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const adminPortalApi = useAdminPortalApi();
   const menuApi = useMenuAdminPortalApi();
@@ -137,6 +140,16 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     });
   };
 
+  const handleOutOfStockToggle = (branchId: string) => {
+    setOutOfStockBranches(prev => {
+      if (prev.includes(branchId)) {
+        return prev.filter(id => id !== branchId);
+      } else {
+        return [...prev, branchId];
+      }
+    });
+  };
+
   const isAllBranchesSelected = branches.length > 0 && selectedBranches.length === branches.length;
   const isSomeBranchesSelected = selectedBranches.length > 0 && selectedBranches.length < branches.length;
 
@@ -166,11 +179,12 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     }
   }, [initialValues.image]);
 
-  // Sincronizar selectedBranches cuando cambian los initialValues (al editar un producto)
+  // Sincronizar selectedBranches y outOfStockBranches cuando cambian los initialValues (al editar un producto)
   useEffect(() => {
     if (initialValues.availableBranches && initialValues.availableBranches.length > 0) {
       setSelectedBranches(initialValues.availableBranches);
     }
+    setOutOfStockBranches(initialValues.outOfStockBranches || []);
   }, [initialValues.id]);
   const handleChange = (
     e: React.ChangeEvent<
@@ -419,6 +433,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
       base_price: basePrice,
       customFields,
       availableBranches: selectedBranches,
+      outOfStockBranches,
     });
   };
   return (
@@ -641,6 +656,70 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                   <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-500">
                     {selectedBranches.length} de {branches.length} sucursal{branches.length !== 1 ? 'es' : ''} seleccionada{selectedBranches.length !== 1 ? 's' : ''}
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Agotado por Sucursal Section */}
+            <div className="pt-3 sm:pt-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2 sm:mb-3">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                  <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 inline mr-1.5 sm:mr-2 text-red-500" />
+                  Agotado por Sucursal
+                </label>
+              </div>
+
+              {branchesLoading ? (
+                <div className="text-center py-3 sm:py-4">
+                  <div className="text-xs sm:text-sm text-gray-500">Cargando sucursales...</div>
+                </div>
+              ) : branches.length === 0 ? (
+                <div className="text-center py-3 sm:py-4">
+                  <p className="text-xs sm:text-sm text-gray-500 italic">
+                    No hay sucursales configuradas para este restaurante.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5 sm:space-y-2">
+                  <p className="text-[10px] sm:text-xs text-gray-600 mb-2 sm:mb-3">
+                    Marca las sucursales donde este producto está agotado temporalmente:
+                  </p>
+                  {branches.map((branch) => (
+                    <label
+                      key={branch.id}
+                      className={`flex items-center p-2.5 sm:p-3 border rounded-lg cursor-pointer transition-colors ${
+                        outOfStockBranches.includes(branch.id)
+                          ? 'border-red-300 bg-red-50'
+                          : 'border-gray-200 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={outOfStockBranches.includes(branch.id)}
+                          onChange={() => handleOutOfStockToggle(branch.id)}
+                          className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded flex-shrink-0"
+                        />
+                        <div className="ml-2.5 sm:ml-3 min-w-0">
+                          <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                            {branch.name}
+                          </div>
+                          <div className="text-[10px] sm:text-xs text-gray-500 truncate">
+                            {branch.address}
+                          </div>
+                        </div>
+                      </div>
+                      {outOfStockBranches.includes(branch.id) && (
+                        <CheckIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 ml-2 flex-shrink-0" />
+                      )}
+                    </label>
+                  ))}
+
+                  {outOfStockBranches.length > 0 && (
+                    <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-red-600 font-medium">
+                      {outOfStockBranches.length} sucursal{outOfStockBranches.length !== 1 ? 'es' : ''} con producto agotado
+                    </div>
+                  )}
                 </div>
               )}
             </div>
