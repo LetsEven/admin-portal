@@ -69,7 +69,7 @@ export const useSettingsOnboarding = (): SettingsOnboardingHook => {
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { status } = data;
 
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
       // Usuario completó o saltó el onboarding de configuraciones
       localStorage.setItem(SETTINGS_ONBOARDING_STORAGE_KEY, "true");
       setRun(false);
@@ -77,7 +77,7 @@ export const useSettingsOnboarding = (): SettingsOnboardingHook => {
   }, []);
 
   const startOnboarding = useCallback(() => {
-    // Verificar si ya completó el onboarding de configuraciones
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
     const completed = localStorage.getItem(SETTINGS_ONBOARDING_STORAGE_KEY);
     if (!completed) {
       setRun(true);
@@ -90,6 +90,7 @@ export const useSettingsOnboarding = (): SettingsOnboardingHook => {
   }, []);
 
   const resetOnboarding = useCallback(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
     localStorage.removeItem(SETTINGS_ONBOARDING_STORAGE_KEY);
     setRun(true);
   }, []);

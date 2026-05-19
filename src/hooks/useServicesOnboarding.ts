@@ -41,7 +41,7 @@ export const useServicesOnboarding = (): ServicesOnboardingHook => {
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { status } = data;
 
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
       // Usuario completó o saltó el onboarding de servicios
       localStorage.setItem(SERVICES_ONBOARDING_STORAGE_KEY, "true");
       setRun(false);
@@ -49,7 +49,7 @@ export const useServicesOnboarding = (): ServicesOnboardingHook => {
   }, []);
 
   const startOnboarding = useCallback(() => {
-    // Verificar si ya completó el onboarding de servicios
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
     const completed = localStorage.getItem(SERVICES_ONBOARDING_STORAGE_KEY);
     if (!completed) {
       setRun(true);
@@ -62,6 +62,7 @@ export const useServicesOnboarding = (): ServicesOnboardingHook => {
   }, []);
 
   const resetOnboarding = useCallback(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
     localStorage.removeItem(SERVICES_ONBOARDING_STORAGE_KEY);
     setRun(true);
   }, []);

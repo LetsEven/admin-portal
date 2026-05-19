@@ -100,7 +100,7 @@ export const useOnboarding = (): OnboardingHook => {
   }, []);
 
   const startOnboarding = useCallback(() => {
-    // Verificar si ya completó el onboarding
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
     const completed = localStorage.getItem(ONBOARDING_STORAGE_KEY);
     if (!completed) {
       setRun(true);
@@ -115,6 +115,7 @@ export const useOnboarding = (): OnboardingHook => {
   }, []);
 
   const resetOnboarding = useCallback(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
     localStorage.removeItem(ONBOARDING_STORAGE_KEY);
     setRun(true);
     setStepIndex(0);

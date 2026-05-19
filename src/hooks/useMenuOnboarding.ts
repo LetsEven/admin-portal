@@ -77,7 +77,7 @@ export const useMenuOnboarding = (): MenuOnboardingHook => {
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { status } = data;
 
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
       // Usuario completó o saltó el onboarding del menú
       localStorage.setItem(MENU_ONBOARDING_STORAGE_KEY, "true");
       setRun(false);
@@ -85,7 +85,7 @@ export const useMenuOnboarding = (): MenuOnboardingHook => {
   }, []);
 
   const startOnboarding = useCallback(() => {
-    // Verificar si ya completó el onboarding del menú
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
     const completed = localStorage.getItem(MENU_ONBOARDING_STORAGE_KEY);
     if (!completed) {
       setRun(true);
@@ -98,6 +98,7 @@ export const useMenuOnboarding = (): MenuOnboardingHook => {
   }, []);
 
   const resetOnboarding = useCallback(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
     localStorage.removeItem(MENU_ONBOARDING_STORAGE_KEY);
     setRun(true);
   }, []);
