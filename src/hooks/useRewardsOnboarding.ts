@@ -62,7 +62,7 @@ export const useRewardsOnboarding = (): RewardsOnboardingHook => {
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { status } = data;
 
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
       // Usuario completó o saltó el onboarding de recompensas
       localStorage.setItem(REWARDS_ONBOARDING_STORAGE_KEY, "true");
       setRun(false);
@@ -70,7 +70,7 @@ export const useRewardsOnboarding = (): RewardsOnboardingHook => {
   }, []);
 
   const startOnboarding = useCallback(() => {
-    // Verificar si ya completó el onboarding de recompensas
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
     const completed = localStorage.getItem(REWARDS_ONBOARDING_STORAGE_KEY);
     if (!completed) {
       setRun(true);
@@ -83,6 +83,7 @@ export const useRewardsOnboarding = (): RewardsOnboardingHook => {
   }, []);
 
   const resetOnboarding = useCallback(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
     localStorage.removeItem(REWARDS_ONBOARDING_STORAGE_KEY);
     setRun(true);
   }, []);
