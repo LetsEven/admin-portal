@@ -222,6 +222,12 @@ const Dashboard = () => {
     getOrderItems,
     updateDishDeliveryStatus,
     updatePickAndGoOrderCookingStatus,
+    getSalesByPaymentSource,
+    getFlexBillTablePayments,
+    salesByPaymentSource,
+    isLoadingSalesBreakdown,
+    tablePersonPayments,
+    isLoadingPersonPayments,
   } = useAnalytics();
 
   // Hook para onboarding
@@ -278,6 +284,7 @@ const Dashboard = () => {
     useState(false);
 
   const [mostrarRankingModal, setMostrarRankingModal] = useState(false);
+  const [mostrarVentasModal, setMostrarVentasModal] = useState(false);
   const [lastUsedFilters, setLastUsedFilters] = useState<any>(null);
 
   // Estado para controlar toasts
@@ -1012,6 +1019,9 @@ const Dashboard = () => {
       console.error("Error cargando items:", e);
     } finally {
       setIsLoadingItems(false);
+    }
+    if (pedido.serviceType === "flex-bill") {
+      getFlexBillTablePayments(pedido.id);
     }
   };
 
@@ -1960,7 +1970,18 @@ const Dashboard = () => {
           className={`grid grid-cols-2 gap-3 sm:gap-5 mb-4 sm:mb-6 ${servicesLoaded && !enabledServices.includes("flex-bill") && !enabledServices.includes("tap-pay") ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}
         >
           {/* Ventas totales */}
-          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
+          <button
+            className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg cursor-pointer text-left w-full group"
+            onClick={() => {
+              setMostrarVentasModal(true);
+              getSalesByPaymentSource({
+                restaurant_id: lastUsedFilters?.restaurant_id,
+                branch_id: lastUsedFilters?.branch_id,
+                start_date: lastUsedFilters?.start_date,
+                end_date: lastUsedFilters?.end_date,
+              });
+            }}
+          >
             <div className="p-3 sm:p-8">
               <div className="flex items-center">
                 <div className="flex-shrink-0 bg-custom-green-100 p-2 sm:p-3 rounded-full">
@@ -1977,12 +1998,17 @@ const Dashboard = () => {
                           ? "..."
                           : `$${datosUnificados?.metricas?.ventasTotales?.toLocaleString() || "0"}`}
                       </div>
+                      <div className="text-[10px] sm:text-xs text-gray-500">
+                        {isLoading || isLoadingAllServices
+                          ? ""
+                          : "Ver desglose"}
+                      </div>
                     </dd>
                   </dl>
                 </div>
               </div>
             </div>
-          </div>
+          </button>
 
           {/* Órdenes Activas */}
           <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
@@ -2452,6 +2478,116 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Modal de Ventas por método de pago */}
+      {mostrarVentasModal && (
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]"
+            onClick={() => setMostrarVentasModal(false)}
+          />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="bg-custom-green-100 p-2 rounded-full">
+                  <BarChart2Icon className="h-5 w-5 text-custom-green-600" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-gray-900">
+                    Ventas totales
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Desglose por método de pago
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setMostrarVentasModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
+              >
+                <XIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-4 space-y-4">
+              {isLoadingSalesBreakdown ? (
+                <div className="flex items-center justify-center py-12 text-gray-400">
+                  <div className="animate-spin h-6 w-6 border-2 border-green-400 border-t-transparent rounded-full mr-3" />
+                  Cargando...
+                </div>
+              ) : !salesByPaymentSource || salesByPaymentSource.total === 0 ? (
+                <p className="text-center text-gray-400 py-12">
+                  Sin datos disponibles
+                </p>
+              ) : (
+                (() => {
+                  const rows = [
+                    {
+                      label: "Even Digital",
+                      value: salesByPaymentSource.digital,
+                      color: "bg-custom-green-500",
+                    },
+                    {
+                      label: "Efectivo",
+                      value: salesByPaymentSource.cash,
+                      color: "bg-emerald-400",
+                    },
+                    {
+                      label: "Terminal",
+                      value: salesByPaymentSource.terminal,
+                      color: "bg-gray-300",
+                    },
+                  ];
+                  const max = Math.max(...rows.map((r) => r.value), 1);
+                  return rows.map((row) => (
+                    <div key={row.label} className="flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-800">
+                            {row.label}
+                          </span>
+                          <span className="text-xs text-gray-500 shrink-0 ml-2">
+                            $
+                            {row.value.toLocaleString("es-MX", {
+                              minimumFractionDigits: 2,
+                            })}
+                            {salesByPaymentSource.total > 0 && (
+                              <span className="text-gray-400 ml-1">
+                                (
+                                {Math.round(
+                                  (row.value / salesByPaymentSource.total) *
+                                    100,
+                                )}
+                                %)
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${row.color}`}
+                            style={{ width: `${(row.value / max) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })()
+              )}
+              {salesByPaymentSource && salesByPaymentSource.total > 0 && (
+                <div className="pt-2 border-t border-gray-100 flex justify-between text-sm font-semibold text-gray-700">
+                  <span>Total</span>
+                  <span>
+                    $
+                    {salesByPaymentSource.total.toLocaleString("es-MX", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Ranking de Artículos */}
       {mostrarRankingModal && (
@@ -2924,6 +3060,55 @@ const Dashboard = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Pagos registrados — solo FlexBill, oculto si no hay pagos */}
+              {pedidoSeleccionado.serviceType === "flex-bill" &&
+                (isLoadingPersonPayments || tablePersonPayments.length > 0) && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                      <UserIcon className="h-4 w-4 mr-2 text-gray-500" />
+                      Pagos registrados
+                    </h4>
+                    {isLoadingPersonPayments ? (
+                      <div className="flex items-center justify-center py-4 text-gray-400">
+                        <div className="animate-spin h-4 w-4 border-2 border-green-400 border-t-transparent rounded-full mr-2" />
+                        <span className="text-xs">Cargando...</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {tablePersonPayments.map((p, i) => {
+                          const methodLabel =
+                            p.payment_source === "cash"
+                              ? "Efectivo"
+                              : p.payment_source === "terminal"
+                                ? `Terminal${p.manual_reference ? ` · ${p.manual_reference}` : ""}`
+                                : "Even Digital";
+                          return (
+                            <div
+                              key={i}
+                              className="flex justify-between items-start text-sm"
+                            >
+                              <div>
+                                <span className="text-gray-700 font-medium">
+                                  {p.name}
+                                </span>
+                                <p className="text-xs text-gray-400">
+                                  {methodLabel}
+                                </p>
+                              </div>
+                              <span className="font-medium text-gray-900">
+                                $
+                                {p.total_paid.toLocaleString("es-MX", {
+                                  minimumFractionDigits: 2,
+                                })}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
             </div>
 
             {/* Footer del Modal */}
