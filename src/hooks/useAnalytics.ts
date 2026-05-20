@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useUser, useAuth } from "@clerk/nextjs";
 
 // Tipos para los filtros de analytics
@@ -186,6 +186,20 @@ export interface RecentTransaction {
   folio?: string | null;
 }
 
+export interface SalesByPaymentSource {
+  digital: number;
+  cash: number;
+  terminal: number;
+  total: number;
+}
+
+export interface PersonPayment {
+  name: string;
+  total_paid: number;
+  payment_source?: string | null;
+  manual_reference?: string | null;
+}
+
 // Filtros para transacciones recientes
 export interface RecentTransactionsFilters {
   restaurant_id?: number | null;
@@ -297,6 +311,16 @@ interface UseAnalyticsReturn {
     status: string,
   ) => Promise<boolean>;
   getAllSellingItems: (filters: AnalyticsFilters) => Promise<void>;
+  getSalesByPaymentSource: (
+    filters: Omit<AnalyticsFilters, "gender" | "age_range" | "granularity">,
+  ) => Promise<void>;
+  getFlexBillTablePayments: (tableOrderId: string) => Promise<void>;
+
+  // Datos payment breakdown
+  salesByPaymentSource: SalesByPaymentSource | null;
+  isLoadingSalesBreakdown: boolean;
+  tablePersonPayments: PersonPayment[];
+  isLoadingPersonPayments: boolean;
 
   // Utilidades
   clearError: () => void;
@@ -336,6 +360,14 @@ export function useAnalytics(): UseAnalyticsReturn {
   const [isLoadingTopItem, setIsLoadingTopItem] = useState(false);
   const [isLoadingRestaurants, setIsLoadingRestaurants] = useState(false);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+  const [salesByPaymentSource, setSalesByPaymentSource] =
+    useState<SalesByPaymentSource | null>(null);
+  const [isLoadingSalesBreakdown, setIsLoadingSalesBreakdown] = useState(false);
+  const [tablePersonPayments, setTablePersonPayments] = useState<
+    PersonPayment[]
+  >([]);
+  const [isLoadingPersonPayments, setIsLoadingPersonPayments] = useState(false);
+  const flexBillAbortRef = useRef<AbortController | null>(null);
 
   // Estados de paginación
   const [ordersPagination, setOrdersPagination] = useState({
@@ -910,6 +942,71 @@ export function useAnalytics(): UseAnalyticsReturn {
     [getAuthToken],
   );
 
+  const getSalesByPaymentSource = useCallback(
+    async (
+      filters: Omit<AnalyticsFilters, "gender" | "age_range" | "granularity">,
+    ) => {
+      try {
+        setIsLoadingSalesBreakdown(true);
+        const token = await getAuthToken();
+        const queryParams = buildQueryParams(filters);
+        const response = await fetch(
+          `${API_BASE_URL}/api/analytics/dashboard/sales-by-payment-source?${queryParams}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        const data = await handleApiResponse<SalesByPaymentSource>(response);
+        setSalesByPaymentSource(data);
+      } catch (error) {
+        console.error(
+          "❌ Error obteniendo desglose por método de pago:",
+          error,
+        );
+      } finally {
+        setIsLoadingSalesBreakdown(false);
+      }
+    },
+    [getAuthToken],
+  );
+
+  const getFlexBillTablePayments = useCallback(
+    async (tableOrderId: string) => {
+      flexBillAbortRef.current?.abort();
+      const controller = new AbortController();
+      flexBillAbortRef.current = controller;
+
+      setIsLoadingPersonPayments(true);
+      setTablePersonPayments([]);
+      try {
+        const token = await getAuthToken();
+        const response = await fetch(
+          `${API_BASE_URL}/api/analytics/dashboard/flex-bill-table-payments?table_order_id=${tableOrderId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            signal: controller.signal,
+          },
+        );
+        const data = await handleApiResponse<PersonPayment[]>(response);
+        setTablePersonPayments(data);
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") return;
+        console.error("❌ Error obteniendo pagos por persona:", error);
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoadingPersonPayments(false);
+        }
+      }
+    },
+    [getAuthToken],
+  );
+
   // Función para limpiar errores
   const clearError = useCallback(() => {
     setError(null);
@@ -957,6 +1054,14 @@ export function useAnalytics(): UseAnalyticsReturn {
     getOrderItems,
     updateDishDeliveryStatus,
     updatePickAndGoOrderCookingStatus,
+    getSalesByPaymentSource,
+    getFlexBillTablePayments,
+
+    // Datos payment breakdown
+    salesByPaymentSource,
+    isLoadingSalesBreakdown,
+    tablePersonPayments,
+    isLoadingPersonPayments,
 
     // Utilidades
     clearError,

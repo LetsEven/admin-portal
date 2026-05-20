@@ -1,5 +1,6 @@
 export class ImageUploadService {
-  private static readonly API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+  private static readonly API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
   /**
    * Obtener token de autenticación
@@ -8,7 +9,7 @@ export class ImageUploadService {
     // Asumiendo que usas Clerk para autenticación
     const token = await (window as any).Clerk?.session?.getToken();
     if (!token) {
-      throw new Error('No authentication token available');
+      throw new Error("No authentication token available");
     }
     return token;
   }
@@ -16,27 +17,31 @@ export class ImageUploadService {
   /**
    * Subir imagen usando el backend API
    */
-  static async uploadImage(file: File, type: 'banner' | 'logo', oldImageUrl?: string): Promise<string> {
+  static async uploadImage(
+    file: File,
+    type: "banner" | "logo" | "item",
+    oldImageUrl?: string,
+  ): Promise<string> {
     try {
       // Verificar que el archivo sea una imagen
-      if (!file.type.startsWith('image/')) {
-        throw new Error('El archivo debe ser una imagen');
+      if (!file.type.startsWith("image/")) {
+        throw new Error("El archivo debe ser una imagen");
       }
 
       // Verificar tamaño (máximo 5MB)
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
-        throw new Error('La imagen no puede ser mayor a 5MB');
+        throw new Error("La imagen no puede ser mayor a 5MB");
       }
 
-      console.log('📤 Uploading image:', file.name);
+      console.log("📤 Uploading image:", file.name);
 
       // Preparar FormData
       const formData = new FormData();
-      formData.append('image', file);
-      formData.append('type', type);
+      formData.append("image", file);
+      formData.append("type", type);
       if (oldImageUrl) {
-        formData.append('oldImageUrl', oldImageUrl);
+        formData.append("oldImageUrl", oldImageUrl);
       }
 
       // Obtener token de autenticación
@@ -44,24 +49,23 @@ export class ImageUploadService {
 
       // Hacer petición al backend
       const response = await fetch(`${this.API_BASE_URL}/api/images/upload`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload image');
+        throw new Error(errorData.error || "Failed to upload image");
       }
 
       const data = await response.json();
-      console.log('✅ Image uploaded successfully:', data.imageUrl);
+      console.log("✅ Image uploaded successfully:", data.imageUrl);
       return data.imageUrl;
-
     } catch (error) {
-      console.error('❌ Error in uploadImage:', error);
+      console.error("❌ Error in uploadImage:", error);
       throw error;
     }
   }
@@ -71,30 +75,29 @@ export class ImageUploadService {
    */
   static async deleteImage(imageUrl: string): Promise<void> {
     try {
-      console.log('🗑️ Deleting image:', imageUrl);
+      console.log("🗑️ Deleting image:", imageUrl);
 
       // Obtener token de autenticación
       const token = await this.getAuthToken();
 
       // Hacer petición al backend
       const response = await fetch(`${this.API_BASE_URL}/api/images/delete`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ imageUrl }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete image');
+        throw new Error(errorData.error || "Failed to delete image");
       }
 
-      console.log('✅ Image deleted successfully');
-
+      console.log("✅ Image deleted successfully");
     } catch (error) {
-      console.error('❌ Error in deleteImage:', error);
+      console.error("❌ Error in deleteImage:", error);
       throw error;
     }
   }
@@ -102,7 +105,11 @@ export class ImageUploadService {
   /**
    * Actualizar imagen (elimina la anterior y sube la nueva)
    */
-  static async updateImage(file: File, type: 'banner' | 'logo', oldImageUrl?: string): Promise<string> {
+  static async updateImage(
+    file: File,
+    type: "banner" | "logo" | "item",
+    oldImageUrl?: string,
+  ): Promise<string> {
     return await this.uploadImage(file, type, oldImageUrl);
   }
 
@@ -121,10 +128,15 @@ export class ImageUploadService {
   /**
    * Redimensionar imagen manteniendo alta calidad
    */
-  static async resizeImage(file: File, maxWidth: number = 1920, maxHeight: number = 1280, quality: number = 0.92): Promise<File> {
+  static async resizeImage(
+    file: File,
+    maxWidth: number = 1920,
+    maxHeight: number = 1280,
+    quality: number = 0.92,
+  ): Promise<File> {
     return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d")!;
       const img = new Image();
 
       img.onload = () => {
@@ -147,7 +159,7 @@ export class ImageUploadService {
 
         // Optimizaciones para mejor calidad
         ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
+        ctx.imageSmoothingQuality = "high";
 
         // Redimensionar con mejor algoritmo
         ctx.drawImage(img, 0, 0, width, height);
@@ -166,7 +178,7 @@ export class ImageUploadService {
             }
           },
           file.type,
-          quality
+          quality,
         );
       };
 
