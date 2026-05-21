@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { PlusIcon, FilterIcon } from "lucide-react";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "@hello-pangea/dnd";
 import { useUser } from "@clerk/nextjs";
 import toast from "react-hot-toast";
 import Joyride from "react-joyride";
@@ -75,7 +81,9 @@ const MenuManagement = () => {
           (a, b) => a.display_order - b.display_order,
         );
         setSections(sortedSections);
-        setMenuItems(itemsData);
+        setMenuItems(
+          itemsData.sort((a, b) => a.display_order - b.display_order),
+        );
       } catch (apiError) {
         const userSectionsKey = `sections_${user.id}`;
         const userItemsKey = `items_${user.id}`;
@@ -289,6 +297,10 @@ const MenuManagement = () => {
         customFields = [];
       }
 
+      const display_order = values.id
+        ? (menuItems.find((item) => item.id === values.id)?.display_order ?? 0)
+        : menuItems.filter((item) => item.section_id === sectionId).length;
+
       const itemData = {
         section_id: sectionId,
         name: values.name,
@@ -298,7 +310,7 @@ const MenuManagement = () => {
         base_price: values.base_price,
         discount: values.discount || 0,
         custom_fields: customFields,
-        display_order: 0,
+        display_order,
         availableBranches: values.availableBranches || [],
         outOfStockBranches: values.outOfStockBranches || [],
       };
@@ -316,6 +328,44 @@ const MenuManagement = () => {
       setError(error instanceof Error ? error.message : "Failed to save item");
     }
   };
+  const handleItemDragEnd = async (result: DropResult) => {
+    const { source, destination } = result;
+    if (
+      !destination ||
+      (source.droppableId === destination.droppableId &&
+        source.index === destination.index)
+    ) {
+      return;
+    }
+    if (source.droppableId !== destination.droppableId) return;
+
+    const sectionId = Number(source.droppableId);
+
+    const sectionItems = menuItems.filter((i) => i.section_id === sectionId);
+    const otherItems = menuItems.filter((i) => i.section_id !== sectionId);
+    const reordered = [...sectionItems];
+    const [moved] = reordered.splice(source.index, 1);
+    reordered.splice(destination.index, 0, moved);
+
+    const reorderedWithOrder = reordered.map((item, index) => ({
+      ...item,
+      display_order: index,
+    }));
+    setMenuItems([...otherItems, ...reorderedWithOrder]);
+
+    try {
+      await menuApi.items.reorder(
+        reorderedWithOrder.map(({ id, display_order }) => ({
+          id,
+          display_order,
+        })),
+      );
+    } catch {
+      toast.error("Error al reordenar platillos");
+      loadData();
+    }
+  };
+
   const handleSectionFormSubmit = async (
     reorderedSections: MenuSection[],
     newSections: NewSection[],
@@ -682,64 +732,106 @@ const MenuManagement = () => {
             </div>
           )
         ) : (
-          Object.entries(itemsByCategory).map(
-            ([category, items], categoryIndex) => (
-              <div key={category} className="mb-6 sm:mb-8">
-                <SectionHeader
-                  title={category}
-                  data-tour={categoryIndex === 0 ? "section-header" : undefined}
-                />
-
-                <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {items.map((item, itemIndex) => (
-                    <MenuItemCard
-                      key={item.id}
-                      id={item.id}
-                      name={item.name}
-                      description={item.description}
-                      price={item.price}
-                      discount={item.discount}
-                      category={
-                        sections.find((s) => s.id === item.section_id)?.name ||
-                        ""
-                      }
-                      image={item.image_url || ""}
-                      availableBranches={item.availableBranches || []}
-                      outOfStockBranches={item.outOfStockBranches || []}
-                      selectedBranchId={selectedBranch?.id || null}
-                      onEdit={handleEditClick}
-                      onDelete={handleDeleteClick}
-                      isDeleting={deletingItemId === item.id}
+          <DragDropContext onDragEnd={handleItemDragEnd}>
+            {Object.entries(itemsByCategory).map(
+              ([category, items], categoryIndex) => {
+                const section = sections.find((s) => s.name === category);
+                const droppableId = String(section?.id ?? category);
+                return (
+                  <div key={category} className="mb-6 sm:mb-8">
+                    <SectionHeader
+                      title={category}
                       data-tour={
-                        categoryIndex === 0 && itemIndex === 0
-                          ? "menu-item-card"
-                          : undefined
+                        categoryIndex === 0 ? "section-header" : undefined
                       }
                     />
-                  ))}
 
-                  <button
-                    onClick={() => handleAddItemClick(category)}
-                    data-tour={categoryIndex === 0 ? "add-item-btn" : undefined}
-                    className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-36 sm:h-48 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="text-center">
-                      <PlusIcon className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
-                      <span className="mt-1 sm:mt-2 block text-xs sm:text-sm font-medium text-gray-500">
-                        Agregar platillo
-                      </span>
-                    </div>
-                  </button>
-                  {items.length === 0 && (
-                    <div className="col-span-full py-3 sm:py-4 text-center text-xs sm:text-sm text-gray-500">
-                      No hay platillos en esta sección. Haz clic en "Agregar
-                      platillo" para comenzar.
-                    </div>
-                  )}
-                </div>
-              </div>
-            ),
-          )
+                    <Droppable droppableId={droppableId} direction="horizontal">
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                        >
+                          {items.map((item, itemIndex) => (
+                            <Draggable
+                              key={String(item.id)}
+                              draggableId={String(item.id)}
+                              index={itemIndex}
+                            >
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`cursor-grab active:cursor-grabbing${snapshot.isDragging ? " opacity-75" : ""}`}
+                                  data-tour={
+                                    categoryIndex === 0 && itemIndex === 0
+                                      ? "menu-item-card"
+                                      : undefined
+                                  }
+                                >
+                                  <MenuItemCard
+                                    key={item.id}
+                                    id={item.id}
+                                    name={item.name}
+                                    description={item.description}
+                                    price={item.price}
+                                    discount={item.discount}
+                                    category={
+                                      sections.find(
+                                        (s) => s.id === item.section_id,
+                                      )?.name || ""
+                                    }
+                                    image={item.image_url || ""}
+                                    availableBranches={
+                                      item.availableBranches || []
+                                    }
+                                    outOfStockBranches={
+                                      item.outOfStockBranches || []
+                                    }
+                                    selectedBranchId={
+                                      selectedBranch?.id || null
+                                    }
+                                    onEdit={handleEditClick}
+                                    onDelete={handleDeleteClick}
+                                    isDeleting={deletingItemId === item.id}
+                                  />
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+
+                          {provided.placeholder}
+
+                          <button
+                            onClick={() => handleAddItemClick(category)}
+                            data-tour={
+                              categoryIndex === 0 ? "add-item-btn" : undefined
+                            }
+                            className="bg-white overflow-hidden shadow rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-36 sm:h-48 hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="text-center">
+                              <PlusIcon className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
+                              <span className="mt-1 sm:mt-2 block text-xs sm:text-sm font-medium text-gray-500">
+                                Agregar platillo
+                              </span>
+                            </div>
+                          </button>
+                          {items.length === 0 && (
+                            <div className="col-span-full py-3 sm:py-4 text-center text-xs sm:text-sm text-gray-500">
+                              No hay platillos en esta sección. Haz clic en
+                              "Agregar platillo" para comenzar.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </Droppable>
+                  </div>
+                );
+              },
+            )}
+          </DragDropContext>
         )}
       </div>
       {showItemForm && (
