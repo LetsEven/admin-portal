@@ -266,6 +266,20 @@ class MenuAdminPortalApiService {
     );
   }
 
+  async reorderItems(
+    items: { id: number; display_order: number }[],
+    token: string,
+  ): Promise<boolean> {
+    return this.makeRequest<boolean>(
+      "/items/reorder",
+      {
+        method: "PUT",
+        body: JSON.stringify({ items }),
+      },
+      token,
+    );
+  }
+
   // ===============================================
   // OPERACIONES DE MENÚ COMPLETO
   // ===============================================
@@ -355,6 +369,10 @@ export function useMenuAdminPortalApi() {
       delete: (id: number) =>
         makeAuthenticatedRequest((token) =>
           menuAdminPortalApiService.deleteItem(id, token),
+        ),
+      reorder: (items: { id: number; display_order: number }[]) =>
+        makeAuthenticatedRequest((token) =>
+          menuAdminPortalApiService.reorderItems(items, token),
         ),
     },
 
