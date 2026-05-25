@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Check, ExternalLink, Loader2, Eye, EyeOff, Save } from "lucide-react";
+import { Check, ExternalLink, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useAdminPortalApi } from "../services/adminPortalApi";
 import { usePaymentProviderApi } from "../services/paymentProviderApi";
@@ -50,21 +50,9 @@ const Pdp = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // API Keys state
-  const [publicKey, setPublicKey] = useState("");
-  const [secretKey, setSecretKey] = useState("");
-  const [environment] = useState<"sandbox" | "production">("production");
-  const [showPublicKey, setShowPublicKey] = useState(false);
-  const [showSecretKey, setShowSecretKey] = useState(false);
-  const [isSavingKeys, setIsSavingKeys] = useState(false);
-  const [keySaveSuccess, setKeySaveSuccess] = useState(false);
-  const [keySaveError, setKeySaveError] = useState<string | null>(null);
-  const [loadingKeys, setLoadingKeys] = useState(false);
-
   const adminPortalApi = useAdminPortalApi();
   const paymentProviderApi = usePaymentProviderApi();
 
-  // Cargar clientId y proveedor activo al montar
   useEffect(() => {
     const loadProviderData = async () => {
       try {
@@ -88,27 +76,6 @@ const Pdp = () => {
     loadProviderData();
   }, []);
 
-  // Cargar settings cuando se selecciona ecartpay
-  useEffect(() => {
-    if (selectedProvider === "ecartpay" && clientId) {
-      const loadSettings = async () => {
-        try {
-          setLoadingKeys(true);
-          const result = await paymentProviderApi.getClientSettings(clientId);
-          if (result.settings) {
-            setPublicKey(result.settings.public_key || "");
-            setSecretKey(result.settings.secret_key || "");
-          }
-        } catch (error) {
-          console.error("Error cargando API keys:", error);
-        } finally {
-          setLoadingKeys(false);
-        }
-      };
-      loadSettings();
-    }
-  }, [selectedProvider, clientId]);
-
   const handleSelectProvider = async (providerId: string) => {
     if (!clientId || isSaving) return;
 
@@ -126,28 +93,6 @@ const Pdp = () => {
       setSelectedProvider(previousProvider);
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleSaveKeys = async () => {
-    if (!clientId || !publicKey.trim() || !secretKey.trim()) return;
-
-    setIsSavingKeys(true);
-    setKeySaveSuccess(false);
-    setKeySaveError(null);
-
-    try {
-      await paymentProviderApi.saveClientSettings(clientId, {
-        public_key: publicKey.trim(),
-        secret_key: secretKey.trim(),
-        environment,
-      });
-      setKeySaveSuccess(true);
-      setTimeout(() => setKeySaveSuccess(false), 3000);
-    } catch (error) {
-      setKeySaveError("Error al guardar. Intenta de nuevo.");
-    } finally {
-      setIsSavingKeys(false);
     }
   };
 
@@ -209,239 +154,128 @@ const Pdp = () => {
           ))}
         </div>
       ) : (
-        <div className="space-y-8">
-          {/* Provider Cards Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-            {paymentProviders.map((provider) => {
-              const isHovered = isHovering === provider.id;
-              const isSelected = selectedProvider === provider.id;
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+          {paymentProviders.map((provider) => {
+            const isHovered = isHovering === provider.id;
+            const isSelected = selectedProvider === provider.id;
 
-              return (
+            return (
+              <div
+                key={provider.id}
+                onMouseEnter={() => setIsHovering(provider.id)}
+                onMouseLeave={() => setIsHovering(null)}
+                onClick={() =>
+                  !provider.comingSoon &&
+                  !isSaving &&
+                  handleSelectProvider(provider.id)
+                }
+                className={`
+                  relative overflow-hidden rounded-2xl transition-all duration-300 group
+                  ${provider.comingSoon || isSaving ? "opacity-60" : "cursor-pointer"}
+                  ${isSelected ? "ring-4 ring-offset-2 ring-emerald-500" : ""}
+                  shadow-lg hover:shadow-xl
+                `}
+              >
+                {isSelected && (
+                  <div className="absolute top-4 right-4 z-10 bg-white rounded-full p-1.5 shadow-lg">
+                    <Check className="w-5 h-5 text-emerald-600" />
+                  </div>
+                )}
+
                 <div
-                  key={provider.id}
-                  onMouseEnter={() => setIsHovering(provider.id)}
-                  onMouseLeave={() => setIsHovering(null)}
-                  onClick={() =>
-                    !provider.comingSoon &&
-                    !isSaving &&
-                    handleSelectProvider(provider.id)
-                  }
-                  className={`
-                    relative overflow-hidden rounded-2xl transition-all duration-300 group
-                    ${provider.comingSoon || isSaving ? "opacity-60" : "cursor-pointer"}
-                    ${isSelected ? "ring-4 ring-offset-2 ring-emerald-500" : ""}
-                    shadow-lg hover:shadow-xl
-                  `}
+                  className={`${provider.headerBg} p-6 sm:p-8 relative overflow-hidden`}
                 >
-                  {isSelected && (
-                    <div className="absolute top-4 right-4 z-10 bg-white rounded-full p-1.5 shadow-lg">
-                      <Check className="w-5 h-5 text-emerald-600" />
-                    </div>
-                  )}
-
-                  <div
-                    className={`${provider.headerBg} p-6 sm:p-8 relative overflow-hidden`}
-                  >
-                    <div className="absolute inset-0 opacity-10">
-                      <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/30" />
-                      <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/20" />
-                      <div className="absolute top-1/2 right-1/4 w-20 h-20 rounded-full bg-white/10" />
-                    </div>
-
-                    <div className="relative flex items-center justify-between">
-                      <div className="flex items-center gap-4 sm:gap-5">
-                        <div className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-white shadow-lg transition-transform duration-300 flex items-center justify-center p-2 sm:p-3">
-                          <Image
-                            src={provider.logo}
-                            alt={`${provider.name} logo`}
-                            width={90}
-                            height={90}
-                            className="object-contain w-full h-full"
-                          />
-                        </div>
-                        <div>
-                          <h2 className="text-xl sm:text-2xl font-bold text-white drop-shadow-sm">
-                            {provider.name}
-                          </h2>
-                          {provider.comingSoon && (
-                            <span className="inline-block mt-1 px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white font-medium">
-                              Próximamente
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/30" />
+                    <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/20" />
+                    <div className="absolute top-1/2 right-1/4 w-20 h-20 rounded-full bg-white/10" />
                   </div>
 
-                  <div className="bg-white p-6 sm:p-8">
-                    <p className="text-gray-600 text-sm sm:text-base mb-6 leading-relaxed">
-                      {provider.description}
-                    </p>
-
-                    <div className="mt-8 flex flex-col gap-3">
-                      <div
-                        className={`
-                          w-full py-3 px-6 rounded-xl font-semibold text-sm sm:text-base
-                          flex items-center justify-center gap-2 transition-all duration-300
-                          ${
-                            isSelected
-                              ? "bg-emerald-50 text-emerald-700 border-2 border-emerald-500"
-                              : "bg-gray-100 text-gray-600 border-2 border-transparent"
-                          }
-                        `}
-                      >
-                        {isSelected ? (
-                          <>
-                            <Check className="w-5 h-5" />
-                            Seleccionado
-                          </>
-                        ) : (
-                          "Clic para seleccionar"
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-4 sm:gap-5">
+                      <div className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-white shadow-lg transition-transform duration-300 flex items-center justify-center p-2 sm:p-3">
+                        <Image
+                          src={provider.logo}
+                          alt={`${provider.name} logo`}
+                          width={90}
+                          height={90}
+                          className="object-contain w-full h-full"
+                        />
+                      </div>
+                      <div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-white drop-shadow-sm">
+                          {provider.name}
+                        </h2>
+                        {provider.comingSoon && (
+                          <span className="inline-block mt-1 px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white font-medium">
+                            Próximamente
+                          </span>
                         )}
                       </div>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          !provider.comingSoon &&
-                            handleOpenWebsite(provider.websiteUrl);
-                        }}
-                        disabled={provider.comingSoon}
-                        className={`
-                          w-full py-3.5 px-6 rounded-xl font-semibold text-sm sm:text-base
-                          transition-all duration-300 flex items-center justify-center gap-2
-                          ${
-                            provider.comingSoon
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              : `${provider.headerBg} text-white shadow-lg cursor-pointer`
-                          }
-                        `}
-                      >
-                        {provider.comingSoon ? (
-                          "Próximamente"
-                        ) : (
-                          <>
-                            Visitar {provider.name}
-                            <ExternalLink
-                              className={`w-5 h-5 transition-transform duration-300 ${isHovered ? "translate-x-0.5 -translate-y-0.5" : ""}`}
-                            />
-                          </>
-                        )}
-                      </button>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
 
-          {/* API Keys Section — solo si eCartPay está seleccionado */}
-          {selectedProvider === "ecartpay" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 px-6 sm:px-8 py-5">
-                  <h2 className="text-white font-semibold text-lg">
-                    Credenciales de eCartPay
-                  </h2>
-                  <p className="text-emerald-100 text-sm mt-0.5">
-                    Configura tus API keys para recibir pagos directamente en tu
-                    cuenta
+                <div className="bg-white p-6 sm:p-8">
+                  <p className="text-gray-600 text-sm sm:text-base mb-6 leading-relaxed">
+                    {provider.description}
                   </p>
-                </div>
 
-                <div className="p-6 sm:p-8 space-y-5">
-                  {loadingKeys ? (
-                    <div className="space-y-4 animate-pulse">
-                      <div className="h-10 bg-gray-100 rounded-xl" />
-                      <div className="h-10 bg-gray-100 rounded-xl" />
-                      <div className="h-10 bg-gray-100 rounded-xl" />
-                    </div>
-                  ) : (
-                    <>
-                      {/* Public Key */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                          Public Key
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showPublicKey ? "text" : "password"}
-                            value={publicKey}
-                            onChange={(e) => setPublicKey(e.target.value)}
-                            placeholder="pub..."
-                            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 pr-12 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPublicKey(!showPublicKey)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                          >
-                            {showPublicKey ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Secret Key */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                          Secret Key
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showSecretKey ? "text" : "password"}
-                            value={secretKey}
-                            onChange={(e) => setSecretKey(e.target.value)}
-                            placeholder="priv..."
-                            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 pr-12 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowSecretKey(!showSecretKey)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                          >
-                            {showSecretKey ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-
-                      {keySaveError && (
-                        <p className="text-sm text-red-600">{keySaveError}</p>
-                      )}
-
-                      <button
-                        onClick={handleSaveKeys}
-                        disabled={
-                          isSavingKeys || !publicKey.trim() || !secretKey.trim()
+                  <div className="mt-8 flex flex-col gap-3">
+                    <div
+                      className={`
+                        w-full py-3 px-6 rounded-xl font-semibold text-sm sm:text-base
+                        flex items-center justify-center gap-2 transition-all duration-300
+                        ${
+                          isSelected
+                            ? "bg-emerald-50 text-emerald-700 border-2 border-emerald-500"
+                            : "bg-gray-100 text-gray-600 border-2 border-transparent"
                         }
-                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                      >
-                        {isSavingKeys ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : keySaveSuccess ? (
-                          <Check className="w-4 h-4" />
-                        ) : (
-                          <Save className="w-4 h-4" />
-                        )}
-                        {isSavingKeys
-                          ? "Guardando..."
-                          : keySaveSuccess
-                            ? "Guardado"
-                            : "Guardar credenciales"}
-                      </button>
-                    </>
-                  )}
+                      `}
+                    >
+                      {isSelected ? (
+                        <>
+                          <Check className="w-5 h-5" />
+                          Seleccionado
+                        </>
+                      ) : (
+                        "Clic para seleccionar"
+                      )}
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        !provider.comingSoon &&
+                          handleOpenWebsite(provider.websiteUrl);
+                      }}
+                      disabled={provider.comingSoon}
+                      className={`
+                        w-full py-3.5 px-6 rounded-xl font-semibold text-sm sm:text-base
+                        transition-all duration-300 flex items-center justify-center gap-2
+                        ${
+                          provider.comingSoon
+                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : `${provider.headerBg} text-white shadow-lg cursor-pointer`
+                        }
+                      `}
+                    >
+                      {provider.comingSoon ? (
+                        "Próximamente"
+                      ) : (
+                        <>
+                          Visitar {provider.name}
+                          <ExternalLink
+                            className={`w-5 h-5 transition-transform duration-300 ${isHovered ? "translate-x-0.5 -translate-y-0.5" : ""}`}
+                          />
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })}
         </div>
       )}
     </div>
