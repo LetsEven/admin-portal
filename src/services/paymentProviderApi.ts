@@ -79,33 +79,5 @@ export function usePaymentProviderApi() {
       });
     },
 
-    // Obtener API keys del cliente (devuelve masked)
-    getClientSettings: async (
-      clientId: string,
-    ): Promise<{
-      success: boolean;
-      settings: {
-        public_key?: string;
-        secret_key?: string;
-        environment?: string;
-      } | null;
-    }> => {
-      return fetchWithAuth(`/client/${clientId}/settings`);
-    },
-
-    // Guardar API keys del cliente
-    saveClientSettings: async (
-      clientId: string,
-      settings: {
-        public_key: string;
-        secret_key: string;
-        environment?: string;
-      },
-    ): Promise<{ success: boolean }> => {
-      return fetchWithAuth(`/client/${clientId}/settings`, {
-        method: "PUT",
-        body: JSON.stringify({ settings }),
-      });
-    },
   };
 }
