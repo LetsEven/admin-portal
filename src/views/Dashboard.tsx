@@ -201,6 +201,102 @@ const CustomTooltip = ({
   return null;
 };
 
+const DashboardSkeleton = () => (
+  <div className="w-full animate-pulse">
+    {/* Filter row */}
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-6">
+      <div className="flex flex-wrap gap-2 sm:gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-9 w-24 bg-gray-200 rounded-lg" />
+        ))}
+      </div>
+      <div className="hidden sm:flex items-center mr-4 sm:mr-8">
+        <div className="w-16 h-16 rounded-full bg-gray-200" />
+      </div>
+    </div>
+
+    {/* Granularity row */}
+    <div className="mb-4 sm:mb-6">
+      <div className="flex justify-between items-center mb-3 sm:mb-4">
+        <div className="h-9 w-36 bg-gray-200 rounded-lg" />
+        <div className="h-9 w-28 bg-gray-200 rounded-lg" />
+      </div>
+    </div>
+
+    {/* Chart card */}
+    <div className="bg-white rounded-lg shadow-md border border-gray-100 p-3 sm:p-6 mb-4 sm:mb-6">
+      <div className="h-5 w-64 bg-gray-200 rounded mb-4" />
+      <div className="h-48 sm:h-80 bg-gray-100 rounded-lg" />
+    </div>
+
+    {/* 4 metric cards */}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-4 sm:mb-6">
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={i}
+          className="bg-white rounded-lg shadow-md border border-gray-100 p-3 sm:p-8"
+        >
+          <div className="flex items-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-200 flex-shrink-0" />
+            <div className="ml-3 flex-1">
+              <div className="h-3.5 w-20 bg-gray-200 rounded mb-2" />
+              <div className="h-5 w-16 bg-gray-200 rounded" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* 3 secondary metric cards */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-6">
+      {[...Array(3)].map((_, i) => (
+        <div
+          key={i}
+          className="bg-white rounded-lg shadow-md border border-gray-100 p-3 sm:p-8"
+        >
+          <div className="flex items-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-200 flex-shrink-0" />
+            <div className="ml-3 flex-1">
+              <div className="h-3.5 w-20 bg-gray-200 rounded mb-2" />
+              <div className="h-5 w-16 bg-gray-200 rounded" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* Transactions section */}
+    <div className="mt-7">
+      <div className="flex items-center justify-between mb-4">
+        <div className="h-5 w-36 bg-gray-200 rounded" />
+        <div className="h-8 w-28 bg-gray-200 rounded-lg" />
+      </div>
+      <div className="bg-white shadow-md sm:rounded-lg border border-gray-100">
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className="px-4 py-4 sm:px-6 border-b border-gray-100 last:border-0"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-200" />
+                <div>
+                  <div className="h-3.5 w-32 bg-gray-200 rounded mb-1.5" />
+                  <div className="h-3 w-24 bg-gray-200 rounded" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <div className="h-5 w-16 bg-gray-200 rounded-full" />
+                <div className="h-5 w-14 bg-gray-200 rounded-full" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 const Dashboard = () => {
   // Hook para analytics
   const {
@@ -1290,6 +1386,45 @@ const Dashboard = () => {
     }
   }, [isLoading, dashboardData, userRestaurants, user, startOnboarding]);
 
+  const closeAllDropdowns = useCallback(() => {
+    setDropdownGeneroAbierto(false);
+    setDropdownEdadAbierto(false);
+    setDropdownAbierto(false);
+    setDropdownServicioAbierto(false);
+    setDropdownGranularidadAbierto(false);
+    setCalendarioAbierto(false);
+    setSelectorMesAbierto(false);
+    setSelectorAnoAbierto(false);
+    setDropdownFechaTransaccionesAbierto(false);
+  }, []);
+
+  useEffect(() => {
+    const closeAll = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest("[data-dropdown]")) {
+        setDropdownGeneroAbierto(false);
+        setDropdownEdadAbierto(false);
+        setDropdownAbierto(false);
+        setDropdownServicioAbierto(false);
+        setDropdownGranularidadAbierto(false);
+        setCalendarioAbierto(false);
+        setSelectorMesAbierto(false);
+        setSelectorAnoAbierto(false);
+        setDropdownFechaTransaccionesAbierto(false);
+      }
+    };
+    document.addEventListener("mousedown", closeAll);
+    return () => document.removeEventListener("mousedown", closeAll);
+  }, []);
+
+  if (branchesLoading || !datosUnificados) {
+    return (
+      <div className="w-full">
+        <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
+        <DashboardSkeleton />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       {/* Componente Joyride para onboarding */}
@@ -1329,10 +1464,14 @@ const Dashboard = () => {
           data-tour="filtros-avanzados"
         >
           {/* Filtro Género */}
-          <div className="relative">
+          <div className="relative" data-dropdown="">
             <button
-              onClick={() => setDropdownGeneroAbierto(!dropdownGeneroAbierto)}
-              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              onClick={() => {
+                const next = !dropdownGeneroAbierto;
+                closeAllDropdowns();
+                setDropdownGeneroAbierto(next);
+              }}
+              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200"
             >
               <UsersIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
               <span className="text-xs sm:text-sm text-gray-600 hidden xs:inline">
@@ -1374,10 +1513,14 @@ const Dashboard = () => {
           </div>
 
           {/* Filtro Edad */}
-          <div className="relative">
+          <div className="relative" data-dropdown="">
             <button
-              onClick={() => setDropdownEdadAbierto(!dropdownEdadAbierto)}
-              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              onClick={() => {
+                const next = !dropdownEdadAbierto;
+                closeAllDropdowns();
+                setDropdownEdadAbierto(next);
+              }}
+              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200"
             >
               <UserIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
               <span className="text-xs sm:text-sm text-gray-600 hidden xs:inline">
@@ -1419,10 +1562,14 @@ const Dashboard = () => {
           </div>
 
           {/* Filtro Sucursal */}
-          <div className="relative">
+          <div className="relative" data-dropdown="">
             <button
-              onClick={() => setDropdownAbierto(!dropdownAbierto)}
-              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              onClick={() => {
+                const next = !dropdownAbierto;
+                closeAllDropdowns();
+                setDropdownAbierto(next);
+              }}
+              className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200"
             >
               <MapPinIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
               <span className="text-xs sm:text-sm text-gray-600 hidden xs:inline">
@@ -1479,12 +1626,14 @@ const Dashboard = () => {
           </div>
 
           {/* Filtro Servicio - Solo mostrar si hay más de 1 servicio habilitado */}
-          <div className="relative">
+          <div className="relative" data-dropdown="">
             <button
-              onClick={() =>
-                setDropdownServicioAbierto(!dropdownServicioAbierto)
-              }
-              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+              onClick={() => {
+                const next = !dropdownServicioAbierto;
+                closeAllDropdowns();
+                setDropdownServicioAbierto(next);
+              }}
+              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200"
             >
               <span className="text-sm text-gray-600">Servicio:</span>
               <span className="text-sm font-medium text-gray-800">
@@ -1553,12 +1702,14 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 mb-3 sm:mb-4">
           {/* Selector de Granularidad + Desde/Hasta a la izquierda */}
           <div className="flex items-end gap-2 sm:gap-3">
-            <div className="relative">
+            <div className="relative" data-dropdown="">
               <button
-                onClick={() =>
-                  setDropdownGranularidadAbierto(!dropdownGranularidadAbierto)
-                }
-                className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+                onClick={() => {
+                  const next = !dropdownGranularidadAbierto;
+                  closeAllDropdowns();
+                  setDropdownGranularidadAbierto(next);
+                }}
+                className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200"
               >
                 <ClockIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
                 <span className="text-xs sm:text-sm text-gray-600">
@@ -1686,10 +1837,14 @@ const Dashboard = () => {
 
             {/* Selector de día (para granularidad Hora) */}
             {granularidadSeleccionada.id === "hora" && (
-              <div className="relative">
+              <div className="relative" data-dropdown="">
                 <button
-                  onClick={() => setCalendarioAbierto(!calendarioAbierto)}
-                  className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+                  onClick={() => {
+                    const next = !calendarioAbierto;
+                    closeAllDropdowns();
+                    setCalendarioAbierto(next);
+                  }}
+                  className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200"
                 >
                   <span className="text-xs sm:text-sm text-gray-600">Día:</span>
                   <span className="text-xs sm:text-sm font-medium text-gray-800">
@@ -1768,10 +1923,14 @@ const Dashboard = () => {
 
             {/* Selector de mes (para granularidad Día) */}
             {granularidadSeleccionada.id === "dia" && (
-              <div className="relative">
+              <div className="relative" data-dropdown="">
                 <button
-                  onClick={() => setSelectorMesAbierto(!selectorMesAbierto)}
-                  className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+                  onClick={() => {
+                    const next = !selectorMesAbierto;
+                    closeAllDropdowns();
+                    setSelectorMesAbierto(next);
+                  }}
+                  className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200"
                 >
                   <span className="text-xs sm:text-sm text-gray-600">Mes:</span>
                   <span className="text-xs sm:text-sm font-medium text-gray-800">
@@ -1829,10 +1988,14 @@ const Dashboard = () => {
 
             {/* Selector de año (para granularidad Mes) */}
             {granularidadSeleccionada.id === "mes" && (
-              <div className="relative">
+              <div className="relative" data-dropdown="">
                 <button
-                  onClick={() => setSelectorAnoAbierto(!selectorAnoAbierto)}
-                  className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:ring-offset-2"
+                  onClick={() => {
+                    const next = !selectorAnoAbierto;
+                    closeAllDropdowns();
+                    setSelectorAnoAbierto(next);
+                  }}
+                  className="flex items-center space-x-1 sm:space-x-2 bg-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200"
                 >
                   <span className="text-xs sm:text-sm text-gray-600">Año:</span>
                   <span className="text-xs sm:text-sm font-medium text-gray-800">
@@ -1994,14 +2157,10 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-sm sm:text-lg font-medium text-gray-900">
-                        {isLoading || isLoadingAllServices
-                          ? "..."
-                          : `$${datosUnificados?.metricas?.ventasTotales?.toLocaleString() || "0"}`}
+                        {`$${datosUnificados?.metricas?.ventasTotales?.toLocaleString() || "0"}`}
                       </div>
                       <div className="text-[10px] sm:text-xs text-gray-500">
-                        {isLoading || isLoadingAllServices
-                          ? ""
-                          : "Ver desglose"}
+                        Ver desglose
                       </div>
                     </dd>
                   </dl>
@@ -2024,9 +2183,7 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-sm sm:text-lg font-medium text-gray-900">
-                        {isLoading || isLoadingAllServices
-                          ? "..."
-                          : datosUnificados?.metricas?.ordenesActivas || "0"}
+                        {datosUnificados?.metricas?.ordenesActivas || "0"}
                       </div>
                     </dd>
                   </dl>
@@ -2052,9 +2209,7 @@ const Dashboard = () => {
                       </dt>
                       <dd>
                         <div className="text-sm sm:text-lg font-medium text-gray-900">
-                          {isLoading || isLoadingAllServices
-                            ? "..."
-                            : datosUnificados?.metricas?.pedidos || "0"}
+                          {datosUnificados?.metricas?.pedidos || "0"}
                         </div>
                       </dd>
                     </dl>
@@ -2078,9 +2233,7 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-sm sm:text-base font-medium text-gray-900">
-                        {isLoading || isLoadingAllServices
-                          ? "..."
-                          : datosUnificados?.metricas?.totalOrdenes || "0"}
+                        {datosUnificados?.metricas?.totalOrdenes || "0"}
                       </div>
                     </dd>
                   </dl>
@@ -2106,9 +2259,7 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-sm sm:text-lg font-medium text-gray-900">
-                        {isLoading || isLoadingAllServices
-                          ? "..."
-                          : `$${datosUnificados?.metricas?.propinasTotales?.toLocaleString() || "0"}`}
+                        {`$${datosUnificados?.metricas?.propinasTotales?.toLocaleString() || "0"}`}
                       </div>
                     </dd>
                   </dl>
@@ -2142,20 +2293,15 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-sm sm:text-lg font-medium text-gray-900">
-                        {isLoadingRanking || isLoadingAllServices
-                          ? "..."
-                          : sellingItemsRanking
-                              .reduce(
-                                (sum, item) =>
-                                  sum + (item.unidades_vendidas || 0),
-                                0,
-                              )
-                              .toLocaleString()}
+                        {sellingItemsRanking
+                          .reduce(
+                            (sum, item) => sum + (item.unidades_vendidas || 0),
+                            0,
+                          )
+                          .toLocaleString()}
                       </div>
                       <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">
-                        {isLoadingRanking || isLoadingAllServices
-                          ? ""
-                          : "Ver más"}
+                        Ver más
                       </div>
                     </dd>
                   </dl>
@@ -2178,9 +2324,7 @@ const Dashboard = () => {
                     </dt>
                     <dd>
                       <div className="text-sm sm:text-lg font-medium text-gray-900">
-                        {isLoading || isLoadingAllServices
-                          ? "..."
-                          : `$${datosUnificados?.metricas?.ticketPromedio?.toLocaleString() || "0"}`}
+                        {`$${datosUnificados?.metricas?.ticketPromedio?.toLocaleString() || "0"}`}
                       </div>
                     </dd>
                   </dl>
@@ -2232,13 +2376,13 @@ const Dashboard = () => {
             Actividad reciente
           </h2>
           {/* Selector de fecha independiente */}
-          <div className="relative">
+          <div className="relative" data-dropdown="">
             <button
-              onClick={() =>
-                setDropdownFechaTransaccionesAbierto(
-                  !dropdownFechaTransaccionesAbierto,
-                )
-              }
+              onClick={() => {
+                const next = !dropdownFechaTransaccionesAbierto;
+                closeAllDropdowns();
+                setDropdownFechaTransaccionesAbierto(next);
+              }}
               className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
             >
               {filtroFechaTransacciones.label}
