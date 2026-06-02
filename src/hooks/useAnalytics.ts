@@ -176,6 +176,7 @@ export interface RecentTransaction {
     | "ready"
     | "partial"
     | "complete";
+  isFlowHeld?: boolean;
   customerName?: string | null;
   paymentsBreakdown?: PaymentBreakdown[] | null;
   // Campos adicionales para FlexBill (desde table_order)

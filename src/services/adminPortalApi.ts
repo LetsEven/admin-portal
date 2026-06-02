@@ -132,6 +132,7 @@ export interface Branch {
       is_closed: boolean;
     };
   };
+  max_pending_orders?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -419,6 +420,21 @@ class AdminPortalApiService {
     );
   }
 
+  async updateBranchOrderFlowLimit(
+    branchId: string,
+    maxPendingOrders: number | null,
+    token: string,
+  ): Promise<{ success: boolean; data?: any; message?: string }> {
+    return this.makeRequest(
+      `/branches/${branchId}/order-flow-limit`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ max_pending_orders: maxPendingOrders }),
+      },
+      token,
+    );
+  }
+
   // ===============================================
   // MÉTODOS DE POS INTEGRATION
   // ===============================================
@@ -634,6 +650,17 @@ export function useAdminPortalApi() {
         adminPortalApiService.updateBranchOpeningHours(
           branchId,
           openingHours,
+          token,
+        ),
+      ),
+    updateBranchOrderFlowLimit: (
+      branchId: string,
+      maxPendingOrders: number | null,
+    ) =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.updateBranchOrderFlowLimit(
+          branchId,
+          maxPendingOrders,
           token,
         ),
       ),

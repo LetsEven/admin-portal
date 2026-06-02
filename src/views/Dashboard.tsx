@@ -2170,27 +2170,37 @@ const Dashboard = () => {
           </button>
 
           {/* Órdenes Activas */}
-          <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
-            <div className="p-3 sm:p-8">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-blue-100 p-2 sm:p-3 rounded-full">
-                  <ShoppingCartIcon className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
-                </div>
-                <div className="ml-2 sm:ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                      Órdenes Activas
-                    </dt>
-                    <dd>
-                      <div className="text-sm sm:text-lg font-medium text-gray-900">
-                        {datosUnificados?.metricas?.ordenesActivas || "0"}
-                      </div>
-                    </dd>
-                  </dl>
+          {(() => {
+            const activeCount = datosUnificados?.metricas?.ordenesActivas || 0;
+            const selectedBranchData = branches.find((b) => b.id === sucursalSeleccionada?.id);
+            const maxPending = selectedBranchData?.max_pending_orders ?? null;
+            const atLimit = maxPending !== null && activeCount >= maxPending;
+            return (
+              <div className={`bg-white overflow-hidden shadow-md rounded-lg border transition-all duration-200 hover:shadow-lg ${atLimit ? "border-amber-400" : "border-gray-100"}`}>
+                <div className="p-3 sm:p-8">
+                  <div className="flex items-center">
+                    <div className={`flex-shrink-0 ${atLimit ? "bg-amber-100" : "bg-blue-100"} p-2 sm:p-3 rounded-full`}>
+                      <ShoppingCartIcon className={`h-4 w-4 sm:h-6 sm:w-6 ${atLimit ? "text-amber-600" : "text-blue-600"}`} />
+                    </div>
+                    <div className="ml-2 sm:ml-5 w-0 flex-1">
+                      <dl>
+                        <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                          Órdenes Activas{atLimit ? " ⚠️" : ""}
+                        </dt>
+                        <dd>
+                          <div className={`text-sm sm:text-lg font-medium ${atLimit ? "text-amber-600" : "text-gray-900"}`}>
+                            {maxPending !== null
+                              ? `${activeCount} / ${maxPending}`
+                              : activeCount || "0"}
+                          </div>
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Pedidos — solo para FlexBill o Tap & Pay */}
           {(!servicesLoaded ||
@@ -2487,26 +2497,30 @@ const Dashboard = () => {
                         {/* Badge de estado de entrega */}
                         <p
                           className={`px-2.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            tx.deliveryStatus === "complete"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : tx.deliveryStatus === "partial"
-                                ? "bg-amber-100 text-amber-800"
-                                : tx.deliveryStatus === "ready"
-                                  ? "bg-cyan-100 text-cyan-800"
-                                  : tx.deliveryStatus === "partial_ready"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : "bg-gray-100 text-gray-600"
+                            tx.isFlowHeld
+                              ? "bg-yellow-100 text-yellow-700"
+                              : tx.deliveryStatus === "complete"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : tx.deliveryStatus === "partial"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : tx.deliveryStatus === "ready"
+                                    ? "bg-cyan-100 text-cyan-800"
+                                    : tx.deliveryStatus === "partial_ready"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : "bg-gray-100 text-gray-600"
                           }`}
                         >
-                          {tx.deliveryStatus === "complete"
-                            ? "Entregado"
-                            : tx.deliveryStatus === "partial"
-                              ? "Entrega parcial"
-                              : tx.deliveryStatus === "ready"
-                                ? "Listo"
-                                : tx.deliveryStatus === "partial_ready"
-                                  ? "Parcialmente listo"
-                                  : "Preparando"}
+                          {tx.isFlowHeld
+                            ? "En cola"
+                            : tx.deliveryStatus === "complete"
+                              ? "Entregado"
+                              : tx.deliveryStatus === "partial"
+                                ? "Entrega parcial"
+                                : tx.deliveryStatus === "ready"
+                                  ? "Listo"
+                                  : tx.deliveryStatus === "partial_ready"
+                                    ? "Parcialmente listo"
+                                    : "Preparando"}
                         </p>
                       </div>
                     </div>

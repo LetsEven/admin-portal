@@ -56,6 +56,7 @@ interface BranchData {
   active: boolean;
   created_at: string;
   updated_at: string;
+  max_pending_orders?: number | null;
   opening_hours?: {
     [key: string]: {
       open_time: string;
@@ -99,6 +100,16 @@ const Settings = () => {
   const [areHoursChanged, setAreHoursChanged] = useState<boolean>(false);
   const [isUpdatingHours, setIsUpdatingHours] = useState<boolean>(false);
   const [hideHoursButtons, setHideHoursButtons] = useState<boolean>(false);
+
+  // Estados para control de flujo de órdenes
+  const PRESET_LIMITS = [10, 15, 20, 25, 30, 50];
+  const [maxPendingOrders, setMaxPendingOrders] = useState<number | null>(null);
+  const [isCustomLimit, setIsCustomLimit] = useState(false);
+  const [customLimitValue, setCustomLimitValue] = useState("");
+  const [isSavingOrderFlow, setIsSavingOrderFlow] = useState(false);
+  const [orderFlowSaveStatus, setOrderFlowSaveStatus] = useState<
+    "success" | "error" | null
+  >(null);
 
   // Debug del estado de autenticación
   useEffect(() => {
@@ -441,7 +452,18 @@ const Settings = () => {
         setOriginalOpeningHours(formattedOpeningHours);
         setIsAddressChanged(false);
         setAreHoursChanged(false);
-        setHideHoursButtons(false); // Resetear estado de botones ocultos
+        setHideHoursButtons(false);
+
+        // Cargar límite de flujo de órdenes de la sucursal
+        const branchMax = selectedBranchData.max_pending_orders ?? null;
+        setMaxPendingOrders(branchMax);
+        if (branchMax !== null && !PRESET_LIMITS.includes(branchMax)) {
+          setIsCustomLimit(true);
+          setCustomLimitValue(String(branchMax));
+        } else {
+          setIsCustomLimit(false);
+          setCustomLimitValue("");
+        }
 
         console.log("🏢 [Settings] Loaded default branch data:", {
           name: selectedBranchData.name,
@@ -881,6 +903,44 @@ const Settings = () => {
         console.error("Fallback copy failed:", fallbackError);
       }
       document.body.removeChild(textArea);
+    }
+  };
+
+  // Guardar límite de flujo de órdenes
+  const handleSaveOrderFlowLimit = async () => {
+    if (!selectedBranch) return;
+    try {
+      setIsSavingOrderFlow(true);
+      setOrderFlowSaveStatus(null);
+      const valueToSave = isCustomLimit
+        ? customLimitValue
+          ? parseInt(customLimitValue, 10)
+          : null
+        : maxPendingOrders;
+      const response = await adminPortalApi.updateBranchOrderFlowLimit(
+        selectedBranch,
+        valueToSave,
+      );
+      if ((response as any).success) {
+        setMaxPendingOrders(valueToSave);
+        setBranches((prev) =>
+          prev.map((b) =>
+            b.id === selectedBranch
+              ? { ...b, max_pending_orders: valueToSave }
+              : b,
+          ),
+        );
+        setOrderFlowSaveStatus("success");
+        setTimeout(() => setOrderFlowSaveStatus(null), 3000);
+      } else {
+        setOrderFlowSaveStatus("error");
+        setTimeout(() => setOrderFlowSaveStatus(null), 3000);
+      }
+    } catch {
+      setOrderFlowSaveStatus("error");
+      setTimeout(() => setOrderFlowSaveStatus(null), 3000);
+    } finally {
+      setIsSavingOrderFlow(false);
     }
   };
 
@@ -1674,118 +1734,121 @@ const Settings = () => {
             </div>
           </div>
         </div>
-        {/* Notifications */}
-        <div
-          className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6"
-          data-tour="notifications"
-        >
-          <div className="md:grid md:grid-cols-3 md:gap-6">
-            <div className="md:col-span-1">
-              <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
-                Notificaciones
-              </h3>
-              <p className="mt-1 text-xs sm:text-sm text-gray-500">
-                Decide cómo quieres recibir notificaciones sobre pedidos y
-                clientes.
-              </p>
-            </div>
-            <div className="mt-5 md:mt-0 md:col-span-2">
-              <div className="space-y-6">
-                <div className="flex items-start">
-                  <div className="flex items-center h-5">
-                    <input
-                      id="orderNotifications"
-                      name="orderNotifications"
-                      type="checkbox"
-                      checked={settings.orderNotifications}
-                      onChange={handleChange}
-                      className="focus:ring-custom-green-500 h-4 w-4 text-custom-green-600 border-gray-300 rounded"
-                    />
-                  </div>
-                  <div className="ml-3 text-sm">
-                    <label
-                      htmlFor="orderNotifications"
-                      className="font-medium text-gray-700"
-                    >
-                      Notificaciones de pedidos
-                    </label>
-                    <p className="sm:ml-2 text-xs sm:text-sm text-gray-500">
-                      Recibe notificaciones cuando lleguen nuevos pedidos.
-                    </p>
-                  </div>
+
+        {/* Control de flujo de órdenes */}
+        {selectedBranch && (
+          <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+            <div className="md:grid md:grid-cols-3 md:gap-6">
+              <div className="md:col-span-1">
+                <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
+                  Control de flujo
+                </h3>
+                <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                  Límite máximo de órdenes activas al mismo tiempo en esta
+                  sucursal. Cuando se alcanza, las nuevas órdenes esperan antes
+                  de enviarse a cocina.
+                </p>
+              </div>
+              <div className="mt-5 md:mt-0 md:col-span-2">
+                {/* Píldoras de valores predefinidos */}
+                <div className="flex flex-wrap gap-2">
+                  {PRESET_LIMITS.map((v) => {
+                    const active = !isCustomLimit && maxPendingOrders === v;
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => {
+                          setMaxPendingOrders(v);
+                          setIsCustomLimit(false);
+                          setCustomLimitValue("");
+                        }}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                          active
+                            ? "bg-custom-green-600 text-white border-gray-900"
+                            : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                        }`}
+                      >
+                        {v}
+                      </button>
+                    );
+                  })}
+
+                  {/* Personalizado */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomLimit(true);
+                      setMaxPendingOrders(null);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center gap-1 ${
+                      isCustomLimit
+                        ? "bg-custom-green-600 hover:bg-custom-green-700 text-white"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                    }`}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    Personalizado
+                  </button>
+
+                  {/* Sin límite */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMaxPendingOrders(null);
+                      setIsCustomLimit(false);
+                      setCustomLimitValue("");
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                      !isCustomLimit && maxPendingOrders === null
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                    }`}
+                  >
+                    Sin límite
+                  </button>
                 </div>
-                <div
-                  className={`flex items-start ${!settings.orderNotifications ? "opacity-50" : ""}`}
-                >
-                  <div className="flex items-center h-5">
+
+                {/* Input personalizado */}
+                {isCustomLimit && (
+                  <div className="mt-3">
                     <input
-                      id="emailNotifications"
-                      name="emailNotifications"
-                      type="checkbox"
-                      checked={settings.emailNotifications}
-                      onChange={handleChange}
-                      disabled={!settings.orderNotifications}
-                      className={`h-4 w-4 border-gray-300 rounded transition-colors duration-200 ${
-                        !settings.orderNotifications
-                          ? "bg-gray-100 cursor-not-allowed"
-                          : "focus:ring-custom-green-500 text-custom-green-600"
-                      }`}
+                      type="number"
+                      min="1"
+                      placeholder="Ej. 40"
+                      value={customLimitValue}
+                      onChange={(e) => setCustomLimitValue(e.target.value)}
+                      className="block w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                     />
                   </div>
-                  <div className="ml-3 text-sm">
-                    <label
-                      htmlFor="emailNotifications"
-                      className={`font-medium ${!settings.orderNotifications ? "text-gray-400" : "text-gray-700"}`}
-                    >
-                      Notificaciones por correo
-                    </label>
-                    <p
-                      className={`${!settings.orderNotifications ? "text-gray-400" : "text-gray-500"} sm:ml-2 text-xs sm:text-sm`}
-                    >
-                      {!settings.orderNotifications
-                        ? "Requiere que las notificaciones de pedidos estén habilitadas."
-                        : "Recibe notificaciones por correo electrónico."}
-                    </p>
-                  </div>
-                </div>
-                <div
-                  className={`flex items-start ${!settings.orderNotifications ? "opacity-50" : ""}`}
-                >
-                  <div className="flex items-center h-5">
-                    <input
-                      id="smsNotifications"
-                      name="smsNotifications"
-                      type="checkbox"
-                      checked={settings.smsNotifications}
-                      onChange={handleChange}
-                      disabled={!settings.orderNotifications}
-                      className={`h-4 w-4 border-gray-300 rounded transition-colors duration-200 ${
-                        !settings.orderNotifications
-                          ? "bg-gray-100 cursor-not-allowed"
-                          : "focus:ring-custom-green-500 text-custom-green-600"
-                      }`}
-                    />
-                  </div>
-                  <div className="ml-3 text-sm">
-                    <label
-                      htmlFor="smsNotifications"
-                      className={`font-medium ${!settings.orderNotifications ? "text-gray-400" : "text-gray-700"}`}
-                    >
-                      Notificaciones por SMS
-                    </label>
-                    <p
-                      className={`${!settings.orderNotifications ? "text-gray-400" : "text-gray-500"} sm:ml-2 text-xs sm:text-sm`}
-                    >
-                      {!settings.orderNotifications
-                        ? "Requiere que las notificaciones de pedidos estén habilitadas."
-                        : "Recibe notificaciones por mensaje de texto (pueden aplicar cargos)."}
-                    </p>
-                  </div>
+                )}
+
+                {/* Botón guardar */}
+                <div className="mt-4 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveOrderFlowLimit}
+                    disabled={isSavingOrderFlow}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-custom-green-600 hover:bg-custom-green-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+                  >
+                    <SaveIcon className="w-4 h-4" />
+                    {isSavingOrderFlow ? "Guardando..." : "Guardar límite"}
+                  </button>
+                  {orderFlowSaveStatus === "success" && (
+                    <span className="text-sm text-green-600 flex items-center gap-1">
+                      <Check className="w-4 h-4" /> Guardado
+                    </span>
+                  )}
+                  {orderFlowSaveStatus === "error" && (
+                    <span className="text-sm text-red-600">
+                      Error al guardar
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* POS Integration Info */}
         {selectedBranch && posIntegrationLoading && (
