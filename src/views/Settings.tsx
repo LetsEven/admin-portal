@@ -57,6 +57,7 @@ interface BranchData {
   created_at: string;
   updated_at: string;
   max_pending_orders?: number | null;
+  max_pending_user_orders?: number | null;
   opening_hours?: {
     [key: string]: {
       open_time: string;
@@ -103,11 +104,26 @@ const Settings = () => {
 
   // Estados para control de flujo de órdenes
   const PRESET_LIMITS = [10, 15, 20, 25, 30, 50];
+  const FLEXBILL_PRESET_LIMITS = [20, 30, 50, 75, 100];
   const [maxPendingOrders, setMaxPendingOrders] = useState<number | null>(null);
   const [isCustomLimit, setIsCustomLimit] = useState(false);
   const [customLimitValue, setCustomLimitValue] = useState("");
   const [isSavingOrderFlow, setIsSavingOrderFlow] = useState(false);
   const [orderFlowSaveStatus, setOrderFlowSaveStatus] = useState<
+    "success" | "error" | null
+  >(null);
+
+  // Estados para control de flujo Flexbill (user_orders)
+  const [selectedFlowServiceTab, setSelectedFlowServiceTab] = useState<
+    "general" | "flex-bill"
+  >("general");
+  const [flexbillMaxUserOrders, setFlexbillMaxUserOrders] = useState<
+    number | null
+  >(null);
+  const [isCustomFlexbillLimit, setIsCustomFlexbillLimit] = useState(false);
+  const [customFlexbillValue, setCustomFlexbillValue] = useState("");
+  const [isSavingFlexbillLimit, setIsSavingFlexbillLimit] = useState(false);
+  const [flexbillSaveStatus, setFlexbillSaveStatus] = useState<
     "success" | "error" | null
   >(null);
 
@@ -454,7 +470,7 @@ const Settings = () => {
         setAreHoursChanged(false);
         setHideHoursButtons(false);
 
-        // Cargar límite de flujo de órdenes de la sucursal
+        // Cargar límite de flujo de órdenes de la sucursal (general)
         const branchMax = selectedBranchData.max_pending_orders ?? null;
         setMaxPendingOrders(branchMax);
         if (branchMax !== null && !PRESET_LIMITS.includes(branchMax)) {
@@ -463,6 +479,20 @@ const Settings = () => {
         } else {
           setIsCustomLimit(false);
           setCustomLimitValue("");
+        }
+
+        // Cargar límite de flujo Flexbill (user_orders)
+        const flexbillMax = selectedBranchData.max_pending_user_orders ?? null;
+        setFlexbillMaxUserOrders(flexbillMax);
+        if (
+          flexbillMax !== null &&
+          !FLEXBILL_PRESET_LIMITS.includes(flexbillMax)
+        ) {
+          setIsCustomFlexbillLimit(true);
+          setCustomFlexbillValue(String(flexbillMax));
+        } else {
+          setIsCustomFlexbillLimit(false);
+          setCustomFlexbillValue("");
         }
 
         console.log("🏢 [Settings] Loaded default branch data:", {
@@ -917,30 +947,61 @@ const Settings = () => {
           ? parseInt(customLimitValue, 10)
           : null
         : maxPendingOrders;
-      const response = await adminPortalApi.updateBranchOrderFlowLimit(
+      await adminPortalApi.updateBranchOrderFlowLimit(
         selectedBranch,
         valueToSave,
       );
-      if ((response as any).success) {
-        setMaxPendingOrders(valueToSave);
-        setBranches((prev) =>
-          prev.map((b) =>
-            b.id === selectedBranch
-              ? { ...b, max_pending_orders: valueToSave }
-              : b,
-          ),
-        );
-        setOrderFlowSaveStatus("success");
-        setTimeout(() => setOrderFlowSaveStatus(null), 3000);
-      } else {
-        setOrderFlowSaveStatus("error");
-        setTimeout(() => setOrderFlowSaveStatus(null), 3000);
-      }
+      // makeRequest throws on failure — reaching here means success
+      setMaxPendingOrders(valueToSave);
+      setBranches((prev) =>
+        prev.map((b) =>
+          b.id === selectedBranch
+            ? { ...b, max_pending_orders: valueToSave }
+            : b,
+        ),
+      );
+      setOrderFlowSaveStatus("success");
+      setTimeout(() => setOrderFlowSaveStatus(null), 3000);
     } catch {
       setOrderFlowSaveStatus("error");
       setTimeout(() => setOrderFlowSaveStatus(null), 3000);
     } finally {
       setIsSavingOrderFlow(false);
+    }
+  };
+
+  // Guardar límite de flujo Flexbill (user_orders)
+  const handleSaveFlexbillFlowLimit = async () => {
+    if (!selectedBranch) return;
+    try {
+      setIsSavingFlexbillLimit(true);
+      setFlexbillSaveStatus(null);
+      const valueToSave = isCustomFlexbillLimit
+        ? customFlexbillValue
+          ? parseInt(customFlexbillValue, 10)
+          : null
+        : flexbillMaxUserOrders;
+      await adminPortalApi.updateBranchOrderFlowLimit(
+        selectedBranch,
+        undefined,
+        valueToSave,
+      );
+      // makeRequest throws on failure — reaching here means success
+      setFlexbillMaxUserOrders(valueToSave);
+      setBranches((prev) =>
+        prev.map((b) =>
+          b.id === selectedBranch
+            ? { ...b, max_pending_user_orders: valueToSave }
+            : b,
+        ),
+      );
+      setFlexbillSaveStatus("success");
+      setTimeout(() => setFlexbillSaveStatus(null), 3000);
+    } catch {
+      setFlexbillSaveStatus("error");
+      setTimeout(() => setFlexbillSaveStatus(null), 3000);
+    } finally {
+      setIsSavingFlexbillLimit(false);
     }
   };
 
@@ -1750,101 +1811,241 @@ const Settings = () => {
                 </p>
               </div>
               <div className="mt-5 md:mt-0 md:col-span-2">
-                {/* Píldoras de valores predefinidos */}
-                <div className="flex flex-wrap gap-2">
-                  {PRESET_LIMITS.map((v) => {
-                    const active = !isCustomLimit && maxPendingOrders === v;
-                    return (
+                {/* Tabs de servicio — solo si hay al menos un servicio general Y Flexbill habilitados */}
+                {isFlexBillEnabled &&
+                  (isPickNGoEnabled || isTapOrderPayEnabled) && (
+                    <div className="flex gap-2 mb-5">
                       <button
-                        key={v}
                         type="button"
-                        onClick={() => {
-                          setMaxPendingOrders(v);
-                          setIsCustomLimit(false);
-                          setCustomLimitValue("");
-                        }}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                          active
-                            ? "bg-custom-green-600 text-white border-gray-900"
-                            : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                        onClick={() => setSelectedFlowServiceTab("general")}
+                        className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          selectedFlowServiceTab === "general"
+                            ? "bg-custom-green-600 hover:bg-custom-green-700 text-white"
+                            : "bg-white text-gray-600 border-gray-300 hover:border-gray-500"
                         }`}
                       >
-                        {v}
+                        General
                       </button>
-                    );
-                  })}
-
-                  {/* Personalizado */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsCustomLimit(true);
-                      setMaxPendingOrders(null);
-                    }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center gap-1 ${
-                      isCustomLimit
-                        ? "bg-custom-green-600 hover:bg-custom-green-700 text-white"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
-                    }`}
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    Personalizado
-                  </button>
-
-                  {/* Sin límite */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMaxPendingOrders(null);
-                      setIsCustomLimit(false);
-                      setCustomLimitValue("");
-                    }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                      !isCustomLimit && maxPendingOrders === null
-                        ? "bg-gray-900 text-white border-gray-900"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
-                    }`}
-                  >
-                    Sin límite
-                  </button>
-                </div>
-
-                {/* Input personalizado */}
-                {isCustomLimit && (
-                  <div className="mt-3">
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="Ej. 40"
-                      value={customLimitValue}
-                      onChange={(e) => setCustomLimitValue(e.target.value)}
-                      className="block w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                    />
-                  </div>
-                )}
-
-                {/* Botón guardar */}
-                <div className="mt-4 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={handleSaveOrderFlowLimit}
-                    disabled={isSavingOrderFlow}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-custom-green-600 hover:bg-custom-green-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
-                  >
-                    <SaveIcon className="w-4 h-4" />
-                    {isSavingOrderFlow ? "Guardando..." : "Guardar límite"}
-                  </button>
-                  {orderFlowSaveStatus === "success" && (
-                    <span className="text-sm text-green-600 flex items-center gap-1">
-                      <Check className="w-4 h-4" /> Guardado
-                    </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFlowServiceTab("flex-bill")}
+                        className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          selectedFlowServiceTab === "flex-bill"
+                            ? "bg-custom-green-600 hover:bg-custom-green-700 text-white"
+                            : "bg-white text-gray-600 border-gray-300 hover:border-gray-500"
+                        }`}
+                      >
+                        Flex Bill
+                      </button>
+                    </div>
                   )}
-                  {orderFlowSaveStatus === "error" && (
-                    <span className="text-sm text-red-600">
-                      Error al guardar
-                    </span>
+
+                {/* TAB: General (tap-order-pay, pick-and-go, room service) */}
+                {(selectedFlowServiceTab === "general" ||
+                  !isFlexBillEnabled ||
+                  (!isPickNGoEnabled && !isTapOrderPayEnabled)) &&
+                  (isPickNGoEnabled || isTapOrderPayEnabled) && (
+                    <div>
+                      <p className="text-xs text-gray-400 mb-3">
+                        Tap Order & Pay, Pick &amp; Go y Room Service combinados
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {PRESET_LIMITS.map((v) => {
+                          const active =
+                            !isCustomLimit && maxPendingOrders === v;
+                          return (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => {
+                                setMaxPendingOrders(v);
+                                setIsCustomLimit(false);
+                                setCustomLimitValue("");
+                              }}
+                              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                                active
+                                  ? "bg-custom-green-600 text-white border-gray-900"
+                                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                              }`}
+                            >
+                              {v}
+                            </button>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCustomLimit(true);
+                            setMaxPendingOrders(null);
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center gap-1 ${
+                            isCustomLimit
+                              ? "bg-custom-green-600 hover:bg-custom-green-700 text-white"
+                              : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                          }`}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          Personalizado
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMaxPendingOrders(null);
+                            setIsCustomLimit(false);
+                            setCustomLimitValue("");
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                            !isCustomLimit && maxPendingOrders === null
+                              ? "bg-custom-green-600 hover:bg-custom-green-700 text-white"
+                              : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                          }`}
+                        >
+                          Sin límite
+                        </button>
+                      </div>
+                      {isCustomLimit && (
+                        <div className="mt-3">
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Ej. 40"
+                            value={customLimitValue}
+                            onChange={(e) =>
+                              setCustomLimitValue(e.target.value)
+                            }
+                            className="block w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                          />
+                        </div>
+                      )}
+                      <div className="mt-4 flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={handleSaveOrderFlowLimit}
+                          disabled={isSavingOrderFlow}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-custom-green-600 hover:bg-custom-green-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+                        >
+                          <SaveIcon className="w-4 h-4" />
+                          {isSavingOrderFlow
+                            ? "Guardando..."
+                            : "Guardar límite"}
+                        </button>
+                        {orderFlowSaveStatus === "success" && (
+                          <span className="text-sm text-green-600 flex items-center gap-1">
+                            <Check className="w-4 h-4" /> Guardado
+                          </span>
+                        )}
+                        {orderFlowSaveStatus === "error" && (
+                          <span className="text-sm text-red-600">
+                            Error al guardar
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   )}
-                </div>
+
+                {/* TAB: Flex Bill (user_orders) */}
+                {isFlexBillEnabled &&
+                  (selectedFlowServiceTab === "flex-bill" ||
+                    (!isPickNGoEnabled && !isTapOrderPayEnabled)) && (
+                    <div>
+                      <p className="text-xs text-gray-400 mb-3">
+                        Personas activos al mismo tiempo en Flex Bill
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {FLEXBILL_PRESET_LIMITS.map((v) => {
+                          const active =
+                            !isCustomFlexbillLimit &&
+                            flexbillMaxUserOrders === v;
+                          return (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => {
+                                setFlexbillMaxUserOrders(v);
+                                setIsCustomFlexbillLimit(false);
+                                setCustomFlexbillValue("");
+                              }}
+                              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                                active
+                                  ? "bg-custom-green-600 text-white border-gray-900"
+                                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                              }`}
+                            >
+                              {v}
+                            </button>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCustomFlexbillLimit(true);
+                            setFlexbillMaxUserOrders(null);
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center gap-1 ${
+                            isCustomFlexbillLimit
+                              ? "bg-custom-green-600 hover:bg-custom-green-700 text-white"
+                              : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                          }`}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          Personalizado
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFlexbillMaxUserOrders(null);
+                            setIsCustomFlexbillLimit(false);
+                            setCustomFlexbillValue("");
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                            !isCustomFlexbillLimit &&
+                            flexbillMaxUserOrders === null
+                              ? "bg-custom-green-600 hover:bg-custom-green-700 text-white "
+                              : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                          }`}
+                        >
+                          Sin límite
+                        </button>
+                      </div>
+                      {isCustomFlexbillLimit && (
+                        <div className="mt-3">
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Ej. 80"
+                            value={customFlexbillValue}
+                            onChange={(e) =>
+                              setCustomFlexbillValue(e.target.value)
+                            }
+                            className="block w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                          />
+                        </div>
+                      )}
+                      <div className="mt-4 flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={handleSaveFlexbillFlowLimit}
+                          disabled={isSavingFlexbillLimit}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-custom-green-600 hover:bg-custom-green-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+                        >
+                          <SaveIcon className="w-4 h-4" />
+                          {isSavingFlexbillLimit
+                            ? "Guardando..."
+                            : "Guardar límite"}
+                        </button>
+                        {flexbillSaveStatus === "success" && (
+                          <span className="text-sm text-green-600 flex items-center gap-1">
+                            <Check className="w-4 h-4" /> Guardado
+                          </span>
+                        )}
+                        {flexbillSaveStatus === "error" && (
+                          <span className="text-sm text-red-600">
+                            Error al guardar
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
           </div>

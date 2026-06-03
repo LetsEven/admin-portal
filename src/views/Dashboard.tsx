@@ -381,6 +381,26 @@ const Dashboard = () => {
 
   const [mostrarRankingModal, setMostrarRankingModal] = useState(false);
   const [mostrarVentasModal, setMostrarVentasModal] = useState(false);
+  const [mostrarFlowModal, setMostrarFlowModal] = useState(false);
+  const [orderFlowStatus, setOrderFlowStatus] = useState<{
+    active_count: number;
+    max_pending_orders: number | null;
+    is_high_demand: boolean;
+    active_user_order_count: number;
+    max_pending_user_orders: number | null;
+    is_flexbill_high_demand: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    const branchId = sucursalSeleccionada?.id;
+    if (!branchId || branchId === "all") {
+      setOrderFlowStatus(null);
+      return;
+    }
+    adminPortalApi.getBranchOrderFlowStatus(branchId).then((data) => {
+      if (data) setOrderFlowStatus(data);
+    });
+  }, [sucursalSeleccionada?.id]);
   const [lastUsedFilters, setLastUsedFilters] = useState<any>(null);
 
   // Estado para controlar toasts
@@ -2171,41 +2191,57 @@ const Dashboard = () => {
 
           {/* Órdenes Activas */}
           {(() => {
-            const activeCount = datosUnificados?.metricas?.ordenesActivas || 0;
-            const selectedBranchData = branches.find((b) => b.id === sucursalSeleccionada?.id);
-            const maxPending = selectedBranchData?.max_pending_orders ?? null;
-            const atLimit = maxPending !== null && activeCount >= maxPending;
+            const generalCount =
+              orderFlowStatus?.active_count ??
+              (datosUnificados?.metricas?.ordenesActivas || 0);
+            const flexbillCount = orderFlowStatus?.active_user_order_count ?? 0;
+            const totalCount = generalCount + flexbillCount;
+
+            const hasLimits = !!(
+              orderFlowStatus?.max_pending_orders ||
+              orderFlowStatus?.max_pending_user_orders
+            );
             return (
-              <div className={`bg-white overflow-hidden shadow-md rounded-lg border transition-all duration-200 hover:shadow-lg ${atLimit ? "border-amber-400" : "border-gray-100"}`}>
+              <button
+                className={`bg-white overflow-hidden shadow-md rounded-lg border transition-all duration-200 hover:shadow-lg text-left w-full`}
+                onClick={() => setMostrarFlowModal(true)}
+              >
                 <div className="p-3 sm:p-8">
                   <div className="flex items-center">
-                    <div className={`flex-shrink-0 ${atLimit ? "bg-amber-100" : "bg-blue-100"} p-2 sm:p-3 rounded-full`}>
-                      <ShoppingCartIcon className={`h-4 w-4 sm:h-6 sm:w-6 ${atLimit ? "text-amber-600" : "text-blue-600"}`} />
+                    <div
+                      className={`flex-shrink-0 bg-blue-100 p-2 sm:p-3 rounded-full`}
+                    >
+                      <ShoppingCartIcon
+                        className={`h-4 w-4 sm:h-6 sm:w-6 text-blue-600`}
+                      />
                     </div>
                     <div className="ml-2 sm:ml-5 w-0 flex-1">
                       <dl>
                         <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                          Órdenes Activas{atLimit ? " ⚠️" : ""}
+                          Órdenes Activas
                         </dt>
                         <dd>
-                          <div className={`text-sm sm:text-lg font-medium ${atLimit ? "text-amber-600" : "text-gray-900"}`}>
-                            {maxPending !== null
-                              ? `${activeCount} / ${maxPending}`
-                              : activeCount || "0"}
+                          <div
+                            className={`text-sm sm:text-lg font-medium text-gray-900`}
+                          >
+                            {totalCount || "0"}
                           </div>
+                          {hasLimits && (
+                            <div className="text-[10px] sm:text-xs text-gray-500">
+                              Ver más
+                            </div>
+                          )}
                         </dd>
                       </dl>
                     </div>
                   </div>
                 </div>
-              </div>
+              </button>
             );
           })()}
 
           {/* Pedidos — solo para FlexBill o Tap & Pay */}
-          {(!servicesLoaded ||
-            enabledServices.includes("flex-bill") ||
-            enabledServices.includes("tap-pay")) && (
+          {(!servicesLoaded || enabledServices.includes("flex-bill")) && (
             <div className="bg-white overflow-hidden shadow-md rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-lg">
               <div className="p-3 sm:p-8">
                 <div className="flex items-center">
@@ -3277,6 +3313,101 @@ const Dashboard = () => {
               >
                 Cerrar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Órdenes Activas (desglose por cola) */}
+      {mostrarFlowModal && orderFlowStatus && (
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-[2px]"
+            onClick={() => setMostrarFlowModal(false)}
+          />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="bg-blue-100 p-2 rounded-full">
+                  <ShoppingCartIcon className="h-5 w-5 text-blue-600" />
+                </div>
+                <h3 className="text-base font-semibold text-gray-900">
+                  Órdenes Activas
+                </h3>
+              </div>
+              <button
+                onClick={() => setMostrarFlowModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+              >
+                <XIcon className="h-5 w-5" />
+              </button>
+            </div>
+            {/* Rows */}
+            <div className="p-5 flex flex-col gap-4">
+              {/* General */}
+              {(orderFlowStatus.active_count > 0 ||
+                orderFlowStatus.max_pending_orders !== null) && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-medium text-gray-700">
+                      General
+                    </span>
+                    <span
+                      className={`text-sm font-semibold ${orderFlowStatus.is_high_demand ? "text-amber-600" : "text-gray-900"}`}
+                    >
+                      {orderFlowStatus.max_pending_orders !== null
+                        ? `${orderFlowStatus.active_count} / ${orderFlowStatus.max_pending_orders}`
+                        : orderFlowStatus.active_count}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Tap Order & Pay, Pick &amp; Go, Room Service
+                  </p>
+                  {orderFlowStatus.max_pending_orders !== null && (
+                    <div className="w-full bg-gray-100 rounded-full h-1.5">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${orderFlowStatus.is_high_demand ? "bg-amber-500" : "bg-blue-500"}`}
+                        style={{
+                          width: `${Math.min(100, (orderFlowStatus.active_count / orderFlowStatus.max_pending_orders) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Flex Bill */}
+              {(orderFlowStatus.active_user_order_count > 0 ||
+                orderFlowStatus.max_pending_user_orders !== null) &&
+                enabledServices.includes("flex-bill") && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-sm font-medium text-gray-700">
+                        Flex Bill
+                      </span>
+                      <span
+                        className={`text-sm font-semibold ${orderFlowStatus.is_flexbill_high_demand ? "text-amber-600" : "text-gray-900"}`}
+                      >
+                        {orderFlowStatus.max_pending_user_orders !== null
+                          ? `${orderFlowStatus.active_user_order_count} / ${orderFlowStatus.max_pending_user_orders}`
+                          : orderFlowStatus.active_user_order_count}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mb-2">
+                      Personas activas
+                    </p>
+                    {orderFlowStatus.max_pending_user_orders !== null && (
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div
+                          className={`h-1.5 rounded-full transition-all ${orderFlowStatus.is_flexbill_high_demand ? "bg-amber-500" : "bg-blue-500"}`}
+                          style={{
+                            width: `${Math.min(100, (orderFlowStatus.active_user_order_count / orderFlowStatus.max_pending_user_orders) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
             </div>
           </div>
         </div>
