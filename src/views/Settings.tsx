@@ -103,11 +103,8 @@ const Settings = () => {
   const [hideHoursButtons, setHideHoursButtons] = useState<boolean>(false);
 
   // Estados para control de flujo de órdenes
-  const PRESET_LIMITS = [10, 15, 20, 25, 30, 50];
-  const FLEXBILL_PRESET_LIMITS = [20, 30, 50, 75, 100];
+  const ORDER_LIMIT_OPTIONS = Array.from({ length: 100 }, (_, i) => i + 1);
   const [maxPendingOrders, setMaxPendingOrders] = useState<number | null>(null);
-  const [isCustomLimit, setIsCustomLimit] = useState(false);
-  const [customLimitValue, setCustomLimitValue] = useState("");
   const [isSavingOrderFlow, setIsSavingOrderFlow] = useState(false);
   const [orderFlowSaveStatus, setOrderFlowSaveStatus] = useState<
     "success" | "error" | null
@@ -120,8 +117,6 @@ const Settings = () => {
   const [flexbillMaxUserOrders, setFlexbillMaxUserOrders] = useState<
     number | null
   >(null);
-  const [isCustomFlexbillLimit, setIsCustomFlexbillLimit] = useState(false);
-  const [customFlexbillValue, setCustomFlexbillValue] = useState("");
   const [isSavingFlexbillLimit, setIsSavingFlexbillLimit] = useState(false);
   const [flexbillSaveStatus, setFlexbillSaveStatus] = useState<
     "success" | "error" | null
@@ -473,27 +468,10 @@ const Settings = () => {
         // Cargar límite de flujo de órdenes de la sucursal (general)
         const branchMax = selectedBranchData.max_pending_orders ?? null;
         setMaxPendingOrders(branchMax);
-        if (branchMax !== null && !PRESET_LIMITS.includes(branchMax)) {
-          setIsCustomLimit(true);
-          setCustomLimitValue(String(branchMax));
-        } else {
-          setIsCustomLimit(false);
-          setCustomLimitValue("");
-        }
 
         // Cargar límite de flujo Flexbill (user_orders)
         const flexbillMax = selectedBranchData.max_pending_user_orders ?? null;
         setFlexbillMaxUserOrders(flexbillMax);
-        if (
-          flexbillMax !== null &&
-          !FLEXBILL_PRESET_LIMITS.includes(flexbillMax)
-        ) {
-          setIsCustomFlexbillLimit(true);
-          setCustomFlexbillValue(String(flexbillMax));
-        } else {
-          setIsCustomFlexbillLimit(false);
-          setCustomFlexbillValue("");
-        }
 
         console.log("🏢 [Settings] Loaded default branch data:", {
           name: selectedBranchData.name,
@@ -942,11 +920,7 @@ const Settings = () => {
     try {
       setIsSavingOrderFlow(true);
       setOrderFlowSaveStatus(null);
-      const valueToSave = isCustomLimit
-        ? customLimitValue
-          ? parseInt(customLimitValue, 10)
-          : null
-        : maxPendingOrders;
+      const valueToSave = maxPendingOrders;
       await adminPortalApi.updateBranchOrderFlowLimit(
         selectedBranch,
         valueToSave,
@@ -976,11 +950,7 @@ const Settings = () => {
     try {
       setIsSavingFlexbillLimit(true);
       setFlexbillSaveStatus(null);
-      const valueToSave = isCustomFlexbillLimit
-        ? customFlexbillValue
-          ? parseInt(customFlexbillValue, 10)
-          : null
-        : flexbillMaxUserOrders;
+      const valueToSave = flexbillMaxUserOrders;
       await adminPortalApi.updateBranchOrderFlowLimit(
         selectedBranch,
         undefined,
@@ -1847,76 +1817,26 @@ const Settings = () => {
                   (isPickNGoEnabled || isTapOrderPayEnabled) && (
                     <div>
                       <p className="text-xs text-gray-400 mb-3">
-                        Tap Order & Pay, Pick &amp; Go y Room Service combinados
+                        Órdenes activas al mismo tiempo
                       </p>
-                      <div className="flex flex-wrap gap-2">
-                        {PRESET_LIMITS.map((v) => {
-                          const active =
-                            !isCustomLimit && maxPendingOrders === v;
-                          return (
-                            <button
-                              key={v}
-                              type="button"
-                              onClick={() => {
-                                setMaxPendingOrders(v);
-                                setIsCustomLimit(false);
-                                setCustomLimitValue("");
-                              }}
-                              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                                active
-                                  ? "bg-custom-green-600 text-white border-gray-900"
-                                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
-                              }`}
-                            >
-                              {v}
-                            </button>
-                          );
-                        })}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCustomLimit(true);
-                            setMaxPendingOrders(null);
-                          }}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center gap-1 ${
-                            isCustomLimit
-                              ? "bg-custom-green-600 hover:bg-custom-green-700 text-white"
-                              : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
-                          }`}
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          Personalizado
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMaxPendingOrders(null);
-                            setIsCustomLimit(false);
-                            setCustomLimitValue("");
-                          }}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                            !isCustomLimit && maxPendingOrders === null
-                              ? "bg-custom-green-600 hover:bg-custom-green-700 text-white"
-                              : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
-                          }`}
-                        >
-                          Sin límite
-                        </button>
-                      </div>
-                      {isCustomLimit && (
-                        <div className="mt-3">
-                          <input
-                            type="number"
-                            min="1"
-                            placeholder="Ej. 40"
-                            value={customLimitValue}
-                            onChange={(e) =>
-                              setCustomLimitValue(e.target.value)
-                            }
-                            className="block w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                          />
-                        </div>
-                      )}
+                      <select
+                        value={maxPendingOrders ?? ""}
+                        onChange={(e) =>
+                          setMaxPendingOrders(
+                            e.target.value === ""
+                              ? null
+                              : parseInt(e.target.value, 10),
+                          )
+                        }
+                        className="block w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
+                      >
+                        <option value="">Sin límite</option>
+                        {ORDER_LIMIT_OPTIONS.map((v) => (
+                          <option key={v} value={v}>
+                            {v}
+                          </option>
+                        ))}
+                      </select>
                       <div className="mt-4 flex items-center gap-3">
                         <button
                           type="button"
@@ -1949,78 +1869,26 @@ const Settings = () => {
                     (!isPickNGoEnabled && !isTapOrderPayEnabled)) && (
                     <div>
                       <p className="text-xs text-gray-400 mb-3">
-                        Personas activos al mismo tiempo en Flex Bill
+                        Órdenes activas al mismo tiempo
                       </p>
-                      <div className="flex flex-wrap gap-2">
-                        {FLEXBILL_PRESET_LIMITS.map((v) => {
-                          const active =
-                            !isCustomFlexbillLimit &&
-                            flexbillMaxUserOrders === v;
-                          return (
-                            <button
-                              key={v}
-                              type="button"
-                              onClick={() => {
-                                setFlexbillMaxUserOrders(v);
-                                setIsCustomFlexbillLimit(false);
-                                setCustomFlexbillValue("");
-                              }}
-                              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                                active
-                                  ? "bg-custom-green-600 text-white border-gray-900"
-                                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
-                              }`}
-                            >
-                              {v}
-                            </button>
-                          );
-                        })}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCustomFlexbillLimit(true);
-                            setFlexbillMaxUserOrders(null);
-                          }}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center gap-1 ${
-                            isCustomFlexbillLimit
-                              ? "bg-custom-green-600 hover:bg-custom-green-700 text-white"
-                              : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
-                          }`}
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          Personalizado
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFlexbillMaxUserOrders(null);
-                            setIsCustomFlexbillLimit(false);
-                            setCustomFlexbillValue("");
-                          }}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                            !isCustomFlexbillLimit &&
-                            flexbillMaxUserOrders === null
-                              ? "bg-custom-green-600 hover:bg-custom-green-700 text-white "
-                              : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
-                          }`}
-                        >
-                          Sin límite
-                        </button>
-                      </div>
-                      {isCustomFlexbillLimit && (
-                        <div className="mt-3">
-                          <input
-                            type="number"
-                            min="1"
-                            placeholder="Ej. 80"
-                            value={customFlexbillValue}
-                            onChange={(e) =>
-                              setCustomFlexbillValue(e.target.value)
-                            }
-                            className="block w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                          />
-                        </div>
-                      )}
+                      <select
+                        value={flexbillMaxUserOrders ?? ""}
+                        onChange={(e) =>
+                          setFlexbillMaxUserOrders(
+                            e.target.value === ""
+                              ? null
+                              : parseInt(e.target.value, 10),
+                          )
+                        }
+                        className="block w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
+                      >
+                        <option value="">Sin límite</option>
+                        {ORDER_LIMIT_OPTIONS.map((v) => (
+                          <option key={v} value={v}>
+                            {v}
+                          </option>
+                        ))}
+                      </select>
                       <div className="mt-4 flex items-center gap-3">
                         <button
                           type="button"
