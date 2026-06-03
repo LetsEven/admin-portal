@@ -422,17 +422,47 @@ class AdminPortalApiService {
 
   async updateBranchOrderFlowLimit(
     branchId: string,
-    maxPendingOrders: number | null,
+    maxPendingOrders: number | null | undefined,
     token: string,
+    maxPendingUserOrders?: number | null,
   ): Promise<{ success: boolean; data?: any; message?: string }> {
+    const body: Record<string, number | null> = {};
+    if (maxPendingOrders !== undefined)
+      body.max_pending_orders = maxPendingOrders;
+    if (maxPendingUserOrders !== undefined)
+      body.max_pending_user_orders = maxPendingUserOrders;
     return this.makeRequest(
       `/branches/${branchId}/order-flow-limit`,
       {
         method: "PUT",
-        body: JSON.stringify({ max_pending_orders: maxPendingOrders }),
+        body: JSON.stringify(body),
       },
       token,
     );
+  }
+
+  // ===============================================
+  // MÉTODOS DE ORDER FLOW STATUS
+  // ===============================================
+
+  async getBranchOrderFlowStatus(branchId: string): Promise<{
+    active_count: number;
+    max_pending_orders: number | null;
+    is_high_demand: boolean;
+    active_user_order_count: number;
+    max_pending_user_orders: number | null;
+    is_flexbill_high_demand: boolean;
+  } | null> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/branches/${branchId}/order-flow-status`,
+      );
+      if (!response.ok) return null;
+      const { data } = await response.json();
+      return data ?? null;
+    } catch {
+      return null;
+    }
   }
 
   // ===============================================
@@ -655,15 +685,19 @@ export function useAdminPortalApi() {
       ),
     updateBranchOrderFlowLimit: (
       branchId: string,
-      maxPendingOrders: number | null,
+      maxPendingOrders: number | null | undefined,
+      maxPendingUserOrders?: number | null,
     ) =>
       makeAuthenticatedRequest((token) =>
         adminPortalApiService.updateBranchOrderFlowLimit(
           branchId,
           maxPendingOrders,
           token,
+          maxPendingUserOrders,
         ),
       ),
+    getBranchOrderFlowStatus: (branchId: string) =>
+      adminPortalApiService.getBranchOrderFlowStatus(branchId),
     getBranchPosIntegration: (branchId: string) =>
       makeAuthenticatedRequest((token) =>
         adminPortalApiService.getBranchPosIntegration(branchId, token),
