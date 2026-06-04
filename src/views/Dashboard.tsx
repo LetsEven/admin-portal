@@ -45,6 +45,7 @@ import {
   joyrideResponsiveCSS,
 } from "../hooks/useOnboarding";
 import toast from "react-hot-toast";
+import { formatFolio } from "../utils/folio";
 
 // Estilos CSS en línea para los sliders
 const sliderStyles = `
@@ -2471,7 +2472,7 @@ const Dashboard = () => {
                       <div className="flex items-center gap-2">
                         {tx.folio && (
                           <span className="text-sm text-custom-green-600">
-                            #{tx.folio}
+                            #{formatFolio(tx.folio)}
                           </span>
                         )}
                         <p className="text-sm font-medium text-custom-green-600 truncate">
