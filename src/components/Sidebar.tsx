@@ -7,7 +7,6 @@ import { useAuth } from "@clerk/nextjs";
 import {
   HomeIcon,
   BookOpenIcon,
-  TagIcon,
   TrendingUpIcon,
   SettingsIcon,
   LogOutIcon,
@@ -108,19 +107,6 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
             className={`${!mobile && !isExpanded ? "hidden" : "block"} transition-opacity duration-200`}
           >
             Menú
-          </span>
-        </Link>
-        <Link
-          href="/promotions"
-          className={`group flex items-center text-sm font-medium rounded-lg transition-all duration-200 ${mobile || isExpanded ? "px-3 py-3" : "px-0 py-3 justify-center"} ${pathname === "/promotions" ? "bg-custom-green-100 text-custom-green-900 shadow-sm" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"}`}
-        >
-          <TagIcon
-            className={`flex-shrink-0 h-5 w-5 ${mobile || isExpanded ? "mr-3 text-custom-green-600" : "mx-auto text-gray-500"} transition-all duration-200`}
-          />
-          <span
-            className={`${!mobile && !isExpanded ? "hidden" : "block"} transition-opacity duration-200`}
-          >
-            Dine
           </span>
         </Link>
         <Link
