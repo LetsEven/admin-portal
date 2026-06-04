@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import Joyride from "react-joyride";
 import {
   SaveIcon,
-  Upload,
   Camera,
   Edit3,
   Trash2,
@@ -1331,22 +1330,35 @@ const Settings = () => {
                   <img
                     src={logoPreview}
                     alt="Logo del restaurante"
-                    className="max-h-full max-w-full object-contain p-2"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <Camera className="h-8 w-8 text-gray-400" />
                 )}
               </button>
-              {logoPreview && (
+              {/* Acciones debajo del logo */}
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={handleLogoDelete}
+                  onClick={handleLogoUpload}
                   disabled={isUploadingLogo}
-                  className="text-xs text-red-600 hover:text-red-700 inline-flex items-center gap-1 disabled:opacity-50"
+                  title="Cambiar logo"
+                  className="p-1.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
                 >
-                  <Trash2 className="h-3.5 w-3.5" /> Quitar
+                  <Edit3 className="h-4 w-4" />
                 </button>
-              )}
+                {logoPreview && (
+                  <button
+                    type="button"
+                    onClick={handleLogoDelete}
+                    disabled={isUploadingLogo}
+                    title="Quitar logo"
+                    className="p-1.5 rounded-md text-red-500 hover:text-red-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Grid 2x2: Nombre · Teléfono · Correo · Logo */}
@@ -1400,30 +1412,17 @@ const Settings = () => {
                 />
               </div>
               <div>
-                <label
-                  htmlFor="logo"
-                  className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
-                >
-                  Logo del restaurante
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                  Dine
                 </label>
                 <button
                   type="button"
-                  onClick={handleLogoUpload}
-                  disabled={isUploadingLogo}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm sm:text-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setOpenModal("dine")}
+                  className="w-full inline-flex items-center gap-2 px-4 py-2 border border-gray-300 shadow-sm sm:text-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
                 >
-                  {isUploadingLogo ? (
-                    <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
-                  ) : logoPreview ? (
-                    <Edit3 className="h-4 w-4 mr-2" />
-                  ) : (
-                    <Upload className="h-4 w-4 mr-2" />
-                  )}
-                  {logoPreview ? "Cambiar logo" : "Subir logo"}
+                  <Tag className="h-4 w-4 text-custom-green-600" />
+                  Gestionar servicios
                 </button>
-                <p className="text-gray-500 text-[10px] sm:text-xs mt-1">
-                  JPG, PNG o WEBP. Se redimensionará automáticamente.
-                </p>
               </div>
             </div>
           </div>
@@ -1433,10 +1432,17 @@ const Settings = () => {
 
           {/* === Sección 2: Configuración por sucursal === */}
           <div className="space-y-4">
-            {/* Selector de sucursal (alineado a la derecha como en el boceto) */}
-            <div className="flex justify-end" data-tour="branches-tables">
-              <div className="w-full sm:w-64">
-                <label htmlFor="branch-select" className="sr-only">
+            {/* Sucursal (izquierda) + Dirección (derecha) en la misma fila */}
+            <div
+              className="grid grid-cols-1 sm:grid-cols-4 gap-4"
+              data-tour="branches-tables"
+            >
+              {/* Selector de sucursal */}
+              <div className="sm:col-span-1">
+                <label
+                  htmlFor="branch-select"
+                  className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
+                >
                   Sucursal
                 </label>
                 <select
@@ -1456,63 +1462,56 @@ const Settings = () => {
                   ))}
                 </select>
               </div>
-            </div>
 
-            {/* Dirección (ancho completo) */}
-            <div>
-              <label
-                htmlFor="address"
-                className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
-              >
-                Dirección
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  name="address"
-                  id="address"
-                  value={settings.address}
-                  onChange={handleAddressChange}
-                  className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-950"
-                  placeholder="Dirección de la sucursal seleccionada"
-                />
-                {selectedBranch && isAddressChanged && (
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={handleSaveBranchAddress}
-                      disabled={isUpdatingAddress}
-                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                    >
-                      {isUpdatingAddress ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <SaveIcon className="w-4 h-4" />
-                      )}
-                      {isUpdatingAddress ? "Guardando..." : "Guardar"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDiscardAddressChanges}
-                      disabled={isUpdatingAddress}
-                      className="px-3 py-1 bg-gray-500 text-white text-sm rounded-md hover:bg-gray-600 disabled:opacity-50"
-                    >
-                      Descartar
-                    </button>
-                  </div>
-                )}
+              {/* Dirección */}
+              <div className="sm:col-span-3">
+                <label
+                  htmlFor="address"
+                  className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
+                >
+                  Dirección
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    name="address"
+                    id="address"
+                    value={settings.address}
+                    onChange={handleAddressChange}
+                    className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-950"
+                    placeholder="Dirección de la sucursal seleccionada"
+                  />
+                  {selectedBranch && isAddressChanged && (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSaveBranchAddress}
+                        disabled={isUpdatingAddress}
+                        className="px-3 py-1 bg-custom-green-600 hover:bg-custom-green-700 text-white text-sm rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                      >
+                        {isUpdatingAddress ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <SaveIcon className="w-4 h-4" />
+                        )}
+                        {isUpdatingAddress ? "Guardando..." : "Guardar"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDiscardAddressChanges}
+                        disabled={isUpdatingAddress}
+                        className="px-3 py-1 bg-gray-500 text-white text-sm rounded-md hover:bg-gray-600 disabled:opacity-50"
+                      >
+                        Descartar
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-              {selectedBranch !== "all" && (
-                <p className="mt-1 text-xs text-gray-700">
-                  {isAddressChanged
-                    ? "Has modificado la dirección. Guarda los cambios para aplicarlos."
-                    : "Esta dirección corresponde a la sucursal seleccionada."}
-                </p>
-              )}
             </div>
 
-            {/* Número de mesas + URL */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Número de mesas + URL — misma cuadrícula que Sucursal/Dirección */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               {/* Configuración de mesas - Solo si FlexBill o TapOrderPay habilitados */}
               {!servicesLoading &&
                 (isFlexBillEnabled || isTapOrderPayEnabled) && (
@@ -1520,8 +1519,8 @@ const Settings = () => {
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       Número de mesas
                     </label>
-                    <div className="bg-gray-50 border border-gray-300 rounded-md px-2.5 sm:px-3 py-1.5 sm:py-2 min-w-0">
-                      <span className="text-xs sm:text-sm text-gray-700 break-all">
+                    <div className="bg-gray-50 border border-gray-300 rounded-md px-2.5 sm:px-3 py-1.5 sm:py-2">
+                      <span className="text-xs sm:text-sm text-gray-700">
                         {selectedBranch !== "all"
                           ? (() => {
                               const selectedBranchData = branches.find(
@@ -1544,11 +1543,11 @@ const Settings = () => {
 
               {/* Pick & Go URL - Solo si el servicio está habilitado */}
               {!servicesLoading && isPickNGoEnabled && (
-                <div className="sm:col-span-2">
+                <div className="sm:col-span-3">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     URL de Pick & Go
                   </label>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2">
                     <div className="flex-1 bg-gray-50 border border-gray-300 rounded-md px-2.5 sm:px-3 py-1.5 sm:py-2 min-w-0">
                       <code className="text-xs sm:text-sm text-gray-700 break-all">
                         {restaurant?.id ? getPickAndGoUrl() : "Cargando..."}
@@ -1556,11 +1555,11 @@ const Settings = () => {
                     </div>
 
                     {restaurant?.id && (
-                      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <button
                           type="button"
                           onClick={copyPickAndGoUrl}
-                          className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
+                          className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-colors"
                           title="Copiar URL"
                         >
                           {copySuccess ? (
@@ -1579,7 +1578,7 @@ const Settings = () => {
                         <button
                           type="button"
                           onClick={openPickAndGoUrl}
-                          className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-custom-green-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-custom-green-700 bg-custom-green-50 hover:bg-custom-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
+                          className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-custom-green-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-custom-green-700 bg-custom-green-50 hover:bg-custom-green-100 focus:outline-none  transition-colors"
                           title="Abrir en nueva pestaña"
                         >
                           <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
@@ -1596,16 +1595,8 @@ const Settings = () => {
           {/* Divider */}
           <div className="border-t border-gray-200 my-6"></div>
 
-          {/* === Sección 3: Acciones (cada botón abre un modal) === */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            <button
-              type="button"
-              onClick={() => setOpenModal("dine")}
-              className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-custom-green-500 hover:bg-gray-50 transition-colors text-left"
-            >
-              <Tag className="h-5 w-5 text-custom-green-600 flex-shrink-0" />
-              <span className="text-sm font-medium text-gray-700">Dine</span>
-            </button>
+          {/* === Sección 3: Acciones por sucursal (cada botón abre un modal) === */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <button
               type="button"
               onClick={() => setOpenModal("horario")}
@@ -1681,7 +1672,7 @@ const Settings = () => {
                       name="language"
                       value={settings?.language}
                       onChange={handleChange}
-                      className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
+                      className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none"
                     >
                       <option value="es">Español</option>
                       <option value="en">Inglés</option>
@@ -1699,7 +1690,7 @@ const Settings = () => {
                       name="currency"
                       value={settings?.currency}
                       onChange={handleChange}
-                      className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
+                      className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none"
                     >
                       <option value="MXN">Peso Mexicano (MXN)</option>
                       <option value="USD">Dólar Estadounidense (USD)</option>
@@ -1742,7 +1733,7 @@ const Settings = () => {
             type="submit"
             data-tour="save-button"
             disabled={isUpdating || saveStatus === "saving"}
-            className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm sm:text-sm text-sm font-medium rounded-md text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm sm:text-sm text-sm font-medium rounded-md text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isUpdating || saveStatus === "saving" ? (
               <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
