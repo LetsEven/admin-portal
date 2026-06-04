@@ -121,6 +121,7 @@ export interface EnabledServices {
 
 export interface Branch {
   id: string;
+  branch_number?: number;
   name: string;
   address?: string;
   tables: number;

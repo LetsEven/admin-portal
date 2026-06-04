@@ -9,8 +9,11 @@ import {
   ExternalLink,
   Copy,
   Check,
-  Eye,
-  EyeOff,
+  Clock,
+  SlidersHorizontal,
+  Server,
+  Printer,
+  Tag,
 } from "lucide-react";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { useRestaurant } from "../hooks/useRestaurant";
@@ -18,12 +21,16 @@ import { ImageUploadService } from "../services/imageUploadService";
 import ImageCropModal from "../components/ImageCropModal";
 import { useAdminPortalApi } from "../services/adminPortalApi";
 import { usePosApi } from "../services/posApi";
-import PrinterSettings from "../components/PrinterSettings";
 import {
   useSettingsOnboarding,
   joyrideTheme,
   joyrideResponsiveCSS,
 } from "../hooks/useSettingsOnboarding";
+import DineModal from "../components/settings/DineModal";
+import HorarioModal from "../components/settings/HorarioModal";
+import ControlFlujoModal from "../components/settings/ControlFlujoModal";
+import PosConfigModal from "../components/settings/PosConfigModal";
+import ImpresorasModal from "../components/settings/ImpresorasModal";
 
 interface SettingsData {
   name: string;
@@ -50,6 +57,7 @@ interface SettingsData {
 interface BranchData {
   id: string;
   client_id: string;
+  branch_number?: number;
   name: string;
   address: string;
   tables: number;
@@ -216,6 +224,11 @@ const Settings = () => {
   const [copySuccessBranchId, setCopySuccessBranchId] = useState(false);
   const [copySuccessToken, setCopySuccessToken] = useState(false);
   const [showToken, setShowToken] = useState(false);
+
+  // Modal abierto en la sección de configuración
+  const [openModal, setOpenModal] = useState<
+    null | "dine" | "horario" | "flujo" | "pos" | "impresoras"
+  >(null);
 
   // Sincronizar estado local con datos del restaurante
   useEffect(() => {
@@ -817,10 +830,14 @@ const Settings = () => {
     }
   };
 
-  // Generar URL de Pick & Go
+  // Generar URL de Pick & Go (por sucursal, usando branch_number)
   const getPickAndGoUrl = () => {
     if (!restaurant?.id) return "";
-    return `https://pg.letseven.io/${restaurant.id}/menu`;
+    const baseUrl = `https://pg.letseven.io/${restaurant.id}/menu`;
+    const branch = branches.find((b) => b.id === selectedBranch);
+    return branch?.branch_number != null
+      ? `${baseUrl}?branch=${branch.branch_number}`
+      : baseUrl;
   };
 
   // Copiar URL al portapapeles
@@ -1285,31 +1302,6 @@ const Settings = () => {
         </div>
 
         <div className="flex items-center space-x-2">
-          {/* Selector de Sucursal */}
-          <div
-            className="flex items-center space-x-1.5 sm:space-x-2 mr-4 sm:mr-8"
-            data-tour="branches-tables"
-          >
-            <label className="text-xs sm:text-sm font-medium text-gray-700">
-              Sucursal:
-            </label>
-            <select
-              value={selectedBranch}
-              onChange={(e) => handleBranchChange(e.target.value)}
-              className="text-xs sm:text-sm border border-gray-300 rounded-md px-2 sm:px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-custom-green-500 focus:border-transparent max-w-[140px] sm:max-w-none"
-              disabled={branchesLoading}
-            >
-              {branches.length === 0 && !branchesLoading && (
-                <option value="">Sin sucursales disponibles</option>
-              )}
-              {branches.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <span className="text-xs sm:text-sm text-gray-700 hidden sm:inline">
             {user?.firstName || "Usuario"}
           </span>
@@ -1319,802 +1311,406 @@ const Settings = () => {
         </div>
       </div>
       <form onSubmit={handleSubmit} className="mt-6 space-y-8">
-        {/* Restaurant Information */}
+        {/* === Tarjeta principal de configuración === */}
         <div
           className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6"
           data-tour="restaurant-info"
         >
-          <div className="md:grid md:grid-cols-3 md:gap-6">
-            <div className="md:col-span-1">
-              <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
-                Información del restaurante
-              </h3>
-              <p className="mt-1 text-xs sm:text-sm text-gray-500">
-                Información básica sobre tu restaurante que se mostrará a los
-                clientes.
-              </p>
-              <div className="flex justify-center mt-6">
-                {logoPreview && (
-                  <div className="w-32 h-32 rounded-lg overflow-hidden border border-gray-200 shadow-sm flex items-center justify-center bg-white p-2">
-                    <img
-                      src={logoPreview}
-                      alt="Logo del restaurante"
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  </div>
+          {/* === Sección 1: Información general del restaurante === */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-5 sm:gap-6">
+            {/* Logo circular */}
+            <div className="flex-shrink-0 flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={handleLogoUpload}
+                disabled={isUploadingLogo}
+                className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border border-gray-200 shadow-sm flex items-center justify-center bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
+                title={logoPreview ? "Cambiar logo" : "Subir logo"}
+              >
+                {logoPreview ? (
+                  <img
+                    src={logoPreview}
+                    alt="Logo del restaurante"
+                    className="max-h-full max-w-full object-contain p-2"
+                  />
+                ) : (
+                  <Camera className="h-8 w-8 text-gray-400" />
                 )}
-              </div>
+              </button>
+              {logoPreview && (
+                <button
+                  type="button"
+                  onClick={handleLogoDelete}
+                  disabled={isUploadingLogo}
+                  className="text-xs text-red-600 hover:text-red-700 inline-flex items-center gap-1 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Quitar
+                </button>
+              )}
             </div>
-            <div className="mt-5 md:mt-0 md:col-span-2">
-              <div className="grid grid-cols-6 gap-4">
-                <div className="col-span-6 sm:col-span-4">
-                  <label
-                    htmlFor="name"
-                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
-                  >
-                    Nombre del restaurante
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    id="name"
-                    value={settings.name}
-                    onChange={handleChange}
-                    className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
-                  />
-                </div>
-                <div className="col-span-6">
-                  <label
-                    htmlFor="address"
-                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
-                  >
-                    Dirección
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      name="address"
-                      id="address"
-                      value={settings.address}
-                      onChange={handleAddressChange}
-                      className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-blue-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500 bg-blue-50"
-                      placeholder="Dirección de la sucursal seleccionada"
-                    />
-                    {selectedBranch && isAddressChanged && (
-                      <div className="flex gap-2 mt-1">
-                        <button
-                          type="button"
-                          onClick={handleSaveBranchAddress}
-                          disabled={isUpdatingAddress}
-                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                        >
-                          {isUpdatingAddress ? (
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          ) : (
-                            <SaveIcon className="w-4 h-4" />
-                          )}
-                          {isUpdatingAddress ? "Guardando..." : "Guardar"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleDiscardAddressChanges}
-                          disabled={isUpdatingAddress}
-                          className="px-3 py-1 bg-gray-500 text-white text-sm rounded-md hover:bg-gray-600 disabled:opacity-50"
-                        >
-                          Descartar
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  {selectedBranch !== "all" && (
-                    <p className="mt-1 text-xs text-gray-700">
-                      {isAddressChanged
-                        ? "Has modificado la dirección. Guarda los cambios para aplicarlos."
-                        : "Esta dirección corresponde a la sucursal seleccionada."}
-                    </p>
+
+            {/* Grid 2x2: Nombre · Teléfono · Correo · Logo */}
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
+                >
+                  Nombre del restaurante
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  id="name"
+                  value={settings.name}
+                  onChange={handleChange}
+                  className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="phone"
+                  className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
+                >
+                  Teléfono
+                </label>
+                <input
+                  type="text"
+                  name="phone"
+                  id="phone"
+                  value={settings.phone}
+                  onChange={handleChange}
+                  className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
+                >
+                  Correo electrónico
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  id="email"
+                  value={settings.email}
+                  onChange={handleChange}
+                  className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="logo"
+                  className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
+                >
+                  Logo del restaurante
+                </label>
+                <button
+                  type="button"
+                  onClick={handleLogoUpload}
+                  disabled={isUploadingLogo}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm sm:text-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUploadingLogo ? (
+                    <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                  ) : logoPreview ? (
+                    <Edit3 className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
                   )}
-                </div>
-                <div className="col-span-6 sm:col-span-3">
-                  <label
-                    htmlFor="phone"
-                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
-                  >
-                    Teléfono
-                  </label>
-                  <input
-                    type="text"
-                    name="phone"
-                    id="phone"
-                    value={settings.phone}
-                    onChange={handleChange}
-                    className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
-                  />
-                </div>
-                <div className="col-span-6 sm:col-span-3">
-                  <label
-                    htmlFor="email"
-                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
-                  >
-                    Correo electrónico
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    id="email"
-                    value={settings.email}
-                    onChange={handleChange}
-                    className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
-                  />
-                </div>
-                <div className="col-span-6 sm:col-span-3">
-                  <label
-                    htmlFor="logo"
-                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
-                  >
-                    Logo del restaurante
-                  </label>
-                  <div className="mt-2">
-                    <div className="flex items-center space-x-4">
-                      <button
-                        type="button"
-                        onClick={handleLogoUpload}
-                        disabled={isUploadingLogo}
-                        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm sm:text-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isUploadingLogo ? (
-                          <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
-                        ) : logoPreview ? (
-                          <Edit3 className="h-4 w-4 mr-2" />
-                        ) : (
-                          <Upload className="h-4 w-4 mr-2" />
-                        )}
-                        {logoPreview ? "Cambiar logo" : "Subir logo"}
-                      </button>
-                      {logoPreview && (
-                        <button
-                          type="button"
-                          onClick={handleLogoDelete}
-                          disabled={isUploadingLogo}
-                          className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm sm:text-sm text-sm font-medium rounded-md text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                    <p className="text-gray-500 text-[10px] sm:text-xs mt-1">
-                      JPG, PNG o WEBP. Se redimensionará automáticamente.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Configuración de mesas - Solo mostrar si FlexBill o TapOrderPay están habilitados */}
-                {!servicesLoading &&
-                  (isFlexBillEnabled || isTapOrderPayEnabled) && (
-                    <div className="col-span-6 sm:col-span-3">
-                      <label className="block text-xs sm:text-sm font-medium text-gray-700">
-                        Número de mesas
-                      </label>
-                      <div
-                        className={`mt-1 block w-full shadow-sm sm:text-sm rounded-md px-3 py-2 ${
-                          selectedBranch !== "all"
-                            ? " text-gray-800"
-                            : " text-gray-800"
-                        }`}
-                      >
-                        <div className="sm:text-sm text-sm font-medium">
-                          {selectedBranch !== "all"
-                            ? (() => {
-                                const selectedBranchData = branches.find(
-                                  (b) => b.id === selectedBranch,
-                                );
-                                return selectedBranchData ? (
-                                  <>
-                                    {selectedBranchData.tables} mesa
-                                    {selectedBranchData.tables !== 1 ? "s" : ""}
-                                  </>
-                                ) : (
-                                  "0 mesas"
-                                );
-                              })()
-                            : `${restaurant?.tableCount || 0} mesa${(restaurant?.tableCount || 0) !== 1 ? "s" : ""} configuradas`}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                {/* Pick & Go URL Section - Solo mostrar si el servicio está habilitado */}
-                {!servicesLoading && isPickNGoEnabled && (
-                  <div className="col-span-6">
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                      URL de Pick & Go
-                    </label>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                      <div className="flex-1 bg-gray-50 border border-gray-300 rounded-md px-2.5 sm:px-3 py-1.5 sm:py-2 min-w-0">
-                        <code className="text-xs sm:text-sm text-gray-700 break-all">
-                          {restaurant?.id ? getPickAndGoUrl() : "Cargando..."}
-                        </code>
-                      </div>
-
-                      {restaurant?.id && (
-                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                          <button
-                            type="button"
-                            onClick={copyPickAndGoUrl}
-                            className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
-                            title="Copiar URL"
-                          >
-                            {copySuccess ? (
-                              <>
-                                <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 mr-1" />
-                                <span className="text-green-500">
-                                  ¡Copiado!
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                                Copiar
-                              </>
-                            )}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={openPickAndGoUrl}
-                            className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-custom-green-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-custom-green-700 bg-custom-green-50 hover:bg-custom-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
-                            title="Abrir en nueva pestaña"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                            Abrir
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <p className="hidden sm:inline mt-1 text-xs text-gray-500">
-                      Esta es la URL pública de tu menú Pick & Go que los
-                      clientes pueden usar para hacer pedidos.
-                    </p>
-                    <p className="sm:hidden mt-1 text-xs text-gray-500">
-                      Esta es tu URL pública.
-                    </p>
-                  </div>
-                )}
+                  {logoPreview ? "Cambiar logo" : "Subir logo"}
+                </button>
+                <p className="text-gray-500 text-[10px] sm:text-xs mt-1">
+                  JPG, PNG o WEBP. Se redimensionará automáticamente.
+                </p>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Opening Hours */}
-        <div
-          className="bg-white shadow px-3 sm:px-4 py-4 sm:py-5 sm:rounded-lg sm:p-6"
-          data-tour="opening-hours"
-        >
-          <div className="sm:grid sm:grid-cols-3 sm:gap-6">
-            <div className="sm:col-span-1">
-              <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
-                Horario de atención
-              </h3>
-              <p className="mt-1 text-xs sm:text-sm text-gray-500">
-                Establece los horarios en que tu restaurante está abierto.
-              </p>
-            </div>
-            <div className="mt-4 sm:mt-0 sm:col-span-2">
-              <div className="space-y-3 sm:space-y-4">
-                {Object.entries(days).map(([day, label]) => (
-                  <div
-                    key={day}
-                    className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 gap-x-4"
-                  >
-                    {/* Línea 1 en móvil: Día + Checkboxes */}
-                    <div className="flex items-center gap-3 sm:gap-0 sm:contents">
-                      <div className="w-16 sm:w-24">
-                        <span className="text-xs sm:text-sm font-medium text-gray-700">
-                          {label}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center">
-                          <input
-                            id={`closed-${day}`}
-                            name={`closed-${day}`}
-                            type="checkbox"
-                            checked={settings.openingHours[day].closed}
-                            onChange={() =>
-                              handleHoursChange(day, "closed", null)
-                            }
-                            className="h-4 w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
-                          />
-                          <label
-                            htmlFor={`closed-${day}`}
-                            className="ml-1.5 text-xs sm:text-sm text-gray-700"
-                          >
-                            Cerrado
-                          </label>
-                        </div>
-                        {!settings.openingHours[day].closed && (
-                          <div className="flex items-center">
-                            <input
-                              id={`allday-${day}`}
-                              name={`allday-${day}`}
-                              type="checkbox"
-                              checked={
-                                settings.openingHours[day].allDay || false
-                              }
-                              onChange={() =>
-                                handleHoursChange(day, "allDay", null)
-                              }
-                              className="h-4 w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
-                            />
-                            <label
-                              htmlFor={`allday-${day}`}
-                              className="ml-1.5 text-xs sm:text-sm text-gray-700"
-                            >
-                              Todo el día
-                            </label>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {/* Línea 2 en móvil: Inputs de hora o badge 24 hrs */}
-                    {!settings.openingHours[day].closed &&
-                      (settings.openingHours[day].allDay ? (
-                        <div className="mt-1.5 sm:mt-0">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                            24 hrs
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 sm:gap-0 sm:contents mt-1.5 sm:mt-0 pl-0 sm:pl-0">
-                          <div className="flex items-center">
-                            <label htmlFor={`open-${day}`} className="sr-only">
-                              Abre
-                            </label>
-                            <input
-                              type="time"
-                              id={`open-${day}`}
-                              value={settings.openingHours[day].open}
-                              onChange={(e) =>
-                                handleHoursChange(day, "open", e.target.value)
-                              }
-                              className="block w-full shadow-sm text-xs sm:text-sm border-gray-300 rounded-md focus:ring-custom-green-500 focus:border-custom-green-500"
-                            />
-                          </div>
-                          <span className="text-xs sm:text-base text-gray-500">
-                            a
-                          </span>
-                          <div className="flex items-center">
-                            <label htmlFor={`close-${day}`} className="sr-only">
-                              Cierra
-                            </label>
-                            <input
-                              type="time"
-                              id={`close-${day}`}
-                              value={settings.openingHours[day].close}
-                              onChange={(e) =>
-                                handleHoursChange(day, "close", e.target.value)
-                              }
-                              className="block w-full shadow-sm text-xs sm:text-sm border-gray-300 rounded-md focus:ring-custom-green-500 focus:border-custom-green-500"
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    {/* Mostrar error de validación si existe */}
-                    {validationErrors[`${day}_time`] && (
-                      <div className="w-full sm:w-auto">
-                        <p className="text-xs sm:text-sm text-red-600 mt-1">
-                          {validationErrors[`${day}_time`]}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+          {/* Divider */}
+          <div className="border-t border-gray-200 my-6"></div>
+
+          {/* === Sección 2: Configuración por sucursal === */}
+          <div className="space-y-4">
+            {/* Selector de sucursal (alineado a la derecha como en el boceto) */}
+            <div className="flex justify-end" data-tour="branches-tables">
+              <div className="w-full sm:w-64">
+                <label htmlFor="branch-select" className="sr-only">
+                  Sucursal
+                </label>
+                <select
+                  id="branch-select"
+                  value={selectedBranch}
+                  onChange={(e) => handleBranchChange(e.target.value)}
+                  disabled={branchesLoading}
+                  className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-custom-green-500"
+                >
+                  {branches.length === 0 && !branchesLoading && (
+                    <option value="">Sin sucursales disponibles</option>
+                  )}
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              {/* Botón para guardar horarios por sucursal */}
-              {(() => {
-                const shouldShowButtons = selectedBranch && areHoursChanged;
-                console.log("🔍 [Settings] Button render check:", {
-                  selectedBranch,
-                  areHoursChanged,
-                  shouldShowButtons,
-                  hideHoursButtons,
-                });
-                return shouldShowButtons;
-              })() && (
-                <div className="flex gap-2 mt-3 sm:mt-4">
-                  <button
-                    type="button"
-                    onClick={handleSaveBranchHours}
-                    disabled={isUpdatingHours}
-                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2"
-                  >
-                    {isUpdatingHours ? (
-                      <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      <SaveIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    )}
-                    {isUpdatingHours ? "Guardando..." : "Guardar horarios"}
-                  </button>
-                  {!hideHoursButtons && (
+            </div>
+
+            {/* Dirección (ancho completo) */}
+            <div>
+              <label
+                htmlFor="address"
+                className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
+              >
+                Dirección
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  name="address"
+                  id="address"
+                  value={settings.address}
+                  onChange={handleAddressChange}
+                  className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-950"
+                  placeholder="Dirección de la sucursal seleccionada"
+                />
+                {selectedBranch && isAddressChanged && (
+                  <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={handleDiscardHoursChanges}
-                      disabled={isUpdatingHours}
-                      className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-500 text-white text-xs sm:text-sm rounded-md hover:bg-gray-600 disabled:opacity-50"
+                      onClick={handleSaveBranchAddress}
+                      disabled={isUpdatingAddress}
+                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                    >
+                      {isUpdatingAddress ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <SaveIcon className="w-4 h-4" />
+                      )}
+                      {isUpdatingAddress ? "Guardando..." : "Guardar"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDiscardAddressChanges}
+                      disabled={isUpdatingAddress}
+                      className="px-3 py-1 bg-gray-500 text-white text-sm rounded-md hover:bg-gray-600 disabled:opacity-50"
                     >
                       Descartar
                     </button>
-                  )}
-                </div>
-              )}
-              {selectedBranch && areHoursChanged && !hideHoursButtons && (
-                <p className="mt-2 text-xs text-gray-700">
-                  Has modificado los horarios de esta sucursal. Guarda los
-                  cambios para aplicarlos.
-                </p>
-              )}
-              {selectedBranch && areHoursChanged && hideHoursButtons && (
-                <p className="mt-2 text-xs text-green-600">
-                  Acción procesada correctamente.
-                </p>
-              )}
-              {selectedBranch && !areHoursChanged && (
-                <p className="mt-2 text-xs text-gray-700">
-                  Estos horarios corresponden a la sucursal seleccionada.
+                  </div>
+                )}
+              </div>
+              {selectedBranch !== "all" && (
+                <p className="mt-1 text-xs text-gray-700">
+                  {isAddressChanged
+                    ? "Has modificado la dirección. Guarda los cambios para aplicarlos."
+                    : "Esta dirección corresponde a la sucursal seleccionada."}
                 </p>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Control de flujo de órdenes */}
-        {selectedBranch && (
-          <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-            <div className="md:grid md:grid-cols-3 md:gap-6">
-              <div className="md:col-span-1">
-                <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
-                  Control de flujo
-                </h3>
-                <p className="mt-1 text-xs sm:text-sm text-gray-500">
-                  Límite máximo de órdenes activas al mismo tiempo en esta
-                  sucursal. Cuando se alcanza, las nuevas órdenes esperan antes
-                  de enviarse a cocina.
-                </p>
-              </div>
-              <div className="mt-5 md:mt-0 md:col-span-2">
-                {/* Tabs de servicio — solo si hay al menos un servicio general Y Flexbill habilitados */}
-                {isFlexBillEnabled &&
-                  (isPickNGoEnabled || isTapOrderPayEnabled) && (
-                    <div className="flex gap-2 mb-5">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedFlowServiceTab("general")}
-                        className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                          selectedFlowServiceTab === "general"
-                            ? "bg-custom-green-600 hover:bg-custom-green-700 text-white"
-                            : "bg-white text-gray-600 border-gray-300 hover:border-gray-500"
-                        }`}
-                      >
-                        General
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedFlowServiceTab("flex-bill")}
-                        className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                          selectedFlowServiceTab === "flex-bill"
-                            ? "bg-custom-green-600 hover:bg-custom-green-700 text-white"
-                            : "bg-white text-gray-600 border-gray-300 hover:border-gray-500"
-                        }`}
-                      >
-                        Flex Bill
-                      </button>
-                    </div>
-                  )}
-
-                {/* TAB: General (tap-order-pay, pick-and-go, room service) */}
-                {(selectedFlowServiceTab === "general" ||
-                  !isFlexBillEnabled ||
-                  (!isPickNGoEnabled && !isTapOrderPayEnabled)) &&
-                  (isPickNGoEnabled || isTapOrderPayEnabled) && (
-                    <div>
-                      <p className="text-xs text-gray-400 mb-3">
-                        Órdenes activas al mismo tiempo
-                      </p>
-                      <select
-                        value={maxPendingOrders ?? ""}
-                        onChange={(e) =>
-                          setMaxPendingOrders(
-                            e.target.value === ""
-                              ? null
-                              : parseInt(e.target.value, 10),
-                          )
-                        }
-                        className="block w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
-                      >
-                        <option value="">Sin límite</option>
-                        {ORDER_LIMIT_OPTIONS.map((v) => (
-                          <option key={v} value={v}>
-                            {v}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="mt-4 flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={handleSaveOrderFlowLimit}
-                          disabled={isSavingOrderFlow}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-custom-green-600 hover:bg-custom-green-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
-                        >
-                          <SaveIcon className="w-4 h-4" />
-                          {isSavingOrderFlow
-                            ? "Guardando..."
-                            : "Guardar límite"}
-                        </button>
-                        {orderFlowSaveStatus === "success" && (
-                          <span className="text-sm text-green-600 flex items-center gap-1">
-                            <Check className="w-4 h-4" /> Guardado
-                          </span>
-                        )}
-                        {orderFlowSaveStatus === "error" && (
-                          <span className="text-sm text-red-600">
-                            Error al guardar
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                {/* TAB: Flex Bill (user_orders) */}
-                {isFlexBillEnabled &&
-                  (selectedFlowServiceTab === "flex-bill" ||
-                    (!isPickNGoEnabled && !isTapOrderPayEnabled)) && (
-                    <div>
-                      <p className="text-xs text-gray-400 mb-3">
-                        Órdenes activas al mismo tiempo
-                      </p>
-                      <select
-                        value={flexbillMaxUserOrders ?? ""}
-                        onChange={(e) =>
-                          setFlexbillMaxUserOrders(
-                            e.target.value === ""
-                              ? null
-                              : parseInt(e.target.value, 10),
-                          )
-                        }
-                        className="block w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
-                      >
-                        <option value="">Sin límite</option>
-                        {ORDER_LIMIT_OPTIONS.map((v) => (
-                          <option key={v} value={v}>
-                            {v}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="mt-4 flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={handleSaveFlexbillFlowLimit}
-                          disabled={isSavingFlexbillLimit}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-custom-green-600 hover:bg-custom-green-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
-                        >
-                          <SaveIcon className="w-4 h-4" />
-                          {isSavingFlexbillLimit
-                            ? "Guardando..."
-                            : "Guardar límite"}
-                        </button>
-                        {flexbillSaveStatus === "success" && (
-                          <span className="text-sm text-green-600 flex items-center gap-1">
-                            <Check className="w-4 h-4" /> Guardado
-                          </span>
-                        )}
-                        {flexbillSaveStatus === "error" && (
-                          <span className="text-sm text-red-600">
-                            Error al guardar
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* POS Integration Info */}
-        {selectedBranch && posIntegrationLoading && (
-          <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-            <div className="flex items-center justify-center py-4">
-              <div className="h-6 w-6 border-2 border-custom-green-500 border-t-transparent rounded-full animate-spin mr-3"></div>
-              <span className="text-sm text-gray-600">
-                Cargando información de integración...
-              </span>
-            </div>
-          </div>
-        )}
-
-        {selectedBranch && !posIntegrationLoading && !posIntegration && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 sm:px-5 sm:py-4">
-            <p className="text-xs sm:text-sm text-blue-700">
-              Esta sucursal no tiene integración POS configurada. Puedes
-              solicitarla al equipo de Even.
-            </p>
-          </div>
-        )}
-
-        {selectedBranch && !posIntegrationLoading && posIntegration && (
-          <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-            <div className="md:grid md:grid-cols-3 md:gap-6">
-              <div className="md:col-span-1">
-                <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
-                  Información de integración POS
-                </h3>
-                <p className="mt-1 text-xs sm:text-sm text-gray-500">
-                  Datos de conexión con el sistema punto de venta.
-                </p>
-              </div>
-              <div className="mt-5 md:mt-0 md:col-span-2">
-                <div className="space-y-4">
-                  {/* Branch ID */}
-                  <div>
+            {/* Número de mesas + URL */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Configuración de mesas - Solo si FlexBill o TapOrderPay habilitados */}
+              {!servicesLoading &&
+                (isFlexBillEnabled || isTapOrderPayEnabled) && (
+                  <div className="sm:col-span-1">
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                      ID de Sucursal
+                      Número de mesas
                     </label>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                      <div className="flex-1 bg-gray-50 border border-gray-300 rounded-md px-2.5 sm:px-3 py-1.5 sm:py-2 min-w-0">
-                        <code className="text-xs sm:text-sm text-gray-700 break-all">
-                          {selectedBranch}
-                        </code>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={copyBranchId}
-                        className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors flex-shrink-0"
-                        title="Copiar ID"
-                      >
-                        {copySuccessBranchId ? (
-                          <>
-                            <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 mr-1" />
-                            <span className="text-green-500">¡Copiado!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                            Copiar
-                          </>
-                        )}
-                      </button>
+                    <div className="bg-gray-50 border border-gray-300 rounded-md px-2.5 sm:px-3 py-1.5 sm:py-2 min-w-0">
+                      <span className="text-xs sm:text-sm text-gray-700 break-all">
+                        {selectedBranch !== "all"
+                          ? (() => {
+                              const selectedBranchData = branches.find(
+                                (b) => b.id === selectedBranch,
+                              );
+                              return selectedBranchData ? (
+                                <>
+                                  {selectedBranchData.tables} mesa
+                                  {selectedBranchData.tables !== 1 ? "s" : ""}
+                                </>
+                              ) : (
+                                "0 mesas"
+                              );
+                            })()
+                          : `${restaurant?.tableCount || 0} mesa${(restaurant?.tableCount || 0) !== 1 ? "s" : ""} configuradas`}
+                      </span>
                     </div>
                   </div>
+                )}
 
-                  {/* POS Token */}
-                  {posIntegration.syncToken ? (
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                        Token de Sincronización
-                      </label>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                        <div className="flex-1 bg-gray-50 border border-gray-300 rounded-md px-2.5 sm:px-3 py-1.5 sm:py-2 min-w-0">
-                          <code className="text-xs sm:text-sm text-gray-700 break-all">
-                            {showToken
-                              ? posIntegration.syncToken
-                              : "••••••••••••••••••••••••"}
-                          </code>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setShowToken(!showToken)}
-                            className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
-                            title={
-                              showToken ? "Ocultar token" : "Mostrar token"
-                            }
-                          >
-                            {showToken ? (
-                              <EyeOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            ) : (
-                              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={copyPosToken}
-                            className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
-                            title="Copiar Token"
-                          >
-                            {copySuccessToken ? (
-                              <>
-                                <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 mr-1" />
-                                <span className="text-green-500">
-                                  ¡Copiado!
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                                Copiar
-                              </>
-                            )}
-                          </button>
-                        </div>
+              {/* Pick & Go URL - Solo si el servicio está habilitado */}
+              {!servicesLoading && isPickNGoEnabled && (
+                <div className="sm:col-span-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    URL de Pick & Go
+                  </label>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <div className="flex-1 bg-gray-50 border border-gray-300 rounded-md px-2.5 sm:px-3 py-1.5 sm:py-2 min-w-0">
+                      <code className="text-xs sm:text-sm text-gray-700 break-all">
+                        {restaurant?.id ? getPickAndGoUrl() : "Cargando..."}
+                      </code>
+                    </div>
+
+                    {restaurant?.id && (
+                      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={copyPickAndGoUrl}
+                          className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
+                          title="Copiar URL"
+                        >
+                          {copySuccess ? (
+                            <>
+                              <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 mr-1" />
+                              <span className="text-green-500">¡Copiado!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+                              Copiar
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={openPickAndGoUrl}
+                          className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 border border-custom-green-300 shadow-sm text-xs sm:text-sm font-medium rounded-md text-custom-green-700 bg-custom-green-50 hover:bg-custom-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500 transition-colors"
+                          title="Abrir en nueva pestaña"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+                          Abrir
+                        </button>
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        Este token se utiliza para sincronizar órdenes con el
-                        sistema POS.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="text-xs sm:text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
-                      ℹ️ Esta integración POS no requiere token de
-                      sincronización.
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
-        )}
 
-        {/* Printer Settings */}
-        {selectedBranch && (
-          <PrinterSettings
-            branchId={selectedBranch}
-            agentConnected={agentConnected}
-          />
-        )}
+          {/* Divider */}
+          <div className="border-t border-gray-200 my-6"></div>
 
-        {/* Regional Settings */}
-        <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-          <div className="md:grid md:grid-cols-3 md:gap-6">
-            <div className="md:col-span-1">
-              <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
-                Configuración regional
-              </h3>
-              <p className="mt-1 text-xs sm:text-sm text-gray-500">
-                Configura el idioma y moneda.
-              </p>
-            </div>
-            <div className="mt-5 md:mt-0 md:col-span-2">
-              <div className="grid grid-cols-6 gap-6">
-                <div className="col-span-6 sm:col-span-3">
-                  <label
-                    htmlFor="language"
-                    className="block text-xs sm:text-sm font-medium text-gray-700"
-                  >
-                    Idioma
-                  </label>
-                  <select
-                    id="language"
-                    name="language"
-                    value={settings.language}
-                    onChange={handleChange}
-                    className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
-                  >
-                    <option value="es">Español</option>
-                    <option value="en">Inglés</option>
-                  </select>
-                </div>
-                <div className="col-span-6 sm:col-span-3">
-                  <label
-                    htmlFor="currency"
-                    className="block text-xs sm:text-sm font-medium text-gray-700"
-                  >
-                    Moneda
-                  </label>
-                  <select
-                    id="currency"
-                    name="currency"
-                    value={settings.currency}
-                    onChange={handleChange}
-                    className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
-                  >
-                    <option value="MXN">Peso Mexicano (MXN)</option>
-                    <option value="USD">Dólar Estadounidense (USD)</option>
-                    <option value="EUR">Euro (EUR)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+          {/* === Sección 3: Acciones (cada botón abre un modal) === */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <button
+              type="button"
+              onClick={() => setOpenModal("dine")}
+              className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-custom-green-500 hover:bg-gray-50 transition-colors text-left"
+            >
+              <Tag className="h-5 w-5 text-custom-green-600 flex-shrink-0" />
+              <span className="text-sm font-medium text-gray-700">Dine</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpenModal("horario")}
+              className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-custom-green-500 hover:bg-gray-50 transition-colors text-left"
+            >
+              <Clock className="h-5 w-5 text-custom-green-600 flex-shrink-0" />
+              <span className="text-sm font-medium text-gray-700">Horario</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpenModal("flujo")}
+              disabled={!selectedBranch}
+              className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-custom-green-500 hover:bg-gray-50 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:bg-transparent"
+            >
+              <SlidersHorizontal className="h-5 w-5 text-custom-green-600 flex-shrink-0" />
+              <span className="text-sm font-medium text-gray-700">
+                Control de flujo
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpenModal("pos")}
+              disabled={!selectedBranch}
+              className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-custom-green-500 hover:bg-gray-50 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:bg-transparent"
+            >
+              <Server className="h-5 w-5 text-custom-green-600 flex-shrink-0" />
+              <span className="text-sm font-medium text-gray-700">
+                Configuración POS
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpenModal("impresoras")}
+              disabled={!selectedBranch}
+              className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-custom-green-500 hover:bg-gray-50 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:bg-transparent"
+            >
+              <Printer className="h-5 w-5 text-custom-green-600 flex-shrink-0" />
+              <span className="text-sm font-medium text-gray-700">
+                Impresoras
+              </span>
+            </button>
           </div>
         </div>
+
+        {/* Horario, Control de flujo e Integración POS → ahora en sus modales
+            (HorarioModal, ControlFlujoModal, PosConfigModal) */}
+        {/* Impresoras → ImpresorasModal */}
+
+        {/* Configuración regional — TODO: re-add later (idioma / moneda).
+            Desactivada por ahora; reactivar cuando se requiera. */}
+        {false && (
+          <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+            <div className="md:grid md:grid-cols-3 md:gap-6">
+              <div className="md:col-span-1">
+                <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900">
+                  Configuración regional
+                </h3>
+                <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                  Configura el idioma y moneda.
+                </p>
+              </div>
+              <div className="mt-5 md:mt-0 md:col-span-2">
+                <div className="grid grid-cols-6 gap-6">
+                  <div className="col-span-6 sm:col-span-3">
+                    <label
+                      htmlFor="language"
+                      className="block text-xs sm:text-sm font-medium text-gray-700"
+                    >
+                      Idioma
+                    </label>
+                    <select
+                      id="language"
+                      name="language"
+                      value={settings?.language}
+                      onChange={handleChange}
+                      className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
+                    >
+                      <option value="es">Español</option>
+                      <option value="en">Inglés</option>
+                    </select>
+                  </div>
+                  <div className="col-span-6 sm:col-span-3">
+                    <label
+                      htmlFor="currency"
+                      className="block text-xs sm:text-sm font-medium text-gray-700"
+                    >
+                      Moneda
+                    </label>
+                    <select
+                      id="currency"
+                      name="currency"
+                      value={settings?.currency}
+                      onChange={handleChange}
+                      className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green-500"
+                    >
+                      <option value="MXN">Peso Mexicano (MXN)</option>
+                      <option value="USD">Dólar Estadounidense (USD)</option>
+                      <option value="EUR">Euro (EUR)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Status Messages */}
         {error && (
@@ -2143,12 +1739,6 @@ const Settings = () => {
 
         <div className="flex justify-end">
           <button
-            type="button"
-            className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm sm:text-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500"
-          >
-            Cancelar
-          </button>
-          <button
             type="submit"
             data-tour="save-button"
             disabled={isUpdating || saveStatus === "saving"}
@@ -2163,6 +1753,65 @@ const Settings = () => {
           </button>
         </div>
       </form>
+
+      {/* Modales de configuración avanzada */}
+      <DineModal
+        isOpen={openModal === "dine"}
+        onClose={() => setOpenModal(null)}
+      />
+
+      <HorarioModal
+        isOpen={openModal === "horario"}
+        onClose={() => setOpenModal(null)}
+        days={days}
+        openingHours={settings.openingHours}
+        validationErrors={validationErrors}
+        onHoursChange={handleHoursChange}
+        onSave={handleSaveBranchHours}
+        isSaving={isUpdatingHours}
+        areHoursChanged={areHoursChanged}
+      />
+
+      <ControlFlujoModal
+        isOpen={openModal === "flujo"}
+        onClose={() => setOpenModal(null)}
+        isFlexBillEnabled={isFlexBillEnabled}
+        isPickNGoEnabled={isPickNGoEnabled}
+        isTapOrderPayEnabled={isTapOrderPayEnabled}
+        selectedFlowServiceTab={selectedFlowServiceTab}
+        setSelectedFlowServiceTab={setSelectedFlowServiceTab}
+        maxPendingOrders={maxPendingOrders}
+        setMaxPendingOrders={setMaxPendingOrders}
+        onSaveGeneral={handleSaveOrderFlowLimit}
+        isSavingGeneral={isSavingOrderFlow}
+        generalSaveStatus={orderFlowSaveStatus}
+        flexbillMaxUserOrders={flexbillMaxUserOrders}
+        setFlexbillMaxUserOrders={setFlexbillMaxUserOrders}
+        onSaveFlexbill={handleSaveFlexbillFlowLimit}
+        isSavingFlexbill={isSavingFlexbillLimit}
+        flexbillSaveStatus={flexbillSaveStatus}
+      />
+
+      <PosConfigModal
+        isOpen={openModal === "pos"}
+        onClose={() => setOpenModal(null)}
+        branchId={selectedBranch}
+        isLoading={posIntegrationLoading}
+        posIntegration={posIntegration}
+        showToken={showToken}
+        setShowToken={setShowToken}
+        onCopyBranchId={copyBranchId}
+        copySuccessBranchId={copySuccessBranchId}
+        onCopyToken={copyPosToken}
+        copySuccessToken={copySuccessToken}
+      />
+
+      <ImpresorasModal
+        isOpen={openModal === "impresoras"}
+        onClose={() => setOpenModal(null)}
+        branchId={selectedBranch}
+        agentConnected={agentConnected}
+      />
 
       {/* Image Crop Modal */}
       <ImageCropModal
