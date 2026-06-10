@@ -21,6 +21,7 @@ interface RestaurantData {
   orderNotifications?: boolean;
   emailNotifications?: boolean;
   smsNotifications?: boolean;
+  tapPayMode?: "scan_to_pay" | "tap_to_pay";
   language?: string;
   currency?: string;
   tableCount?: number;
@@ -150,6 +151,7 @@ export function useRestaurant(): UseRestaurantReturn {
             orderNotifications: result.data.order_notifications ?? true,
             emailNotifications: result.data.email_notifications ?? false,
             smsNotifications: result.data.sms_notifications ?? false,
+            tapPayMode: result.data.tap_pay_mode ?? "scan_to_pay",
             tableCount: result.data.table_count ?? 0,
             language: 'es',
             currency: 'MXN'
@@ -226,6 +228,7 @@ export function useRestaurant(): UseRestaurantReturn {
         order_notifications: updateData.orderNotifications,
         email_notifications: updateData.emailNotifications,
         sms_notifications: updateData.smsNotifications,
+        tap_pay_mode: updateData.tapPayMode,
         table_count: updateData.tableCount,
       };
 

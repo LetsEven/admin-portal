@@ -35,6 +35,7 @@ export interface Restaurant {
   phone?: string;
   email?: string;
   is_active: boolean;
+  tap_pay_mode?: "scan_to_pay" | "tap_to_pay";
   created_at: string;
   updated_at: string;
 }
