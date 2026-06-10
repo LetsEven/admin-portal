@@ -90,8 +90,13 @@ const Settings = () => {
   const [isPickNGoEnabled, setIsPickNGoEnabled] = useState(false);
   const [isFlexBillEnabled, setIsFlexBillEnabled] = useState(false);
   const [isTapOrderPayEnabled, setIsTapOrderPayEnabled] = useState(false);
+  const [isTapPayEnabled, setIsTapPayEnabled] = useState(false);
   const [servicesLoading, setServicesLoading] = useState(true);
   const [servicesLoaded, setServicesLoaded] = useState(false);
+
+  // Tap & Pay mode (restaurant-level)
+  const [tapPayMode, setTapPayMode] = useState<"scan_to_pay" | "tap_to_pay">("scan_to_pay");
+  const [savingTapPayMode, setSavingTapPayMode] = useState(false);
 
   // Estados para sucursales
   const [branches, setBranches] = useState<BranchData[]>([]);
@@ -233,6 +238,7 @@ const Settings = () => {
   useEffect(() => {
     if (restaurant) {
       console.log("🔍 Restaurant data received in Settings:", restaurant);
+      if (restaurant.tapPayMode) setTapPayMode(restaurant.tapPayMode);
       setSettings({
         name: restaurant.name || "Mi Restaurante",
         address: restaurant.address || "",
@@ -311,6 +317,7 @@ const Settings = () => {
         setIsPickNGoEnabled(enabledServiceIds.includes("pick-n-go"));
         setIsFlexBillEnabled(enabledServiceIds.includes("flex-bill"));
         setIsTapOrderPayEnabled(enabledServiceIds.includes("tap-order-pay"));
+        setIsTapPayEnabled(enabledServiceIds.includes("tap-pay"));
 
         console.log("🔍 [Settings] Services enabled:", {
           pickNGo: enabledServiceIds.includes("pick-n-go"),
@@ -826,6 +833,19 @@ const Settings = () => {
       alert("Error al eliminar el logo.");
     } finally {
       setIsUploadingLogo(false);
+    }
+  };
+
+  const handleTapPayModeChange = async (mode: "scan_to_pay" | "tap_to_pay") => {
+    if (savingTapPayMode || mode === tapPayMode) return;
+    setSavingTapPayMode(true);
+    try {
+      await updateRestaurant({ tapPayMode: mode });
+      setTapPayMode(mode);
+    } catch (error) {
+      console.error("❌ Error saving tap_pay_mode:", error);
+    } finally {
+      setSavingTapPayMode(false);
     }
   };
 
@@ -1361,7 +1381,7 @@ const Settings = () => {
               </div>
             </div>
 
-            {/* Grid 2x2: Nombre · Teléfono · Correo · Logo */}
+            {/* Grid: Nombre · Teléfono · Correo · Dine [· Tap&Pay mode] */}
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label
@@ -1424,6 +1444,46 @@ const Settings = () => {
                   Gestionar servicios
                 </button>
               </div>
+
+              {/* Tap & Pay mode — ocupa las 2 columnas, visible solo si el servicio está activo */}
+              {!servicesLoading && isTapPayEnabled && (
+                <div className="sm:col-span-2 pt-3 border-t border-gray-100">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                    Modo de pago — Tap &amp; Pay
+                  </label>
+                  <div className="flex gap-2 max-w-xs">
+                    <button
+                      type="button"
+                      disabled={savingTapPayMode}
+                      onClick={() => handleTapPayModeChange("scan_to_pay")}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${
+                        tapPayMode === "scan_to_pay"
+                          ? "bg-custom-green-600 border-custom-green-600 text-white"
+                          : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                      } disabled:opacity-60`}
+                    >
+                      Scan to Pay
+                    </button>
+                    <button
+                      type="button"
+                      disabled={savingTapPayMode}
+                      onClick={() => handleTapPayModeChange("tap_to_pay")}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${
+                        tapPayMode === "tap_to_pay"
+                          ? "bg-custom-green-600 border-custom-green-600 text-white"
+                          : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                      } disabled:opacity-60`}
+                    >
+                      Tap to Pay
+                    </button>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-400">
+                    {tapPayMode === "scan_to_pay"
+                      ? "El mesero imprime un ticket con código QR para que el cliente escanee y pague."
+                      : "El mesero muestra el QR en pantalla y en el futuro usará NFC para acercar el pago al cliente."}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
