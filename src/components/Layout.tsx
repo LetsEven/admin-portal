@@ -136,7 +136,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </button>
           <div className="flex-1 flex justify-center">
             <img
-              src="/logo-short-green.webp"
+              src="/even-assets/asterisk-evergreen.png"
               alt="Even Logo"
               className="h-8 w-auto"
             />
@@ -144,39 +144,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="w-10"></div>
         </div>
         <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none bg-gray-50">
-          {/* Restaurant Setup Banner */}
-          {/* {!restaurantLoading && !restaurant && (
-            <div className="bg-gradient-to-r from-custom-green-500 to-custom-green-600 border-b border-custom-green-700">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-                <div className="py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <StoreIcon className="h-8 w-8 text-white" />
-                      </div>
-                      <div className="ml-4">
-                        <h3 className="text-lg font-medium text-white">
-                          ¡Configura tu restaurante!
-                        </h3>
-                        <p className="text-sm text-custom-green-100">
-                          Para comenzar a gestionar tu menú, primero necesitas configurar la información de tu restaurante.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <Link href="/menu">
-                        <button className="inline-flex items-center px-4 py-2 bg-white text-custom-green-700 text-sm font-medium rounded-lg hover:bg-custom-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-custom-green-600 focus:ring-white transition-colors">
-                          Configurar ahora
-                          <ArrowRightIcon className="ml-2 h-4 w-4" />
-                        </button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )} */}
-
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
               {children}

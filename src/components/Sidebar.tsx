@@ -49,7 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
         <div className="relative w-full h-full flex items-center justify-center">
           {/* Full logo for expanded state */}
           <img
-            src="/logo-green.webp"
+            src="/even-assets/logo-even-evergreen.png"
             alt="Even Logo"
             className={`h-8 w-auto max-w-full transition-opacity ${mobile || isExpanded ? "duration-[800ms]" : "duration-0"} ease-out ${mobile || isExpanded ? "opacity-100" : "opacity-0 absolute"}`}
           />
@@ -58,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
             className={`flex items-center justify-center transition-opacity ${mobile || isExpanded ? "duration-0" : "duration-[800ms]"} ease-out ${mobile || isExpanded ? "opacity-0 absolute" : "opacity-100"}`}
           >
             <img
-              src="/logo-short-green.webp"
+              src="/even-assets/asterisk-evergreen.png"
               alt="Even Logo"
               className="h-8 w-auto object-contain"
             />
