@@ -9,20 +9,20 @@ import "../src/index.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Admin Portal - Even",
+  title: "Portal de Administración | Even",
   description: "Portal de Administración Even",
   icons: {
     icon: [
       {
-        url: "/logo-short-green.webp",
+        url: "/even-assets/even-icon.png",
         media: "(prefers-color-scheme: light)",
       },
       {
-        url: "/iso-1-white.webp",
+        url: "/even-assets/even-icon.png",
         media: "(prefers-color-scheme: dark)",
       },
     ],
-    apple: "/logo-short-green.webp",
+    apple: "/even-assets/even-icon.png",
   },
 };
 

@@ -120,7 +120,7 @@ export default function Page() {
           {/* Logo */}
           <div className="mb-6">
             <img
-              src="logo-short-green.webp"
+              src="/even-assets/asterisk-evergreen.png"
               alt="Even Logo"
               className="size-16 justify-self-center"
             />
@@ -302,7 +302,7 @@ export default function Page() {
         {/* Logo */}
         <div className="mb-6">
           <img
-            src="logo-short-green.webp"
+            src="/even-assets/asterisk-evergreen.png"
             alt="Even Logo"
             className="size-16 justify-self-center"
           />
