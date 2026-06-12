@@ -1,36 +1,36 @@
 export default {
   content: [
-    './index.html',
-    './app/**/*.{js,ts,jsx,tsx}',
-    './src/**/*.{js,ts,jsx,tsx}',
-    './components/**/*.{js,ts,jsx,tsx}'
+    "./index.html",
+    "./app/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
       colors: {
-        'custom-green': {
-          100: '#E6ECEC',
-          200: '#B3C6C8',
-          500: '#2A5A62',
-          600: '#173E44',
-          700: '#133237',
-          800: '#0E262A',
-          900: '#09191C',
+        "custom-green": {
+          100: "#E5EBEA",
+          200: "#B3C3BF",
+          500: "#023828",
+          600: "#022C22",
+          700: "#01241A",
+          800: "#011912",
+          900: "#010E0A",
         },
       },
     },
   },
   plugins: [
-    function({ addUtilities }) {
+    function ({ addUtilities }) {
       addUtilities({
-        '.scrollbar-hide': {
-          '-ms-overflow-style': 'none',
-          'scrollbar-width': 'none',
-          '&::-webkit-scrollbar': {
-            display: 'none'
-          }
-        }
-      })
-    }
+        ".scrollbar-hide": {
+          "-ms-overflow-style": "none",
+          "scrollbar-width": "none",
+          "&::-webkit-scrollbar": {
+            display: "none",
+          },
+        },
+      });
+    },
   ],
-}
+};

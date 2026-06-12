@@ -104,7 +104,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
             )}
           </button>
         </div>
-        <div className="absolute bottom-0 left-0 bg-custom-green-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium">
+        <div className="absolute bottom-0 left-0 bg-custom-green-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium">
           {category}
         </div>
         {hasDiscount && (
@@ -134,7 +134,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
                 </p>
               </>
             ) : (
-              <p className="text-sm sm:text-lg font-semibold text-custom-green-600">
+              <p className="text-sm sm:text-lg font-medium text-custom-green-500">
                 ${price.toFixed(2)}
               </p>
             )}

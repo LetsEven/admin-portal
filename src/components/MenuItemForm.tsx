@@ -7,6 +7,7 @@ import {
   MapPin,
   CheckIcon,
   AlertTriangle,
+  ChevronDown,
 } from "lucide-react";
 import { ImageUploadService } from "../services/imageUploadService";
 import { useUser } from "@clerk/nextjs";
@@ -100,6 +101,8 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
     initialValues.outOfStockBranches || [],
   );
   const [branchesLoading, setBranchesLoading] = useState(false);
+  const [availabilityExpanded, setAvailabilityExpanded] = useState(false);
+  const [outOfStockExpanded, setOutOfStockExpanded] = useState(false);
   const adminPortalApi = useAdminPortalApi();
   const menuApi = useMenuAdminPortalApi();
 
@@ -615,165 +618,193 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
 
             {/* Disponibilidad por Sucursal Section */}
             <div className="pt-3 sm:pt-4 border-t border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2 sm:mb-3">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700">
-                  <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 inline mr-1.5 sm:mr-2" />
+              <button
+                type="button"
+                onClick={() => setAvailabilityExpanded((v) => !v)}
+                className="w-full flex items-center justify-between mb-2 sm:mb-3 group"
+              >
+                <span className="flex items-center text-xs sm:text-sm font-medium text-gray-700">
+                  <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                   Disponibilidad por Sucursal
-                </label>
-                {branches.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={handleSelectAllBranches}
-                    className="inline-flex items-center px-2 py-1 border border-gray-300 text-[10px] sm:text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 self-start sm:self-auto"
-                  >
-                    {isAllBranchesSelected
-                      ? "Deseleccionar todas"
-                      : "Seleccionar todas"}
-                  </button>
-                )}
-              </div>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${availabilityExpanded ? "rotate-180" : ""}`}
+                />
+              </button>
 
-              {branchesLoading ? (
-                <div className="text-center py-3 sm:py-4">
-                  <div className="text-xs sm:text-sm text-gray-500">
-                    Cargando sucursales...
-                  </div>
-                </div>
-              ) : branches.length === 0 ? (
-                <div className="text-center py-3 sm:py-4">
-                  <p className="text-xs sm:text-sm text-gray-500 italic">
-                    No hay sucursales configuradas para este restaurante.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-1.5 sm:space-y-2">
-                  <p className="text-[10px] sm:text-xs text-gray-600 mb-2 sm:mb-3">
-                    Selecciona las sucursales donde este producto estará
-                    disponible:
-                  </p>
-                  {branches.map((branch) => (
-                    <label
-                      key={branch.id}
-                      className={`flex items-center p-2.5 sm:p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedBranches.includes(branch.id)
-                          ? "border-green-300 bg-green-50"
-                          : "border-gray-200 bg-white hover:bg-gray-50"
-                      }`}
-                    >
-                      <div className="flex items-center flex-1 min-w-0">
-                        <input
-                          type="checkbox"
-                          checked={selectedBranches.includes(branch.id)}
-                          onChange={() => handleBranchToggle(branch.id)}
-                          className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded flex-shrink-0"
-                        />
-                        <div className="ml-2.5 sm:ml-3 min-w-0">
-                          <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                            {branch.name}
-                          </div>
-                          <div className="text-[10px] sm:text-xs text-gray-500 truncate">
-                            {branch.address}
-                          </div>
-                        </div>
-                      </div>
-                      {selectedBranches.includes(branch.id) && (
-                        <CheckIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 ml-2 flex-shrink-0" />
-                      )}
-                    </label>
-                  ))}
-
-                  {selectedBranches.length === 0 && (
-                    <div className="mt-1.5 sm:mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                      <p className="text-[10px] sm:text-xs text-yellow-800">
-                        Este producto no estará disponible en ninguna sucursal.
-                      </p>
+              {availabilityExpanded && (
+                <>
+                  {branches.length > 1 && (
+                    <div className="flex justify-end mb-2 sm:mb-3">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllBranches}
+                        className="inline-flex items-center px-2 py-1 border border-gray-300 text-[10px] sm:text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                      >
+                        {isAllBranchesSelected
+                          ? "Deseleccionar todas"
+                          : "Seleccionar todas"}
+                      </button>
                     </div>
                   )}
 
-                  <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-500">
-                    {selectedBranches.length} de {branches.length} sucursal
-                    {branches.length !== 1 ? "es" : ""} seleccionada
-                    {selectedBranches.length !== 1 ? "s" : ""}
-                  </div>
-                </div>
+                  {branchesLoading ? (
+                    <div className="text-center py-3 sm:py-4">
+                      <div className="text-xs sm:text-sm text-gray-500">
+                        Cargando sucursales...
+                      </div>
+                    </div>
+                  ) : branches.length === 0 ? (
+                    <div className="text-center py-3 sm:py-4">
+                      <p className="text-xs sm:text-sm text-gray-500 italic">
+                        No hay sucursales configuradas para este restaurante.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 sm:space-y-2">
+                      <p className="text-[10px] sm:text-xs text-gray-600 mb-2 sm:mb-3">
+                        Selecciona las sucursales donde este producto estará
+                        disponible:
+                      </p>
+                      {branches.map((branch) => (
+                        <label
+                          key={branch.id}
+                          className={`flex items-center p-2.5 sm:p-3 border rounded-lg cursor-pointer transition-colors ${
+                            selectedBranches.includes(branch.id)
+                              ? "border-green-300 bg-green-50"
+                              : "border-gray-200 bg-white hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center flex-1 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={selectedBranches.includes(branch.id)}
+                              onChange={() => handleBranchToggle(branch.id)}
+                              className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded flex-shrink-0"
+                            />
+                            <div className="ml-2.5 sm:ml-3 min-w-0">
+                              <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                                {branch.name}
+                              </div>
+                              <div className="text-[10px] sm:text-xs text-gray-500 truncate">
+                                {branch.address}
+                              </div>
+                            </div>
+                          </div>
+                          {selectedBranches.includes(branch.id) && (
+                            <CheckIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 ml-2 flex-shrink-0" />
+                          )}
+                        </label>
+                      ))}
+
+                      {selectedBranches.length === 0 && (
+                        <div className="mt-1.5 sm:mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                          <p className="text-[10px] sm:text-xs text-yellow-800">
+                            Este producto no estará disponible en ninguna
+                            sucursal.
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-500">
+                        {selectedBranches.length} de {branches.length} sucursal
+                        {branches.length !== 1 ? "es" : ""} seleccionada
+                        {selectedBranches.length !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
             {/* Agotado por Sucursal Section */}
             <div className="pt-3 sm:pt-4 border-t border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2 sm:mb-3">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700">
-                  <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 inline mr-1.5 sm:mr-2 text-red-500" />
+              <button
+                type="button"
+                onClick={() => setOutOfStockExpanded((v) => !v)}
+                className="w-full flex items-center justify-between mb-2 sm:mb-3 group"
+              >
+                <span className="flex items-center text-xs sm:text-sm font-medium text-gray-700">
+                  <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-red-500" />
                   Agotado por Sucursal
-                </label>
-              </div>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${outOfStockExpanded ? "rotate-180" : ""}`}
+                />
+              </button>
 
-              {branchesLoading ? (
-                <div className="text-center py-3 sm:py-4">
-                  <div className="text-xs sm:text-sm text-gray-500">
-                    Cargando sucursales...
-                  </div>
-                </div>
-              ) : branches.length === 0 ? (
-                <div className="text-center py-3 sm:py-4">
-                  <p className="text-xs sm:text-sm text-gray-500 italic">
-                    No hay sucursales configuradas para este restaurante.
-                  </p>
-                </div>
-              ) : selectedBranches.length === 0 ? (
-                <div className="text-center py-3 sm:py-4">
-                  <p className="text-xs sm:text-sm text-gray-500 italic">
-                    Selecciona al menos una sucursal en disponibilidad para
-                    marcar agotado.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-1.5 sm:space-y-2">
-                  <p className="text-[10px] sm:text-xs text-gray-600 mb-2 sm:mb-3">
-                    Marca las sucursales donde este producto está agotado
-                    temporalmente:
-                  </p>
-                  {branches
-                    .filter((b) => selectedBranches.includes(b.id))
-                    .map((branch) => (
-                      <label
-                        key={branch.id}
-                        className={`flex items-center p-2.5 sm:p-3 border rounded-lg cursor-pointer transition-colors ${
-                          outOfStockBranches.includes(branch.id)
-                            ? "border-red-300 bg-red-50"
-                            : "border-gray-200 bg-white hover:bg-gray-50"
-                        }`}
-                      >
-                        <div className="flex items-center flex-1 min-w-0">
-                          <input
-                            type="checkbox"
-                            checked={outOfStockBranches.includes(branch.id)}
-                            onChange={() => handleOutOfStockToggle(branch.id)}
-                            className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded flex-shrink-0"
-                          />
-                          <div className="ml-2.5 sm:ml-3 min-w-0">
-                            <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                              {branch.name}
+              {outOfStockExpanded && (
+                <>
+                  {branchesLoading ? (
+                    <div className="text-center py-3 sm:py-4">
+                      <div className="text-xs sm:text-sm text-gray-500">
+                        Cargando sucursales...
+                      </div>
+                    </div>
+                  ) : branches.length === 0 ? (
+                    <div className="text-center py-3 sm:py-4">
+                      <p className="text-xs sm:text-sm text-gray-500 italic">
+                        No hay sucursales configuradas para este restaurante.
+                      </p>
+                    </div>
+                  ) : selectedBranches.length === 0 ? (
+                    <div className="text-center py-3 sm:py-4">
+                      <p className="text-xs sm:text-sm text-gray-500 italic">
+                        Selecciona al menos una sucursal en disponibilidad para
+                        marcar agotado.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 sm:space-y-2">
+                      <p className="text-[10px] sm:text-xs text-gray-600 mb-2 sm:mb-3">
+                        Marca las sucursales donde este producto está agotado
+                        temporalmente:
+                      </p>
+                      {branches
+                        .filter((b) => selectedBranches.includes(b.id))
+                        .map((branch) => (
+                          <label
+                            key={branch.id}
+                            className={`flex items-center p-2.5 sm:p-3 border rounded-lg cursor-pointer transition-colors ${
+                              outOfStockBranches.includes(branch.id)
+                                ? "border-red-300 bg-red-50"
+                                : "border-gray-200 bg-white hover:bg-gray-50"
+                            }`}
+                          >
+                            <div className="flex items-center flex-1 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={outOfStockBranches.includes(branch.id)}
+                                onChange={() =>
+                                  handleOutOfStockToggle(branch.id)
+                                }
+                                className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded flex-shrink-0"
+                              />
+                              <div className="ml-2.5 sm:ml-3 min-w-0">
+                                <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                                  {branch.name}
+                                </div>
+                                <div className="text-[10px] sm:text-xs text-gray-500 truncate">
+                                  {branch.address}
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-[10px] sm:text-xs text-gray-500 truncate">
-                              {branch.address}
-                            </div>
-                          </div>
+                            {outOfStockBranches.includes(branch.id) && (
+                              <CheckIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 ml-2 flex-shrink-0" />
+                            )}
+                          </label>
+                        ))}
+
+                      {outOfStockBranches.length > 0 && (
+                        <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-red-600 font-medium">
+                          {outOfStockBranches.length} sucursal
+                          {outOfStockBranches.length !== 1 ? "es" : ""} con
+                          producto agotado
                         </div>
-                        {outOfStockBranches.includes(branch.id) && (
-                          <CheckIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 ml-2 flex-shrink-0" />
-                        )}
-                      </label>
-                    ))}
-
-                  {outOfStockBranches.length > 0 && (
-                    <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-red-600 font-medium">
-                      {outOfStockBranches.length} sucursal
-                      {outOfStockBranches.length !== 1 ? "es" : ""} con producto
-                      agotado
+                      )}
                     </div>
                   )}
-                </div>
+                </>
               )}
             </div>
 
@@ -786,7 +817,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                 <button
                   type="button"
                   onClick={handleAddField}
-                  className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 border border-transparent text-[10px] sm:text-xs font-medium rounded-md text-white bg-custom-green-600 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-500"
+                  className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 border border-transparent text-[10px] sm:text-xs font-medium rounded-md text-white bg-custom-green-500 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-600"
                 >
                   <PlusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                   Add Field

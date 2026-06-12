@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { PlusIcon, FilterIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import {
   DragDropContext,
   Droppable,

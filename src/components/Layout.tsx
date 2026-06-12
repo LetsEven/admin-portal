@@ -69,23 +69,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Show loading while authentication is being verified
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-[#023828] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-custom-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verificando autenticación...</p>
+          <div className="h-6 w-6 border-b-2 border-[#82E657] animate-spin mx-auto" />
+          <p className="mt-4 text-xs uppercase tracking-widest text-[#82E657]/60">
+            Verificando...
+          </p>
         </div>
       </div>
     );
   }
 
-  // Redirect to sign-in if not authenticated (fallback, middleware should handle this)
   if (!isSignedIn) {
     window.location.href = "/sign-in";
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-[#023828] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-custom-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Redirigiendo al login...</p>
+          <div className="h-6 w-6 border-b-2 border-[#82E657] animate-spin mx-auto" />
+          <p className="mt-4 text-xs uppercase tracking-widest text-[#82E657]/60">
+            Redirigiendo...
+          </p>
         </div>
       </div>
     );

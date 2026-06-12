@@ -3,14 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import {
-  Mail,
-  KeyRound,
-  User,
-  CheckCircle2,
-  Circle,
-  ShieldAlert,
-} from "lucide-react";
+import { Mail, KeyRound, User, ShieldAlert } from "lucide-react";
 import { Field, Input, FieldError } from "@clerk/elements/common";
 import { Root, Step, Action } from "@clerk/elements/sign-up";
 
@@ -26,7 +19,6 @@ export default function Page() {
     clientName: "",
   });
 
-  // Mapeo de data-error-code de Clerk a mensajes en español
   const clerkErrorMap: Record<string, string> = {
     form_password_pwned:
       "Tu contraseña fue encontrada en una filtración de datos. Por seguridad, usa una contraseña diferente.",
@@ -34,21 +26,16 @@ export default function Page() {
       "La contraseña debe tener al menos 8 caracteres.",
   };
 
-  // Observar el FieldError de Clerk y traducirlo al español
-  // Dependemos de emailValidation.allowed para que se ejecute cuando el formulario esté visible
   useEffect(() => {
-    // Solo ejecutar cuando el formulario está visible (allowed = true)
     if (!emailValidation.allowed) return;
 
     let observer: MutationObserver | null = null;
 
-    // Pequeño delay para asegurar que el DOM se haya renderizado
     const timeoutId = setTimeout(() => {
       const container = passwordFieldRef.current;
       if (!container) return;
 
       const checkForErrors = () => {
-        // Buscar el FieldError de Clerk usando el atributo data-error-code (específico de Clerk)
         const errorEl = container.querySelector(
           "[data-error-code]",
         ) as HTMLElement | null;
@@ -62,7 +49,6 @@ export default function Page() {
         setPasswordErrorEs("");
       };
 
-      // Verificar inmediatamente al montar
       checkForErrors();
 
       observer = new MutationObserver(checkForErrors);
@@ -76,9 +62,7 @@ export default function Page() {
 
     return () => {
       clearTimeout(timeoutId);
-      if (observer) {
-        observer.disconnect();
-      }
+      if (observer) observer.disconnect();
     };
   }, [emailValidation.allowed]);
 
@@ -134,39 +118,37 @@ export default function Page() {
 
   if (emailValidation.loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0a8b9b] to-[#153f43] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
-          <p className="mt-4 text-white">Validando acceso...</p>
-        </div>
+      <div className="min-h-screen bg-[#023828] flex items-center justify-center">
+        <div className="h-6 w-6 border-b-2 border-[#82E657] animate-spin" />
       </div>
     );
   }
 
   if (!emailValidation.allowed) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0a8b9b] to-[#153f43] flex items-center justify-center px-4">
-        <div className="max-w-md mx-auto text-center">
-          {/* Logo */}
-          <div className="mb-6">
+      <div className="min-h-screen bg-[#023828] flex flex-col justify-center items-center px-6">
+        <div className="w-full max-w-md">
+          <div className="flex justify-center mb-12">
             <img
               src="/even-assets/asterisk-evergreen.png"
-              alt="Even Logo"
-              className="size-18 justify-self-center mx-auto"
+              alt="Even"
+              className="h-16 brightness-0 invert"
             />
           </div>
 
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 border border-white/20">
-            <div className="text-red-400 text-6xl mb-6">🚫</div>
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Acceso Restringido
+          <div className="bg-white p-10">
+            <div className="flex items-center justify-center w-14 h-14 mx-auto bg-red-50 mb-6">
+              <ShieldAlert className="w-7 h-7 text-red-500" />
+            </div>
+            <h2 className="text-base font-medium uppercase tracking-widest text-[#023828] text-center mb-2">
+              Acceso restringido
             </h2>
-            <p className="text-gray-200 mb-6">
+            <p className="text-xs text-[#023828]/50 text-center tracking-wide mb-6">
               {emailValidation.message ||
                 "No tienes autorización para acceder a este portal."}
             </p>
-            <div className="bg-white/5 p-4 rounded-lg border border-white/10">
-              <p className="text-sm text-gray-300">
+            <div className="bg-[#C3FEFF]/20 border border-[#023828]/10 p-4">
+              <p className="text-xs text-[#023828]/60 text-center">
                 Si crees que esto es un error, contacta a tu administrador para
                 obtener una invitación válida.
               </p>
@@ -178,78 +160,76 @@ export default function Page() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a8b9b] to-[#153f43] flex flex-col justify-center items-center px-4">
-      <div className="relative z-10 w-full max-w-md text-center flex flex-col items-center">
-        {/* Logo */}
-        <div className="mb-6">
+    <div className="min-h-screen bg-[#023828] flex flex-col justify-center items-center px-6">
+      <div className="w-full max-w-md">
+        <div className="flex justify-center mb-12">
           <img
             src="/even-assets/asterisk-evergreen.png"
-            alt="Even Logo"
-            className="size-16 justify-self-center"
+            alt="Even"
+            className="h-16 brightness-0 invert"
           />
         </div>
 
-        <div className="w-full">
+        <div className="bg-white p-10">
           <Root>
             <Step name="start">
-              {/* Título y descripción */}
-              <div className="mb-6 text-center">
-                <h1 className="text-xl font-medium text-white mb-2">
-                  Admin Portal - Even
+              <div className="mb-8">
+                <h1 className="text-base font-medium uppercase tracking-widest text-[#023828]">
+                  Crear cuenta
                 </h1>
-                <p className="text-gray-200 text-sm">
-                  Completa tu registro para acceder a tu portal
+                <p className="text-xs text-[#023828]/40 mt-2 tracking-wide">
+                  Completa tu registro para acceder al portal
                 </p>
               </div>
 
-              <div className="space-y-3">
-                <Field name="firstName" className="space-y-2">
+              <div className="space-y-4">
+                <Field name="firstName" className="space-y-1.5">
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#023828]/30 pointer-events-none" />
                     <Input
                       required
                       type="text"
                       autoComplete="given-name"
-                      className="w-full pl-10 pr-3 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a8b9b] focus:border-transparent"
+                      className="w-full pl-11 pr-4 py-3 text-sm border-2 border-[#023828]/20 focus:border-[#023828] focus:outline-none text-[#023828] bg-white"
                       placeholder="Nombre"
                     />
                   </div>
-                  <FieldError className="text-rose-400 text-xs" />
+                  <FieldError className="text-xs text-red-500" />
                 </Field>
 
-                <Field name="lastName" className="space-y-2">
+                <Field name="lastName" className="space-y-1.5">
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#023828]/30 pointer-events-none" />
                     <Input
                       required
                       type="text"
                       autoComplete="family-name"
-                      className="w-full pl-10 pr-3 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a8b9b] focus:border-transparent"
+                      className="w-full pl-11 pr-4 py-3 text-sm border-2 border-[#023828]/20 focus:border-[#023828] focus:outline-none text-[#023828] bg-white"
                       placeholder="Apellido"
                     />
                   </div>
-                  <FieldError className="text-rose-400 text-xs" />
+                  <FieldError className="text-xs text-red-500" />
                 </Field>
 
-                <Field name="emailAddress" className="space-y-2">
+                <Field name="emailAddress" className="space-y-1.5">
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#023828]/20 pointer-events-none" />
                     <Input
                       required
                       type="email"
                       autoComplete="username email"
-                      className="w-full pl-10 pr-3 py-2 text-gray-500 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
+                      className="w-full pl-11 pr-4 py-3 text-sm border-2 border-[#023828]/10 text-[#023828]/40 bg-[#023828]/5 cursor-not-allowed"
                       placeholder="Email"
                       value={emailFromUrl || ""}
                       readOnly
                       disabled
                     />
                   </div>
-                  <FieldError className="text-rose-400 text-xs" />
+                  <FieldError className="text-xs text-red-500" />
                 </Field>
 
                 <div ref={passwordFieldRef}>
-                  <Field name="password" className="space-y-2">
+                  <Field name="password" className="space-y-1.5">
                     <div
                       className="relative"
                       onInput={(e) => {
@@ -264,37 +244,37 @@ export default function Page() {
                       onFocusCapture={() => setPasswordFocused(true)}
                       onBlurCapture={() => setPasswordFocused(false)}
                     >
-                      <KeyRound className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                      <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#023828]/30 pointer-events-none" />
                       <Input
                         required
                         type="password"
                         autoComplete="new-password"
-                        className="w-full pl-10 pr-3 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a8b9b] focus:border-transparent"
+                        className="w-full pl-11 pr-4 py-3 text-sm border-2 border-[#023828]/20 focus:border-[#023828] focus:outline-none text-[#023828] bg-white"
                         placeholder="Contraseña"
                       />
                     </div>
-                    {/* FieldError de Clerk oculto visualmente pero presente en el DOM para el MutationObserver */}
                     <FieldError className="sr-only" />
 
-                    {/* Requisitos de contraseña */}
                     {(passwordFocused || password.length > 0) && (
-                      <div className="mt-1 space-y-1.5 transition-all duration-200">
-                        {/* <div className="flex items-center gap-1.5">
-                        {password.length >= 8 ? (
-                          <CheckCircle2 className="size-3.5 text-green-400 flex-shrink-0" />
-                        ) : (
-                          <Circle className="size-3.5 text-gray-400 flex-shrink-0" />
-                        )}
-                        <span className={`text-xs ${password.length >= 8 ? 'text-green-400' : 'text-gray-400'}`}>
-                          Mínimo 8 caracteres
-                        </span>
-                      </div> */}
+                      <div className="mt-1 space-y-1.5">
                         <div className="flex items-start gap-1.5">
                           <ShieldAlert
-                            className={`size-3.5 flex-shrink-0 mt-0.5 ${passwordErrorEs ? "text-rose-400" : password.length >= 8 ? "text-amber-400" : "text-gray-400"}`}
+                            className={`h-3.5 w-3.5 flex-shrink-0 mt-0.5 ${
+                              passwordErrorEs
+                                ? "text-red-500"
+                                : password.length >= 8
+                                  ? "text-[#023828]/50"
+                                  : "text-[#023828]/30"
+                            }`}
                           />
                           <span
-                            className={`text-xs ${passwordErrorEs ? "text-rose-400 font-medium" : password.length >= 8 ? "text-amber-400" : "text-gray-400"}`}
+                            className={`text-xs ${
+                              passwordErrorEs
+                                ? "text-red-500 font-medium"
+                                : password.length >= 8
+                                  ? "text-[#023828]/50"
+                                  : "text-[#023828]/30"
+                            }`}
                           >
                             {passwordErrorEs ||
                               (password.length >= 8
@@ -308,48 +288,46 @@ export default function Page() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-3 mt-6">
-                <Action
-                  submit
-                  className="bg-black hover:bg-stone-950 w-full text-white py-3 rounded-full cursor-pointer transition-colors"
-                >
-                  Crear cuenta
-                </Action>
-              </div>
+              <Action
+                submit
+                className="w-full mt-7 py-3.5 bg-[#82E657] text-[#023828] text-xs uppercase tracking-widest font-medium hover:bg-[#6fd444] transition-colors cursor-pointer"
+              >
+                Crear cuenta
+              </Action>
 
-              <div className="mt-4 text-center">
-                <p className="text-white text-sm">
-                  ¿Ya tienes una cuenta?{" "}
-                  <a href="/sign-in" className="underline hover:text-gray-200">
-                    Iniciar sesión
-                  </a>
-                </p>
+              <div className="mt-5 text-center">
+                <a
+                  href="/sign-in"
+                  className="text-[10px] uppercase tracking-widest text-[#023828]/30 hover:text-[#023828] transition-colors"
+                >
+                  ¿Ya tienes una cuenta? Iniciar sesión
+                </a>
               </div>
             </Step>
 
             <Step name="verifications">
-              <div className="mb-6 text-center">
-                <h1 className="text-xl font-medium text-white mb-2">
-                  Verificar tu cuenta
+              <div className="mb-8">
+                <h1 className="text-base font-medium uppercase tracking-widest text-[#023828]">
+                  Verificar cuenta
                 </h1>
-                <p className="text-gray-200 text-sm">
+                <p className="text-xs text-[#023828]/40 mt-2 tracking-wide">
                   Hemos enviado un código de verificación a tu email
                 </p>
               </div>
 
-              <Field name="code" className="space-y-2 mb-6">
+              <Field name="code" className="space-y-1.5 mb-7">
                 <Input
                   required
                   type="text"
-                  className="w-full px-3 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a8b9b] focus:border-transparent text-center tracking-widest"
-                  placeholder="Código de verificación"
+                  className="w-full px-4 py-3 text-sm border-2 border-[#023828]/20 focus:border-[#023828] focus:outline-none text-center tracking-[0.4em] text-[#023828] bg-white"
+                  placeholder="000000"
                 />
-                <FieldError className="text-rose-400 text-xs" />
+                <FieldError className="text-xs text-red-500" />
               </Field>
 
               <Action
                 submit
-                className="bg-black hover:bg-stone-950 w-full text-white py-3 rounded-full cursor-pointer transition-colors"
+                className="w-full py-3.5 bg-[#82E657] text-[#023828] text-xs uppercase tracking-widest font-medium hover:bg-[#6fd444] transition-colors cursor-pointer"
               >
                 Verificar cuenta
               </Action>
