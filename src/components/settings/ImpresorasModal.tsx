@@ -9,6 +9,9 @@ interface ImpresorasModalProps {
   onClose: () => void;
   branchId: string;
   agentConnected: boolean;
+  tapPayPrint: boolean;
+  onTapPayPrintChange: (val: boolean) => void;
+  isTapPayEnabled: boolean;
 }
 
 const ImpresorasModal: React.FC<ImpresorasModalProps> = ({
@@ -16,6 +19,9 @@ const ImpresorasModal: React.FC<ImpresorasModalProps> = ({
   onClose,
   branchId,
   agentConnected,
+  tapPayPrint,
+  onTapPayPrintChange,
+  isTapPayEnabled,
 }) => {
   return (
     <SettingsModal
@@ -25,7 +31,13 @@ const ImpresorasModal: React.FC<ImpresorasModalProps> = ({
       description="Detecta y administra las impresoras de esta sucursal."
       maxWidthClass="max-w-4xl"
     >
-      <PrinterSettings branchId={branchId} agentConnected={agentConnected} />
+      <PrinterSettings
+        branchId={branchId}
+        agentConnected={agentConnected}
+        tapPayPrint={tapPayPrint}
+        onTapPayPrintChange={onTapPayPrintChange}
+        isTapPayEnabled={isTapPayEnabled}
+      />
     </SettingsModal>
   );
 };

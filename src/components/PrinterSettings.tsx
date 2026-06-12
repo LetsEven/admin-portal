@@ -28,6 +28,9 @@ const ROLE_COLORS: Record<string, string> = {
 interface Props {
   branchId: string;
   agentConnected: boolean;
+  tapPayPrint: boolean;
+  onTapPayPrintChange: (val: boolean) => void;
+  isTapPayEnabled: boolean;
 }
 
 interface EditState {
@@ -219,7 +222,13 @@ function PrinterCard({
   );
 }
 
-export default function PrinterSettings({ branchId, agentConnected }: Props) {
+export default function PrinterSettings({
+  branchId,
+  agentConnected,
+  tapPayPrint,
+  onTapPayPrintChange,
+  isTapPayEnabled,
+}: Props) {
   const posApi = usePosApi();
   const [printers, setPrinters] = useState<PrinterType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -341,6 +350,32 @@ export default function PrinterSettings({ branchId, agentConnected }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* === Tap & Pay print setting === */}
+      {isTapPayEnabled && (
+        <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium leading-6 text-gray-900 mb-3">
+            Modo de pago — Tap &amp; Pay
+          </h3>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={tapPayPrint}
+              onChange={(e) => onTapPayPrintChange(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded accent-custom-green-500 cursor-pointer"
+            />
+            <div>
+              <span className="text-sm font-medium text-gray-700">
+                Imprimir ticket con QR
+              </span>
+              <p className="text-xs text-gray-400 mt-0.5">
+                El mesero podrá imprimir un ticket con código QR para que el
+                cliente escanee y pague.
+              </p>
+            </div>
+          </label>
+        </div>
+      )}
+
       {/* === WiFi === */}
       <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
         <div className="md:grid md:grid-cols-3 md:gap-6">
