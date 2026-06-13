@@ -17,7 +17,11 @@ import SectionForm from "../components/SectionForm";
 import MobileMenuPreview from "../components/MobileMenuPreview";
 import RestaurantHeader from "../components/RestaurantHeader";
 import { useMenuAdminPortalApi } from "../services/menuAdminPortalApi";
-import { MenuSection, MenuItem } from "../services/adminPortalApi";
+import {
+  MenuSection,
+  MenuItem,
+  useAdminPortalApi,
+} from "../services/adminPortalApi";
 import {
   useMenuOnboarding,
   joyrideTheme,
@@ -46,6 +50,7 @@ const MenuManagement = () => {
     createRestaurant,
   } = useRestaurant();
   const menuApi = useMenuAdminPortalApi();
+  const adminPortalApi = useAdminPortalApi();
 
   // Menu onboarding tour
   const { run, steps, handleJoyrideCallback, startOnboarding } =
@@ -56,6 +61,7 @@ const MenuManagement = () => {
   const [sections, setSections] = useState<MenuSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPickNGoEnabled, setIsPickNGoEnabled] = useState(false);
 
   // Branch selection state
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
@@ -125,6 +131,17 @@ const MenuManagement = () => {
       loadData();
     }
   }, [isHydrated, user, restaurant, restaurantLoading, selectedBranch]);
+
+  useEffect(() => {
+    if (!user) return;
+    adminPortalApi
+      .getEnabledServices()
+      .then((response) => {
+        const ids: string[] = response?.enabled_services ?? [];
+        setIsPickNGoEnabled(ids.includes("pick-n-go"));
+      })
+      .catch(() => {});
+  }, [user]);
 
   // Iniciar tour cuando la página esté completamente cargada
   useEffect(() => {
@@ -313,6 +330,7 @@ const MenuManagement = () => {
         display_order,
         availableBranches: values.availableBranches || [],
         outOfStockBranches: values.outOfStockBranches || [],
+        preparation_time_minutes: values.preparation_time_minutes ?? null,
       };
 
       if (values.id) {
@@ -841,6 +859,7 @@ const MenuManagement = () => {
           onCancel={() => setShowItemForm(false)}
           preselectedCategory={selectedCategory}
           preselectedSectionId={selectedSectionId || undefined}
+          isPickNGoEnabled={isPickNGoEnabled}
         />
       )}
       {showSectionForm && (

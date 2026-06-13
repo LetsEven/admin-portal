@@ -40,6 +40,7 @@ export interface CreateItemRequest {
   display_order?: number;
   availableBranches?: string[]; // Array de branch IDs donde estará disponible
   outOfStockBranches?: string[]; // Array de branch IDs donde estará agotado
+  preparation_time_minutes?: number;
 }
 
 export interface UpdateItemRequest {
@@ -54,6 +55,7 @@ export interface UpdateItemRequest {
   display_order?: number;
   availableBranches?: string[]; // Array de branch IDs donde estará disponible
   outOfStockBranches?: string[]; // Array de branch IDs donde estará agotado
+  preparation_time_minutes?: number;
 }
 
 // ===============================================

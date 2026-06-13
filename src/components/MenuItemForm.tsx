@@ -49,11 +49,13 @@ interface MenuItemFormProps {
     customFields?: CustomField[];
     availableBranches?: string[]; // Array de branch IDs donde está disponible
     outOfStockBranches?: string[]; // Array de branch IDs donde está agotado
+    preparation_time_minutes?: number;
   };
   onSubmit: (values: any) => void;
   onCancel: () => void;
   preselectedCategory?: string;
   preselectedSectionId?: number; // Agregamos para manejar section_id
+  isPickNGoEnabled?: boolean;
 }
 const MenuItemForm: React.FC<MenuItemFormProps> = ({
   initialValues = {
@@ -71,6 +73,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   onCancel,
   preselectedCategory,
   preselectedSectionId,
+  isPickNGoEnabled = false,
 }) => {
   const { user } = useUser();
   // Si estamos editando (tiene id y base_price), usar base_price directamente
@@ -103,6 +106,11 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [availabilityExpanded, setAvailabilityExpanded] = useState(false);
   const [outOfStockExpanded, setOutOfStockExpanded] = useState(false);
+  const [personalizationExpanded, setPersonalizationExpanded] = useState(false);
+  const [prepTimeExpanded, setPrepTimeExpanded] = useState(true);
+  const [prepTimeMinutes, setPrepTimeMinutes] = useState<number | "">(
+    initialValues.preparation_time_minutes ?? "",
+  );
   const adminPortalApi = useAdminPortalApi();
   const menuApi = useMenuAdminPortalApi();
 
@@ -465,6 +473,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
       customFields,
       availableBranches: selectedBranches,
       outOfStockBranches,
+      preparation_time_minutes: prepTimeMinutes === "" ? null : prepTimeMinutes,
     });
   };
   return (
@@ -810,242 +819,316 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
 
             {/* Personalización Section */}
             <div className="pt-3 sm:pt-4 border-t border-gray-200">
-              <div className="flex justify-between items-center mb-2 sm:mb-3">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700">
+              <button
+                type="button"
+                onClick={() => setPersonalizationExpanded((v) => !v)}
+                className="w-full flex items-center justify-between mb-2 sm:mb-3 group"
+              >
+                <span className="text-xs sm:text-sm font-medium text-gray-700">
                   Personalización
-                </label>
-                <button
-                  type="button"
-                  onClick={handleAddField}
-                  className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 border border-transparent text-[10px] sm:text-xs font-medium rounded-md text-white bg-custom-green-500 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-600"
-                >
-                  <PlusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                  Add Field
-                </button>
-              </div>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${personalizationExpanded ? "rotate-180" : ""}`}
+                />
+              </button>
 
-              {customFields.length === 0 ? (
-                <p className="text-xs sm:text-sm text-gray-500 italic">
-                  No hay campos de personalización. Haz clic en "Add Field" para
-                  agregar uno.
-                </p>
-              ) : (
-                <div className="space-y-3 sm:space-y-4">
-                  {customFields.map((field, fieldIndex) => (
-                    <div
-                      key={field.id}
-                      className="p-2.5 sm:p-3 border border-gray-200 rounded-md bg-gray-50"
+              {personalizationExpanded && (
+                <>
+                  <div className="flex justify-end mb-2 sm:mb-3">
+                    <button
+                      type="button"
+                      onClick={handleAddField}
+                      className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 border border-transparent text-[10px] sm:text-xs font-medium rounded-md text-white bg-custom-green-500 hover:bg-custom-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-green-600"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-[10px] sm:text-xs font-medium text-gray-500">
-                          Campo {fieldIndex + 1}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveField(field.id)}
-                          className="text-red-500 hover:text-red-700 p-0.5"
+                      <PlusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+                      Add Field
+                    </button>
+                  </div>
+
+                  {customFields.length === 0 ? (
+                    <p className="text-xs sm:text-sm text-gray-500 italic">
+                      No hay campos de personalización. Haz clic en "Add Field"
+                      para agregar uno.
+                    </p>
+                  ) : (
+                    <div className="space-y-3 sm:space-y-4">
+                      {customFields.map((field, fieldIndex) => (
+                        <div
+                          key={field.id}
+                          className="p-2.5 sm:p-3 border border-gray-200 rounded-md bg-gray-50"
                         >
-                          <TrashIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        </button>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div>
-                          <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1">
-                            Nombre del campo
-                          </label>
-                          <input
-                            type="text"
-                            value={field.name}
-                            onChange={(e) =>
-                              handleFieldNameChange(field.id, e.target.value)
-                            }
-                            placeholder="Ej: Tamaño, Extras, etc."
-                            className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-xs sm:text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1">
-                            Tipo de respuesta
-                          </label>
-                          <select
-                            value={field.type}
-                            onChange={(e) =>
-                              handleFieldTypeChange(
-                                field.id,
-                                e.target.value as CustomField["type"],
-                              )
-                            }
-                            className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-xs sm:text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
-                          >
-                            <option value="dropdown">Lista Desplegable</option>
-                            <option value="checkboxes">
-                              Opciones Casillas
-                            </option>
-                            <option value="dropdown-quantity">
-                              Lista desplegable con cantidad
-                            </option>
-                          </select>
-                        </div>
-
-                        {/* Checkbox Obligatorio - solo para dropdown */}
-                        {field.type === "dropdown" && (
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id={`required-${field.id}`}
-                              checked={field.required}
-                              onChange={(e) => {
-                                setCustomFields(
-                                  customFields.map((f) =>
-                                    f.id === field.id
-                                      ? { ...f, required: e.target.checked }
-                                      : f,
-                                  ),
-                                );
-                              }}
-                              className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
-                            />
-                            <label
-                              htmlFor={`required-${field.id}`}
-                              className="ml-2 block text-[10px] sm:text-xs font-medium text-gray-700"
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-[10px] sm:text-xs font-medium text-gray-500">
+                              Campo {fieldIndex + 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveField(field.id)}
+                              className="text-red-500 hover:text-red-700 p-0.5"
                             >
-                              Obligatorio
-                            </label>
+                              <TrashIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            </button>
                           </div>
-                        )}
 
-                        {/* Max Selections - solo para checkboxes */}
-                        {field.type === "checkboxes" && (
-                          <div>
-                            <label
-                              htmlFor={`max-selections-${field.id}`}
-                              className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1"
-                            >
-                              Máximo de opciones seleccionables
-                            </label>
-                            <input
-                              type="number"
-                              id={`max-selections-${field.id}`}
-                              min="1"
-                              max="10"
-                              value={field.maxSelections || 1}
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value);
-                                if (value >= 1 && value <= 10) {
-                                  handleMaxSelectionsChange(field.id, value);
-                                }
-                              }}
-                              className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-xs sm:text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
-                            />
-                            <p className="mt-1 text-[10px] sm:text-xs text-gray-500">
-                              Los clientes podrán seleccionar hasta{" "}
-                              {field.maxSelections || 1}{" "}
-                              {field.maxSelections === 1
-                                ? "opción"
-                                : "opciones"}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Options for dropdown and checkboxes */}
-                        {(field.type === "dropdown" ||
-                          field.type === "checkboxes" ||
-                          field.type === "dropdown-quantity") && (
-                          <div>
-                            <div className="flex justify-between items-center mb-1">
-                              <label className="block text-[10px] sm:text-xs font-medium text-gray-700">
-                                Opciones
+                          <div className="space-y-2">
+                            <div>
+                              <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1">
+                                Nombre del campo
                               </label>
-                              <button
-                                type="button"
-                                onClick={() => handleAddOption(field.id)}
-                                className="text-[10px] sm:text-xs text-custom-green-600 hover:text-custom-green-700"
-                              >
-                                + Agregar opción
-                              </button>
+                              <input
+                                type="text"
+                                value={field.name}
+                                onChange={(e) =>
+                                  handleFieldNameChange(
+                                    field.id,
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="Ej: Tamaño, Extras, etc."
+                                className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-xs sm:text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                              />
                             </div>
-                            <div className="space-y-1.5 sm:space-y-2">
-                              {field.options.map((option, optionIndex) => (
-                                <div
-                                  key={optionIndex}
-                                  className="border border-gray-200 rounded-md p-1.5 sm:p-2 bg-gray-50"
+
+                            <div>
+                              <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1">
+                                Tipo de respuesta
+                              </label>
+                              <select
+                                value={field.type}
+                                onChange={(e) =>
+                                  handleFieldTypeChange(
+                                    field.id,
+                                    e.target.value as CustomField["type"],
+                                  )
+                                }
+                                className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-xs sm:text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                              >
+                                <option value="dropdown">
+                                  Lista Desplegable
+                                </option>
+                                <option value="checkboxes">
+                                  Opciones Casillas
+                                </option>
+                                <option value="dropdown-quantity">
+                                  Lista desplegable con cantidad
+                                </option>
+                              </select>
+                            </div>
+
+                            {/* Checkbox Obligatorio - solo para dropdown */}
+                            {field.type === "dropdown" && (
+                              <div className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id={`required-${field.id}`}
+                                  checked={field.required}
+                                  onChange={(e) => {
+                                    setCustomFields(
+                                      customFields.map((f) =>
+                                        f.id === field.id
+                                          ? { ...f, required: e.target.checked }
+                                          : f,
+                                      ),
+                                    );
+                                  }}
+                                  className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-custom-green-600 focus:ring-custom-green-500 border-gray-300 rounded"
+                                />
+                                <label
+                                  htmlFor={`required-${field.id}`}
+                                  className="ml-2 block text-[10px] sm:text-xs font-medium text-gray-700"
                                 >
-                                  <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                                    <input
-                                      type="text"
-                                      value={option.name}
-                                      onChange={(e) =>
-                                        handleOptionChange(
-                                          field.id,
-                                          optionIndex,
-                                          e.target.value,
-                                        )
-                                      }
-                                      placeholder={`Opción ${optionIndex + 1}`}
-                                      className="flex-1 block border border-gray-300 rounded-md shadow-sm py-1 px-2 text-xs sm:text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
-                                    />
-                                    {field.options &&
-                                      field.options.length > 1 && (
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            handleRemoveOption(
+                                  Obligatorio
+                                </label>
+                              </div>
+                            )}
+
+                            {/* Max Selections - solo para checkboxes */}
+                            {field.type === "checkboxes" && (
+                              <div>
+                                <label
+                                  htmlFor={`max-selections-${field.id}`}
+                                  className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1"
+                                >
+                                  Máximo de opciones seleccionables
+                                </label>
+                                <input
+                                  type="number"
+                                  id={`max-selections-${field.id}`}
+                                  min="1"
+                                  max="10"
+                                  value={field.maxSelections || 1}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if (value >= 1 && value <= 10) {
+                                      handleMaxSelectionsChange(
+                                        field.id,
+                                        value,
+                                      );
+                                    }
+                                  }}
+                                  className="block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2 text-xs sm:text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                                />
+                                <p className="mt-1 text-[10px] sm:text-xs text-gray-500">
+                                  Los clientes podrán seleccionar hasta{" "}
+                                  {field.maxSelections || 1}{" "}
+                                  {field.maxSelections === 1
+                                    ? "opción"
+                                    : "opciones"}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Options for dropdown and checkboxes */}
+                            {(field.type === "dropdown" ||
+                              field.type === "checkboxes" ||
+                              field.type === "dropdown-quantity") && (
+                              <div>
+                                <div className="flex justify-between items-center mb-1">
+                                  <label className="block text-[10px] sm:text-xs font-medium text-gray-700">
+                                    Opciones
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddOption(field.id)}
+                                    className="text-[10px] sm:text-xs text-custom-green-600 hover:text-custom-green-700"
+                                  >
+                                    + Agregar opción
+                                  </button>
+                                </div>
+                                <div className="space-y-1.5 sm:space-y-2">
+                                  {field.options.map((option, optionIndex) => (
+                                    <div
+                                      key={optionIndex}
+                                      className="border border-gray-200 rounded-md p-1.5 sm:p-2 bg-gray-50"
+                                    >
+                                      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                                        <input
+                                          type="text"
+                                          value={option.name}
+                                          onChange={(e) =>
+                                            handleOptionChange(
                                               field.id,
                                               optionIndex,
+                                              e.target.value,
                                             )
                                           }
-                                          className="text-red-500 hover:text-red-700 p-0.5"
-                                        >
-                                          <TrashIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                                        </button>
-                                      )}
-                                  </div>
-
-                                  {/* Precio opcional */}
-                                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                                    <label className="text-[10px] sm:text-xs text-gray-600">
-                                      Precio adicional:
-                                    </label>
-                                    <div className="relative">
-                                      <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                                        <span className="text-gray-500 text-[10px] sm:text-xs">
-                                          $
-                                        </span>
+                                          placeholder={`Opción ${optionIndex + 1}`}
+                                          className="flex-1 block border border-gray-300 rounded-md shadow-sm py-1 px-2 text-xs sm:text-sm focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                                        />
+                                        {field.options &&
+                                          field.options.length > 1 && (
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                handleRemoveOption(
+                                                  field.id,
+                                                  optionIndex,
+                                                )
+                                              }
+                                              className="text-red-500 hover:text-red-700 p-0.5"
+                                            >
+                                              <TrashIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                                            </button>
+                                          )}
                                       </div>
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={option.price || ""}
-                                        onChange={(e) =>
-                                          handleOptionPriceChange(
-                                            field.id,
-                                            optionIndex,
-                                            e.target.value === ""
-                                              ? 0
-                                              : parseFloat(e.target.value) || 0,
-                                          )
-                                        }
-                                        placeholder="0.00"
-                                        className="w-16 sm:w-20 pl-4 sm:pl-5 pr-1.5 sm:pr-2 py-1 border border-gray-300 rounded-md shadow-sm text-[10px] sm:text-xs focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
-                                      />
+
+                                      {/* Precio opcional */}
+                                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                        <label className="text-[10px] sm:text-xs text-gray-600">
+                                          Precio adicional:
+                                        </label>
+                                        <div className="relative">
+                                          <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                                            <span className="text-gray-500 text-[10px] sm:text-xs">
+                                              $
+                                            </span>
+                                          </div>
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={option.price || ""}
+                                            onChange={(e) =>
+                                              handleOptionPriceChange(
+                                                field.id,
+                                                optionIndex,
+                                                e.target.value === ""
+                                                  ? 0
+                                                  : parseFloat(
+                                                      e.target.value,
+                                                    ) || 0,
+                                              )
+                                            }
+                                            placeholder="0.00"
+                                            className="w-16 sm:w-20 pl-4 sm:pl-5 pr-1.5 sm:pr-2 py-1 border border-gray-300 rounded-md shadow-sm text-[10px] sm:text-xs focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500"
+                                          />
+                                        </div>
+                                      </div>
                                     </div>
-                                  </div>
+                                  ))}
                                 </div>
-                              ))}
-                            </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
 
-            <div>
+            {/* Tiempo de preparación — solo visible con Pick & Go activo */}
+            {isPickNGoEnabled && (
+              <div className="pt-3 sm:pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setPrepTimeExpanded((v) => !v)}
+                  className="w-full flex items-center justify-between mb-2 sm:mb-3 group"
+                >
+                  <span className="text-xs sm:text-sm font-medium text-gray-700">
+                    Tiempo de preparación
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${prepTimeExpanded ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {prepTimeExpanded && (
+                  <div>
+                    <p className="text-[10px] sm:text-xs text-gray-500 mb-2">
+                      Tiempo estimado para preparar este platillo (opcional).
+                    </p>
+                    <div className="relative rounded-md shadow-sm">
+                      <input
+                        type="number"
+                        min="1"
+                        max="120"
+                        step="1"
+                        value={prepTimeMinutes}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "") {
+                            setPrepTimeMinutes("");
+                          } else {
+                            const n = parseInt(v);
+                            if (!isNaN(n) && n >= 1 && n <= 120)
+                              setPrepTimeMinutes(n);
+                          }
+                        }}
+                        placeholder="Ej: 15"
+                        className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 pr-14 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 text-sm"
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 text-sm">min</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="pt-3 sm:pt-4 border-t border-gray-200">
               <label
                 htmlFor="discount"
                 className="block text-xs sm:text-sm font-medium text-gray-700"

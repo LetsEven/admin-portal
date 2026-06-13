@@ -72,6 +72,7 @@ export interface MenuItem {
   updated_at: string;
   availableBranches?: string[]; // Array de branch IDs donde el item está disponible
   outOfStockBranches?: string[]; // Array de branch IDs donde el item está agotado
+  preparation_time_minutes?: number;
 }
 
 export interface CustomField {
