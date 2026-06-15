@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect, memo } from "react";
-import { PlusIcon, MicIcon, SendIcon } from "lucide-react";
+import { PlusIcon, MicIcon, SendIcon, X, History, Trash2 } from "lucide-react";
 import Joyride from "react-joyride";
+import ReactMarkdown from "react-markdown";
 import Layout from "../../src/components/Layout";
 import { useRestaurant } from "../../src/contexts/RestaurantContext";
 import { useUser } from "@clerk/nextjs";
@@ -11,8 +12,9 @@ import {
   pepperJoyrideTheme,
   joyrideResponsiveCSS,
 } from "../../src/hooks/usePepperOnboarding";
+import { ArtifactBlock } from "./artifacts/ArtifactBlock";
+import type { Artifact } from "./artifacts/types";
 
-// Tipo para los eventos del stream (basado en la API real de AI Spine)
 interface StreamEvent {
   type:
     | "token"
@@ -25,21 +27,32 @@ interface StreamEvent {
     | "node_end"
     | "final_response"
     | "tool_start"
-    | "tool_end";
+    | "tool_end"
+    | "artifact";
   content?: string;
   session_id?: string;
   tool_name?: string;
   node_name?: string;
   node_type?: string;
   phase?: string;
+  artifact?: Artifact;
 }
 
-// Mapeo de nombres de herramientas a nombres amigables
 const toolDisplayNames: Record<string, string> = {
   thinking: "Pensando...",
+  get_current_datetime: "Pensando...",
+  get_restaurant_info: "Obteniendo información del restaurante...",
+  get_branches: "Consultando sucursales...",
+  get_menu: "Consultando el menú...",
+  get_dashboard_metrics: "Obteniendo estadísticas...",
+  get_recent_transactions: "Consultando transacciones...",
+  get_selling_items: "Analizando ventas...",
+  render_chart: "Generando gráfica...",
+  render_metric: "Generando indicadores...",
+  // Legacy AI Spine tools
   admin_obtener_fecha_actual: "Pensando...",
-  admin_get_charts: "Obteniendo graficas",
-  dashboard_metrics_all_services: "Obteniendo estadísticas",
+  admin_get_charts: "Obteniendo gráficas...",
+  dashboard_metrics_all_services: "Obteniendo estadísticas...",
 };
 
 // Función para streaming con el agente
@@ -51,6 +64,7 @@ async function streamFromAgent(
   onToolStart: (toolName: string) => void,
   onToolEnd: () => void,
   onFinalResponse?: (content: string) => void,
+  onArtifact?: (artifact: Artifact) => void,
 ): Promise<void> {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/ai-agent/chat/stream`,
@@ -99,10 +113,10 @@ async function streamFromAgent(
           if (event.type === "token" && event.content) {
             onToken(event.content);
           } else if (event.type === "conversation_start" && event.session_id) {
-            // Session ID viene en conversation_start
             onSessionId(event.session_id);
+          } else if (event.type === "artifact" && event.artifact) {
+            onArtifact?.(event.artifact);
           } else if (event.type === "thinking_start") {
-            // Mostrar indicador de "pensando"
             onToolStart("thinking");
           } else if (event.type === "thinking_end") {
             onToolEnd();
@@ -111,7 +125,6 @@ async function streamFromAgent(
           } else if (event.type === "tool_end") {
             onToolEnd();
           } else if (event.type === "final_response" && event.content) {
-            // La respuesta final viene completa - reemplazar, no agregar
             if (onFinalResponse) {
               onFinalResponse(event.content);
             } else {
@@ -168,6 +181,71 @@ interface Message {
   content: string;
   role: "user" | "assistant";
   timestamp: Date;
+  artifacts?: Artifact[];
+}
+
+interface StoredMessage {
+  id: string;
+  content: string;
+  role: "user" | "assistant";
+  timestamp: string;
+  artifacts?: Artifact[];
+}
+
+interface StoredConversation {
+  id: string;
+  title: string;
+  messages: StoredMessage[];
+  sessionId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function groupConversationsByDate(convs: StoredConversation[]) {
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toDateString();
+  const weekAgo = new Date(now);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+
+  const groups: Record<string, StoredConversation[]> = {
+    Hoy: [],
+    Ayer: [],
+    "Últimos 7 días": [],
+    "Más antiguo": [],
+  };
+
+  for (const conv of convs) {
+    const d = new Date(conv.updatedAt);
+    if (d.toDateString() === todayStr) groups["Hoy"].push(conv);
+    else if (d.toDateString() === yesterdayStr) groups["Ayer"].push(conv);
+    else if (d > weekAgo) groups["Últimos 7 días"].push(conv);
+    else groups["Más antiguo"].push(conv);
+  }
+
+  return Object.entries(groups)
+    .filter(([, items]) => items.length > 0)
+    .map(([label, items]) => ({ label, items }));
+}
+
+// Detecta frases de pensamiento/proceso y las convierte a cursiva con salto de línea
+function preprocessThinkingText(content: string): string {
+  if (!content.includes("...")) return content;
+
+  return (
+    content
+      // Inline: "frase..." seguida de una nueva oración con mayúscula
+      .replace(
+        /(?<![*_`\\])([A-Za-záéíóúüñÁÉÍÓÚÜÑ¿][^_*`\n]{4,}?\.\.\.)(?![*_`.]) +(?=[A-ZÁÉÍÓÚÜÑ¿¡])/g,
+        (_, sentence) => `_${sentence.trim()}_\n\n`,
+      )
+      // Línea completa que termina con "..."
+      .replace(/^(?![#\-*>|`\d])(.{5,}?\.\.\.)[ \t]*$/gm, (_, sentence) =>
+        `_${sentence.trim()}_`,
+      )
+  );
 }
 
 // Componente de puntos de carga
@@ -207,6 +285,30 @@ const hasIncompleteImageUrl = (text: string): boolean => {
   return false;
 };
 
+const markdownComponents = {
+  strong: ({ children }: { children?: React.ReactNode }) => (
+    <strong className="font-bold">{children}</strong>
+  ),
+  em: ({ children }: { children?: React.ReactNode }) => (
+    <em className="italic text-gray-400 font-normal">{children}</em>
+  ),
+  p: ({ children }: { children?: React.ReactNode }) => (
+    <p className="mb-2 last:mb-0">{children}</p>
+  ),
+  ul: ({ children }: { children?: React.ReactNode }) => (
+    <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>
+  ),
+  ol: ({ children }: { children?: React.ReactNode }) => (
+    <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>
+  ),
+  li: ({ children }: { children?: React.ReactNode }) => (
+    <li>{children}</li>
+  ),
+  code: ({ children }: { children?: React.ReactNode }) => (
+    <code className="bg-gray-100 rounded px-1 text-sm font-mono">{children}</code>
+  ),
+};
+
 // Componente para renderizar mensajes con imágenes (memoizado para evitar re-renders innecesarios)
 const MessageContent = memo(
   ({
@@ -221,11 +323,16 @@ const MessageContent = memo(
     // Si el contenido está vacío, mostrar herramienta o puntos de carga
     if (!content) {
       if (activeTool) {
+        const displayName = toolDisplayNames[activeTool] || activeTool;
         return (
-          <div className="flex items-center gap-2">
-            <Spinner />
-            <span className="text-gray-500">
-              {toolDisplayNames[activeTool] || activeTool}
+          <div className="flex items-center gap-3 py-0.5">
+            {/* Radar pulse */}
+            <div className="relative flex h-2.5 w-2.5 flex-shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-300 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-purple-400" />
+            </div>
+            <span className="text-sm text-gray-400 italic animate-pulse">
+              {displayName}
             </span>
           </div>
         );
@@ -255,9 +362,9 @@ const MessageContent = memo(
       parts.forEach((part, i) => {
         if (part) {
           elements.push(
-            <span key={`t${i}`} className="whitespace-pre-wrap">
+            <ReactMarkdown key={`t${i}`} components={markdownComponents}>
               {part}
-            </span>,
+            </ReactMarkdown>,
           );
         }
         if (i < parts.length - 1) {
@@ -265,8 +372,27 @@ const MessageContent = memo(
         }
       });
 
+      // Si hay una herramienta activa mientras se hace streaming, mostrarla al final
+      if (activeTool) {
+        const displayName = toolDisplayNames[activeTool] || activeTool;
+        elements.push(
+          <div key="tool-indicator" className="flex items-center gap-3 mt-2 py-0.5">
+            <div className="relative flex h-2.5 w-2.5 flex-shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-300 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-purple-400" />
+            </div>
+            <span className="text-sm text-gray-400 italic animate-pulse">
+              {displayName}
+            </span>
+          </div>,
+        );
+      }
+
       return <div>{elements}</div>;
     }
+
+    // Aplicar preprocesamiento de texto de pensamiento
+    const processedContent = preprocessThinkingText(content);
 
     // Regex para detectar imágenes en formato Markdown: ![alt](url)
     const markdownImageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
@@ -290,7 +416,7 @@ const MessageContent = memo(
     }> = [];
 
     let match;
-    while ((match = markdownImageRegex.exec(content)) !== null) {
+    while ((match = markdownImageRegex.exec(processedContent)) !== null) {
       matches.push({
         index: match.index,
         length: match[0].length,
@@ -301,7 +427,7 @@ const MessageContent = memo(
     }
 
     // Luego, encontrar URLs directas (que no estén dentro de Markdown)
-    while ((match = directImageRegex.exec(content)) !== null) {
+    while ((match = directImageRegex.exec(processedContent)) !== null) {
       // Verificar que no esté dentro de un match de Markdown
       const isInsideMarkdown = matches.some(
         (m) => match!.index >= m.index && match!.index < m.index + m.length,
@@ -323,12 +449,12 @@ const MessageContent = memo(
     for (const m of matches) {
       // Agregar texto antes de la imagen
       if (m.index > lastIndex) {
-        const text = content.slice(lastIndex, m.index);
+        const text = processedContent.slice(lastIndex, m.index);
         if (text.trim()) {
           elements.push(
-            <p key={key++} className="whitespace-pre-wrap">
+            <ReactMarkdown key={key++} components={markdownComponents}>
               {text}
-            </p>,
+            </ReactMarkdown>,
           );
         }
       }
@@ -348,20 +474,24 @@ const MessageContent = memo(
     }
 
     // Agregar texto restante
-    if (lastIndex < content.length) {
-      const text = content.slice(lastIndex);
+    if (lastIndex < processedContent.length) {
+      const text = processedContent.slice(lastIndex);
       if (text.trim()) {
         elements.push(
-          <p key={key++} className="whitespace-pre-wrap">
+          <ReactMarkdown key={key++} components={markdownComponents}>
             {text}
-          </p>,
+          </ReactMarkdown>,
         );
       }
     }
 
     // Si no hay elementos (solo espacios), mostrar el contenido original
     if (elements.length === 0) {
-      return <p className="whitespace-pre-wrap">{content}</p>;
+      return (
+        <ReactMarkdown components={markdownComponents}>
+          {processedContent}
+        </ReactMarkdown>
+      );
     }
 
     return <div className="space-y-2">{elements}</div>;
@@ -402,8 +532,13 @@ const PepperPage: React.FC = () => {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [conversations, setConversations] = useState<StoredConversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const prevIsLoadingRef = useRef(false);
+  const activeConvIdRef = useRef<string | null>(null);
   const { isMobile, isTablet, isDesktop, width } = useResponsive();
 
   // Obtener contextos
@@ -427,6 +562,74 @@ const PepperPage: React.FC = () => {
     setIsHydrated(true);
   }, []);
 
+  // Keep ref in sync with state for use inside async callbacks
+  useEffect(() => {
+    activeConvIdRef.current = activeConversationId;
+  }, [activeConversationId]);
+
+  // Load conversations from localStorage
+  useEffect(() => {
+    if (!isHydrated) return;
+    try {
+      const stored = localStorage.getItem("pepper_conversations");
+      if (stored) setConversations(JSON.parse(stored));
+    } catch {
+      // ignore corrupt data
+    }
+  }, [isHydrated]);
+
+  // Auto-save conversation when a response finishes
+  useEffect(() => {
+    const wasLoading = prevIsLoadingRef.current;
+    prevIsLoadingRef.current = isLoading;
+
+    if (!isHydrated || isLoading || !wasLoading) return;
+    const convId = activeConvIdRef.current;
+    if (messages.length === 0 || !convId) return;
+
+    const title =
+      messages.find((m) => m.role === "user")?.content.slice(0, 60) ??
+      "Nueva conversación";
+    const serialized: StoredMessage[] = messages.map((m) => ({
+      ...m,
+      timestamp:
+        m.timestamp instanceof Date
+          ? m.timestamp.toISOString()
+          : (m.timestamp as string),
+    }));
+
+    setConversations((prev) => {
+      const existing = prev.find((c) => c.id === convId);
+      let updated: StoredConversation[];
+      if (existing) {
+        updated = prev.map((c) =>
+          c.id === convId
+            ? {
+                ...c,
+                messages: serialized,
+                sessionId,
+                updatedAt: new Date().toISOString(),
+              }
+            : c,
+        );
+      } else {
+        updated = [
+          {
+            id: convId,
+            title,
+            messages: serialized,
+            sessionId,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          ...prev,
+        ];
+      }
+      localStorage.setItem("pepper_conversations", JSON.stringify(updated));
+      return updated;
+    });
+  }, [isLoading, isHydrated, messages, sessionId]);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages, activeTool]);
@@ -441,8 +644,42 @@ const PepperPage: React.FC = () => {
     }
   }, [isHydrated, user, restaurant, startOnboarding]);
 
+  const startNewConversation = () => {
+    setMessages([]);
+    setSessionId(null);
+    setActiveConversationId(null);
+    activeConvIdRef.current = null;
+    setInputValue("");
+  };
+
+  const loadConversation = (conv: StoredConversation) => {
+    setMessages(
+      conv.messages.map((m) => ({ ...m, timestamp: new Date(m.timestamp) })),
+    );
+    setSessionId(conv.sessionId);
+    setActiveConversationId(conv.id);
+    activeConvIdRef.current = conv.id;
+  };
+
+  const deleteConversation = (convId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConversations((prev) => {
+      const updated = prev.filter((c) => c.id !== convId);
+      localStorage.setItem("pepper_conversations", JSON.stringify(updated));
+      return updated;
+    });
+    if (activeConvIdRef.current === convId) startNewConversation();
+  };
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
+
+    // Ensure a conversation ID exists before the first message
+    if (!activeConvIdRef.current) {
+      const newId = `conv-${Date.now()}`;
+      setActiveConversationId(newId);
+      activeConvIdRef.current = newId;
+    }
 
     const userMessage: Message = {
       id: `user-${Date.now()}`,
@@ -499,11 +736,7 @@ const PepperPage: React.FC = () => {
         },
         // onSessionId - guardar el session_id
         (newSessionId: string) => {
-          console.log("📥 Session ID recibido:", newSessionId);
-          if (!sessionId) {
-            setSessionId(newSessionId);
-            console.log("✅ Session ID guardado:", newSessionId);
-          }
+          if (!sessionId) setSessionId(newSessionId);
         },
         // onToolStart - mostrar qué herramienta se está ejecutando
         (toolName: string) => {
@@ -519,6 +752,19 @@ const PepperPage: React.FC = () => {
             prev.map((msg) =>
               msg.id === assistantMessageId
                 ? { ...msg, content: content }
+                : msg,
+            ),
+          );
+        },
+        // onArtifact - añadir artefacto visual al mensaje
+        (artifact: Artifact) => {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId
+                ? {
+                    ...msg,
+                    artifacts: [...(msg.artifacts ?? []), artifact],
+                  }
                 : msg,
             ),
           );
@@ -672,8 +918,96 @@ const PepperPage: React.FC = () => {
 
       <Layout>
         <div className="relative min-h-screen overflow-hidden">
+
+          {/* History Toggle Button */}
+          <button
+            onClick={() => setShowHistory((v) => !v)}
+            title="Historial de conversaciones"
+            className="fixed top-4 right-4 z-30 p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 border border-gray-200 transition-colors"
+          >
+            <History className="w-5 h-5 text-gray-600" />
+          </button>
+
+          {/* History Panel */}
+          <div
+            className={`fixed top-0 right-0 h-full bg-white border-l border-gray-200 shadow-xl flex flex-col z-20 transition-all duration-300 ease-in-out ${
+              showHistory ? "w-64 opacity-100" : "w-0 opacity-0 pointer-events-none overflow-hidden"
+            }`}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-100 flex-shrink-0">
+              <h2 className="text-sm font-semibold text-gray-900">Historial</h2>
+              <button
+                onClick={() => setShowHistory(false)}
+                className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Nueva conversación */}
+            <div className="px-3 py-3 flex-shrink-0">
+              <button
+                onClick={() => { startNewConversation(); }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#173E44] hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors font-medium"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Nueva conversación
+              </button>
+            </div>
+
+            {/* Lista de conversaciones */}
+            <div className="flex-1 overflow-y-auto px-2 pb-4">
+              {conversations.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center px-4 py-8">
+                  No hay conversaciones guardadas
+                </p>
+              ) : (
+                groupConversationsByDate(conversations).map((group) => (
+                  <div key={group.label} className="mb-4">
+                    <p className="text-xs font-medium text-gray-400 px-2 py-1 uppercase tracking-wide">
+                      {group.label}
+                    </p>
+                    {group.items.map((conv) => (
+                      <div
+                        key={conv.id}
+                        className={`group/item relative flex items-center rounded-lg mb-0.5 cursor-pointer transition-colors ${
+                          conv.id === activeConversationId
+                            ? "bg-[#173E44] text-white"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
+                        onClick={() => loadConversation(conv)}
+                      >
+                        <p
+                          className={`flex-1 truncate text-xs px-3 py-2 pr-8 leading-5 ${
+                            conv.id === activeConversationId ? "text-white" : "text-gray-700"
+                          }`}
+                        >
+                          {conv.title}
+                        </p>
+                        <button
+                          onClick={(e) => deleteConversation(conv.id, e)}
+                          className={`absolute right-2 p-1 rounded opacity-0 group-hover/item:opacity-100 transition-opacity ${
+                            conv.id === activeConversationId
+                              ? "hover:bg-white/20 text-white/70"
+                              : "hover:bg-gray-200 text-gray-400"
+                          }`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
           {/* Main Content Area */}
-          <div className="h-[calc(100vh-140px)] overflow-hidden">
+          <div
+            className="h-[calc(100vh-140px)] overflow-hidden transition-all duration-300 ease-in-out"
+            style={{ paddingRight: showHistory && !isTablet ? "264px" : "0px" }}
+          >
             {messages.length === 0 ? (
               // Empty State - Responsive
               <div className="h-full flex flex-col">
@@ -759,7 +1093,7 @@ const PepperPage: React.FC = () => {
                           </div>
                         )}
 
-                        <div className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
+                        <div className="text-sm sm:text-base leading-relaxed">
                           <MessageContent
                             content={message.content}
                             isStreaming={
@@ -776,6 +1110,17 @@ const PepperPage: React.FC = () => {
                             }
                           />
                         </div>
+                        {/* Artifacts: charts and metric cards */}
+                        {message.artifacts && message.artifacts.length > 0 && (
+                          <div className="mt-3 flex flex-col gap-3">
+                            {message.artifacts.map((artifact) => (
+                              <ArtifactBlock
+                                key={artifact.id}
+                                artifact={artifact}
+                              />
+                            ))}
+                          </div>
+                        )}
                         <p
                           className={`text-xs mt-1 sm:mt-2 ${
                             message.role === "user"
@@ -818,7 +1163,7 @@ const PepperPage: React.FC = () => {
                   : isTablet
                     ? "16px"
                     : "80px",
-              right: "16px",
+              right: showHistory && !isTablet ? "280px" : "16px",
             }}
           >
             <div
