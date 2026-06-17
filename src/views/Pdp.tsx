@@ -42,6 +42,11 @@ const paymentProviders: PaymentProvider[] = [
   },
 ];
 
+// Proveedores visibles en la página (Clip oculto por ahora)
+const visibleProviders = paymentProviders.filter(
+  (provider) => provider.id !== "clip",
+);
+
 const Pdp = () => {
   const [isHovering, setIsHovering] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
@@ -139,7 +144,7 @@ const Pdp = () => {
       {/* Skeleton de carga */}
       {isLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-          {[1, 2].map((i) => (
+          {visibleProviders.map((_, i) => (
             <div
               key={i}
               className="rounded-2xl shadow-lg overflow-hidden animate-pulse"
@@ -155,7 +160,7 @@ const Pdp = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-          {paymentProviders.map((provider) => {
+          {visibleProviders.map((provider) => {
             const isHovered = isHovering === provider.id;
             const isSelected = selectedProvider === provider.id;
 
