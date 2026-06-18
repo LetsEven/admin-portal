@@ -41,19 +41,31 @@ function color(series: { color?: string }, idx: number) {
   return series.color ?? PALETTE[idx % PALETTE.length];
 }
 
-function fmtValue(value: unknown, unit?: string): string {
+// Formato compacto para los ejes (poco espacio). Usa 1 decimal en K para no
+// deformar montos (ej. $5.6K en vez de redondear $5,554.96 a "$6K").
+function fmtAxis(value: unknown, unit?: string): string {
   const n = Number(value);
   if (isNaN(n)) return String(value);
   if (unit === "MXN" || unit === "$") {
     return n >= 1_000_000
       ? `$${(n / 1_000_000).toFixed(1)}M`
       : n >= 1_000
-        ? `$${(n / 1_000).toFixed(0)}K`
-        : `$${n.toLocaleString("es-MX")}`;
+        ? `$${(n / 1_000).toFixed(1)}K`
+        : `$${n.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`;
   }
   if (unit === "%") return `${n.toFixed(1)}%`;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString("es-MX", { maximumFractionDigits: 0 });
+}
+
+// Formato exacto para los tooltips (al hacer hover quieres el número real).
+function fmtFull(value: unknown, unit?: string): string {
+  const n = Number(value);
+  if (isNaN(n)) return String(value);
+  if (unit === "MXN" || unit === "$")
+    return n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+  if (unit === "%") return `${n.toFixed(1)}%`;
   return n.toLocaleString("es-MX", { maximumFractionDigits: 2 });
 }
 
@@ -72,7 +84,7 @@ function CustomTooltip({ active, payload, label, unit }: any) {
           />
           <span className="text-gray-400">{p.name}:</span>
           <span className="font-semibold tabular-nums">
-            {fmtValue(p.value, unit)}
+            {fmtFull(p.value, unit)}
             {unit && !["MXN", "$", "%"].includes(unit) ? ` ${unit}` : ""}
           </span>
         </p>
@@ -143,7 +155,7 @@ export function ChartArtifact({ payload }: { payload: ChartPayload }) {
             />
             <YAxis
               tick={axisStyle}
-              tickFormatter={(v) => fmtValue(v, unit)}
+              tickFormatter={(v) => fmtAxis(v, unit)}
               width={52}
               axisLine={false}
               tickLine={false}
@@ -178,7 +190,7 @@ export function ChartArtifact({ payload }: { payload: ChartPayload }) {
             />
             <YAxis
               tick={axisStyle}
-              tickFormatter={(v) => fmtValue(v, unit)}
+              tickFormatter={(v) => fmtAxis(v, unit)}
               width={52}
               axisLine={false}
               tickLine={false}
@@ -214,7 +226,7 @@ export function ChartArtifact({ payload }: { payload: ChartPayload }) {
             />
             <YAxis
               tick={axisStyle}
-              tickFormatter={(v) => fmtValue(v, unit)}
+              tickFormatter={(v) => fmtAxis(v, unit)}
               width={52}
               axisLine={false}
               tickLine={false}
@@ -261,7 +273,7 @@ export function ChartArtifact({ payload }: { payload: ChartPayload }) {
             />
             <YAxis
               tick={axisStyle}
-              tickFormatter={(v) => fmtValue(v, unit)}
+              tickFormatter={(v) => fmtAxis(v, unit)}
               width={52}
               axisLine={false}
               tickLine={false}

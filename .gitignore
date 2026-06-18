@@ -32,3 +32,8 @@ out/
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# Environment variables (secrets)
+.env
+.env.*
+!.env.example

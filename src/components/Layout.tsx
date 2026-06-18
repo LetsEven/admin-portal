@@ -122,7 +122,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </div>
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-shrink-0">
-        <div className="flex flex-col transition-all duration-300 ease-in-out w-16 hover:w-64 shadow-lg group">
+        <div className="flex flex-col transition-all duration-300 ease-in-out w-28 hover:w-64 shadow-lg group">
           <Sidebar mobile={false} />
         </div>
       </div>

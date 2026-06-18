@@ -44,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
     >
       {/* Logo */}
       <div
-        className={`flex items-center justify-center h-24 flex-shrink-0 px-4 bg-white shadow-md rounded-lg mt-3 ${mobile || isExpanded ? "mx-3" : "ml-1 mr-0"}`}
+        className={`flex items-center justify-center flex-shrink-0 bg-white shadow-md rounded-lg mt-3 ${mobile || isExpanded ? "h-24 px-4 mx-3" : "h-24 w-24 mx-auto"}`}
       >
         <div className="relative w-full h-full flex items-center justify-center">
           {/* Full logo for expanded state */}
@@ -78,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
             className={`flex-shrink-0 h-5 w-5 ${mobile || isExpanded ? "mr-3 text-custom-green-600" : "mx-auto text-gray-500"} transition-all duration-200`}
           />
           <span
-            className={`${!mobile && !isExpanded ? "hidden" : "block"} transition-opacity duration-200`}
+            className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${mobile || isExpanded ? "opacity-100 max-w-[160px]" : "opacity-0 max-w-0"}`}
           >
             Inicio
           </span>
@@ -91,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
             className={`flex-shrink-0 h-5 w-5 ${mobile || isExpanded ? "mr-3 text-custom-green-600" : "mx-auto text-gray-500"} transition-all duration-200`}
           />
           <span
-            className={`${!mobile && !isExpanded ? "hidden" : "block"} transition-opacity duration-200`}
+            className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${mobile || isExpanded ? "opacity-100 max-w-[160px]" : "opacity-0 max-w-0"}`}
           >
             Pepper
           </span>
@@ -104,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
             className={`flex-shrink-0 h-5 w-5 ${mobile || isExpanded ? "mr-3 text-custom-green-600" : "mx-auto text-gray-500"} transition-all duration-200`}
           />
           <span
-            className={`${!mobile && !isExpanded ? "hidden" : "block"} transition-opacity duration-200`}
+            className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${mobile || isExpanded ? "opacity-100 max-w-[160px]" : "opacity-0 max-w-0"}`}
           >
             Menú
           </span>
@@ -117,7 +117,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
             className={`flex-shrink-0 h-5 w-5 ${mobile || isExpanded ? "mr-3 text-custom-green-600" : "mx-auto text-gray-500"} transition-all duration-200`}
           />
           <span
-            className={`${!mobile && !isExpanded ? "hidden" : "block"} transition-opacity duration-200`}
+            className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${mobile || isExpanded ? "opacity-100 max-w-[160px]" : "opacity-0 max-w-0"}`}
           >
             Scala
           </span>
@@ -130,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
             className={`flex-shrink-0 h-5 w-5 ${mobile || isExpanded ? "mr-3 text-custom-green-600" : "mx-auto text-gray-500"} transition-all duration-200`}
           />
           <span
-            className={`${!mobile && !isExpanded ? "hidden" : "block"} transition-opacity duration-200`}
+            className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${mobile || isExpanded ? "opacity-100 max-w-[160px]" : "opacity-0 max-w-0"}`}
           >
             PDP
           </span>
@@ -143,7 +143,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
             className={`flex-shrink-0 h-5 w-5 ${mobile || isExpanded ? "mr-3 text-custom-green-600" : "mx-auto text-gray-500"} transition-all duration-200`}
           />
           <span
-            className={`${!mobile && !isExpanded ? "hidden" : "block"} transition-opacity duration-200`}
+            className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${mobile || isExpanded ? "opacity-100 max-w-[160px]" : "opacity-0 max-w-0"}`}
           >
             Configuración
           </span>
@@ -157,7 +157,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
               className={`flex-shrink-0 h-5 w-5 text-red-500 ${mobile || isExpanded ? "mr-3" : "mx-auto"}`}
             />
             <span
-              className={`${!mobile && !isExpanded ? "hidden" : "block"} transition-opacity duration-200`}
+              className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${mobile || isExpanded ? "opacity-100 max-w-[160px]" : "opacity-0 max-w-0"}`}
             >
               Cerrar sesión
             </span>

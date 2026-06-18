@@ -47,6 +47,8 @@ const toolDisplayNames: Record<string, string> = {
   get_dashboard_metrics: "Obteniendo estadísticas...",
   get_recent_transactions: "Consultando transacciones...",
   get_selling_items: "Analizando ventas...",
+  get_revenue_breakdown: "Analizando ingresos y comisiones...",
+  get_customer_demographics: "Analizando tu clientela...",
   render_chart: "Generando gráfica...",
   render_metric: "Generando indicadores...",
   // Legacy AI Spine tools

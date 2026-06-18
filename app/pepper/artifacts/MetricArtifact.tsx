@@ -15,16 +15,16 @@ function formatValue(item: MetricItem): string {
   const n = Number(v);
   if (isNaN(n)) return String(v);
   if (item.unit === "MXN" || item.unit === "$") {
-    return n >= 1_000_000
-      ? `$${(n / 1_000_000).toFixed(1)}M`
-      : n >= 1_000
-        ? `$${(n / 1_000).toFixed(0)}K`
-        : `$${n.toLocaleString("es-MX")}`;
+    // Mostrar el monto completo con separadores; abreviar solo de millones en
+    // adelante. Evita que $5,554.96 se deforme a "$6K".
+    return Math.abs(n) >= 1_000_000
+      ? `$${(n / 1_000_000).toFixed(2)}M`
+      : n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
   }
   if (item.unit === "%") return `${n.toFixed(1)}%`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString("es-MX", { maximumFractionDigits: 2 });
+  return Math.abs(n) >= 1_000_000
+    ? `${(n / 1_000_000).toFixed(1)}M`
+    : n.toLocaleString("es-MX", { maximumFractionDigits: 2 });
 }
 
 function TrendArrow({ trend, change }: { trend?: string; change?: number }) {
