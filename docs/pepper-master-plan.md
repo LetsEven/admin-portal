@@ -110,8 +110,9 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 > **Objetivo:** que Pepper sea seguro, exacto y barato antes de agregar superficie. Prerrequisito de todo.
 
-### 0.1 — Autenticación y autorización del backend `[ ]`
+### 0.1 — Autenticación y autorización del backend `[x]`
 - **Repo/archivos:** `xquisito-backend/src/routes/shared/aiAgentRoutes.js`, nuevo middleware de auth, `src/app.js`.
+- **Implementado:** se reutilizó el middleware existente `adminPortalAuth` (Clerk, `Authorization: Bearer`) en ambas rutas de `/api/ai-agent`. Se agregó `authorizeRestaurant` que resuelve los restaurantes del usuario con `analyticsService.getUserRestaurants(clerkUserId)` y valida el `restaurant_id` solicitado contra esa lista (403 si no es suyo; 400 si no especifica y tiene varios). `streamChat` ahora recibe `authContext` server-side y lo usa como autoridad; `parseContext` quedó solo como hint. El audit log de `pci_audit_logs` ya captura el `user_id` real (corre en `res.finish`, con `req.user` ya poblado). **Nota:** no hay "tabla de membresías" — la relación es ownership (`restaurants.user_id = user_admin_portal.id`).
 - **Pasos:**
   1. Agregar middleware que **valide el token de Clerk** (o el esquema de auth que use el resto del backend admin-portal) en `/api/ai-agent`.
   2. Derivar `restaurant_id` y `user_id` **del token/servidor**, NO del mensaje del cliente.
@@ -342,18 +343,18 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 - `[ ]` **DP2 — Desambiguación multi-restaurante en WhatsApp:** ¿restaurante default por número o Pepper pregunta? *(Bloquea 3.2.)*
 - `[ ]` **DP3 — Modelo:** ¿Sonnet por default? *(Fase 0.4.)*
 - `[ ]` **DP4 — Zep escala/residencia:** ¿free tier para piloto y luego Flex? ¿Cloud US aceptable o se requiere BYOC por PCI? *(Fase 4.)*
-- `[ ]` **DP5 — Auth backend:** ¿el backend ya valida Clerk en otras rutas admin-portal? Confirmar el mecanismo exacto a reutilizar. *(Fase 0.1.)*
+- `[x]` **DP5 — Auth backend (RESUELTO 2026-06-18):** Sí. El backend ya valida Clerk con `@clerk/clerk-sdk-node` vía `Authorization: Bearer` y el middleware `adminPortalAuth` (`src/middleware/clerkAdminPortalAuth.js`), usado en todas las rutas admin-portal (analytics, campaigns, segments, etc.). Config por proyecto en `clerkConfig.js` (`adminPortal` → `CLERK_SECRET_KEY_ADMIN_PORTAL`). Autorización por **ownership** (`restaurants.user_id = user_admin_portal.id`), no por tabla de membresías; helper reutilizado: `analyticsService.getUserRestaurants`. *(Desbloqueó y se aplicó en Fase 0.1.)*
 
 ---
 
 ## 📊 Estado actual
 
-**Fase en curso:** _Ninguna iniciada._
-**Próximo paso sugerido:** **Fase 0.1 — Autenticación y autorización del backend** (o resolver DP5 primero). Alternativamente, si se prioriza el cimiento omnicanal, **Fase 1.1 — Modelo de datos**.
+**Fase en curso:** **Fase 0 — Fundaciones y hardening** (🟨). 0.1 ✅ completado.
+**Próximo paso sugerido:** **Fase 0.2 — Frontend envía credenciales** — el chat web (`app/pepper/page.tsx`) debe adjuntar el token de Clerk en el `fetch`. ⚠️ Debe ir junto a 0.1 antes de cualquier deploy: con 0.1 activo y sin 0.2, el chat web rompería con 401.
 
 | Fase | Estado |
 |------|--------|
-| 0 — Fundaciones y hardening | ⬜ Pendiente |
+| 0 — Fundaciones y hardening | 🟨 En curso (0.1 ✅) |
 | 1 — Store persistente | ⬜ Pendiente |
 | 2 — Core agnóstico de canal | ⬜ Pendiente |
 | 3 — Canal WhatsApp | ⬜ Pendiente |
@@ -372,3 +373,6 @@ Leyenda: ⬜ Pendiente · 🟨 En curso · ✅ Completada
 > Una línea por avance. Formato: `AAAA-MM-DD — <fase.paso> — qué se hizo`.
 
 - 2026-06-18 — Plan maestro creado. Definidas visión, arquitectura objetivo, decisiones D1–D9, estado actual y fases 0–8.
+- 2026-06-18 — infra — Rama `feat/pepper-gerente-digital` creada en admin-portal y xquisito-backend; WIP previo de Pepper commiteado como baseline y rebaseado sobre `origin/main` (sin perder el fix de seguridad `multer 2.2.0`). `.env` agregado al `.gitignore` de admin-portal.
+- 2026-06-18 — DP5 — Resuelto: el backend ya valida Clerk vía `adminPortalAuth` (`Authorization: Bearer`); autorización por ownership (`restaurants.user_id`), helper `getUserRestaurants`.
+- 2026-06-18 — 0.1 — Auth + authz en `/api/ai-agent`: `adminPortalAuth` + `authorizeRestaurant` (valida `restaurant_id` contra restaurantes del usuario). `restaurant_id`/`user_id` ahora server-side (cierra el IDOR); `parseContext` solo como hint. 401 sin/con token inválido verificado en runtime; 403 cross-restaurante y `restaurant_id` server-side verificados por código (faltan probar E2E con token real, junto a 0.2).
