@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { UserButton, useUser, useAuth } from "@clerk/nextjs";
-import { useRestaurant } from "../contexts/RestaurantContext";
+import { useUser, useAuth } from "@clerk/nextjs";
 import Sidebar from "./Sidebar";
-import { MenuIcon, XIcon, StoreIcon, ArrowRightIcon } from "lucide-react";
+import { MenuIcon, XIcon } from "lucide-react";
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -10,7 +9,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useUser();
   const { isLoaded, isSignedIn } = useAuth();
-  const { restaurant, loading: restaurantLoading } = useRestaurant();
+  const [minLoadingComplete, setMinLoadingComplete] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinLoadingComplete(true);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Completar registro si el usuario viene de una invitación
   useEffect(() => {
@@ -67,14 +74,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [user]);
 
   // Show loading while authentication is being verified
-  if (!isLoaded) {
+  if (!isLoaded || !minLoadingComplete) {
     return (
       <div className="min-h-screen bg-[#023828] flex items-center justify-center">
         <div className="text-center">
-          <div className="h-6 w-6 border-b-2 border-[#82E657] animate-spin mx-auto" />
-          <p className="mt-4 text-xs uppercase tracking-widest text-[#82E657]/60">
-            Verificando...
-          </p>
+          <img
+            src="/even/even-asterisk-grass.svg"
+            alt="Even"
+            className="asterisk-spin size-18 md:size-20 object-contain"
+          />
         </div>
       </div>
     );

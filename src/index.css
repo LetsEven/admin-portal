@@ -1,7 +1,7 @@
 /* PLEASE NOTE: THESE TAILWIND IMPORTS SHOULD NEVER BE DELETED */
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 /* DO NOT DELETE THESE TAILWIND IMPORTS, OTHERWISE THE STYLING WILL NOT RENDER AT ALL */
 
 /* React Easy Crop Styles */
@@ -59,7 +59,7 @@
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  background: #173E44;
+  background: #173e44;
   height: 20px;
   width: 20px;
   border-radius: 50%;
@@ -74,7 +74,7 @@
 }
 
 .slider::-moz-range-thumb {
-  background: #173E44;
+  background: #173e44;
   height: 20px;
   width: 20px;
   border-radius: 50%;
@@ -144,4 +144,50 @@
   background-position: center top !important; /* Coincide con flexbill móvil */
   background-repeat: no-repeat !important;
   background-color: #f8f9fa; /* Color de fondo igual que flexbill */
+}
+
+/* QR page asterisk spin — gear/nut click-by-click turn */
+@keyframes spin-steps {
+  0% {
+    transform: rotate(0deg);
+  }
+  10% {
+    transform: rotate(60deg);
+  } /* turn 1 */
+  16.66% {
+    transform: rotate(60deg);
+  } /* settle */
+  26.66% {
+    transform: rotate(120deg);
+  } /* turn 2 */
+  33.33% {
+    transform: rotate(120deg);
+  }
+  43.33% {
+    transform: rotate(180deg);
+  } /* turn 3 */
+  50% {
+    transform: rotate(180deg);
+  }
+  60% {
+    transform: rotate(240deg);
+  } /* turn 4 */
+  66.66% {
+    transform: rotate(240deg);
+  }
+  76.66% {
+    transform: rotate(300deg);
+  } /* turn 5 */
+  83.33% {
+    transform: rotate(300deg);
+  }
+  93.33% {
+    transform: rotate(360deg);
+  } /* turn 6 */
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.asterisk-spin {
+  animation: spin-steps 3s ease-in-out infinite;
 }
