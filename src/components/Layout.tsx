@@ -9,15 +9,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useUser();
   const { isLoaded, isSignedIn } = useAuth();
-  const [minLoadingComplete, setMinLoadingComplete] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setMinLoadingComplete(true);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   // Completar registro si el usuario viene de una invitación
   useEffect(() => {
@@ -74,7 +65,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [user]);
 
   // Show loading while authentication is being verified
-  if (!isLoaded || !minLoadingComplete) {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen bg-[#023828] flex items-center justify-center">
         <div className="text-center">
