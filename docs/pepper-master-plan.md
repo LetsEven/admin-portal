@@ -179,10 +179,11 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 - **Implementado:** nuevo `pepperStoreService` (`resolveInternalUserId` con cache, `getConversation`, `createConversation`, `loadHistory`, `persistTurn`). `streamChat` ahora: resuelve `clerk_user_id`→`user_admin_portal.id`; el `sessionId` ES el id de `pepper_conversations`; valida ownership de la conversación (restaurant+user) antes de cargar su historial (anti-IDOR); carga historial desde Postgres (cap por mensaje = `CONTENT_CAP`, solo para contexto; se almacena completo); captura artifacts del turno y persiste user+assistant. Se eliminó el `Map` + sweeper TTL. Modo degradado (id efímero, sin persistir) si no se resuelve user/restaurant.
 - **Criterios de aceptación:** reiniciar el backend NO pierde el historial; un segundo mensaje recuerda el primero leyendo de Postgres. ✅ Verificado round-trip en runtime (create→persist→**loadHistory desde Postgres**=2 msgs en orden→cleanup), sin estado en memoria. INSERT/SELECT/UPDATE/DELETE OK con anon key.
 
-### 1.3 — Endpoints de historial `[ ]`
-- **Repo/archivos:** `aiAgentRoutes.js`.
+### 1.3 — Endpoints de historial `[x]`
+- **Repo/archivos:** `aiAgentRoutes.js`, `pepperStoreService.js`.
 - **Pasos:** `GET /conversations` (lista por restaurante/usuario), `GET /conversations/:id/messages`, `DELETE /conversations/:id`. Todos autenticados (Fase 0).
-- **Criterios de aceptación:** la web puede listar, abrir y borrar conversaciones desde el backend.
+- **Implementado:** los 3 endpoints con `adminPortalAuth`. `GET /conversations` usa `authorizeRestaurant` (que ahora lee `restaurant_id` de query) + filtra por `user_admin_portal.id` interno. Los endpoints `:id` validan ownership por `conversation.user_id === user interno` (404 si no, para no revelar existencia). Nuevas funciones de store: `listConversations`, `getMessages`, `deleteConversation`. Respuestas: `{ conversations }` y `{ conversation_id, messages }`.
+- **Criterios de aceptación:** la web puede listar, abrir y borrar conversaciones desde el backend. ✅ Verificado: 401 sin token en los 3; `list/getMessages/delete` (con cascade) OK end-to-end contra datos reales.
 
 ### 1.4 — Frontend lee historial del backend `[ ]`
 - **Repo/archivos:** `admin-portal/app/pepper/page.tsx`.
@@ -357,14 +358,14 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 ## 📊 Estado actual
 
-**Fase en curso:** **Fase 1 — Store persistente** (🟨). 1.1 ✅, 1.2 ✅. **Fase 0 completa en prod** (0.1, 0.2, 0.3, 0.5). **0.4 parqueada** (DP3 abierta; Pepper en Opus 4.8).
-**Próximo paso sugerido:** **Fase 1.3 — Endpoints de historial** (`GET /conversations`, `GET /conversations/:id/messages`, `DELETE /conversations/:id`, autenticados).
+**Fase en curso:** **Fase 1 — Store persistente** (🟨). 1.1 ✅, 1.2 ✅, 1.3 ✅. **Fase 0 completa en prod** (0.1, 0.2, 0.3, 0.5). **0.4 parqueada** (DP3 abierta; Pepper en Opus 4.8).
+**Próximo paso sugerido:** **Fase 1.4 — Frontend lee historial del backend** (`page.tsx`: sustituir `localStorage` por los endpoints de 1.3 + migración única). Cierra Fase 1.
 **Regla activa:** NO mergear a `main` — todo se queda en `feat/pepper-gerente-digital` (ambos repos) hasta terminar la feature (instrucción del usuario 2026-06-19).
 
 | Fase | Estado |
 |------|--------|
 | 0 — Fundaciones y hardening | ✅ Completada en prod (0.1, 0.2, 0.3, 0.5; 0.4 parqueada/DP3) |
-| 1 — Store persistente | 🟨 En curso (1.1 ✅, 1.2 ✅) |
+| 1 — Store persistente | 🟨 En curso (1.1 ✅, 1.2 ✅, 1.3 ✅) |
 | 2 — Core agnóstico de canal | ⬜ Pendiente |
 | 3 — Canal WhatsApp | ⬜ Pendiente |
 | 4 — Memoria de largo plazo | ⬜ Pendiente |
@@ -393,3 +394,4 @@ Leyenda: ⬜ Pendiente · 🟨 En curso · ✅ Completada
 - 2026-06-19 — deploy — 0.3+0.5 a prod. admin-portal push directo a `main` (`56b5fe1`, Vercel success). backend PR #188 → `main` (`bb61336`) tras Semgrep SAST + npm audit. Fase 0 completa en prod.
 - 2026-06-19 — 1.1 — Migración del store: `pepper.sql` (`pepper_conversations`, `pepper_messages`, `whatsapp_identities`) con FKs integer + cascade, índices (único parcial en `provider_message_id`) y RLS patrón admin-portal. Aplicada en Supabase por el usuario y verificada (3 tablas legibles por el backend). **Nueva regla: a partir de aquí todo se queda en `feat/pepper-gerente-digital`, sin merges a `main` hasta terminar la feature.**
 - 2026-06-19 — 1.2 — Store en Postgres: nuevo `pepperStoreService` (resolveInternalUserId/getConversation/createConversation/loadHistory/persistTurn). `streamChat` usa Postgres (sessionId = id de `pepper_conversations`), valida ownership de la conversación (anti-IDOR), carga historial y persiste user+assistant+artifacts; eliminado el `Map` + sweeper TTL. Verificado round-trip en runtime (loadHistory desde Postgres sin estado en memoria).
+- 2026-06-19 — 1.3 — Endpoints de historial en `aiAgentRoutes`: `GET /conversations` (authz por restaurante + user interno), `GET /conversations/:id/messages` y `DELETE /conversations/:id` (ownership por `conversation.user_id`, 404 si ajena). `authorizeRestaurant` ahora lee `restaurant_id` de query. Store: `listConversations`/`getMessages`/`deleteConversation`. Verificado: 401 sin token + round-trip list/get/delete.
