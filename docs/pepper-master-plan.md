@@ -350,8 +350,8 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 ## 📊 Estado actual
 
-**Fase en curso:** **Fase 0 — Fundaciones y hardening** (🟨). 0.1 ✅ y 0.2 ✅ completados.
-**Próximo paso sugerido:** **Deploy del baseline seguro a prod** (0.1 + 0.2 juntas: backend con auth + frontend mandando token). Luego continuar con **Fase 0.3 — Prompt caching**.
+**Fase en curso:** **Fase 0 — Fundaciones y hardening** (🟨). 0.1 ✅ y 0.2 ✅ completados y **desplegados a prod (2026-06-19)**.
+**Próximo paso sugerido:** **Fase 0.3 — Prompt caching** (backend). Nota: antes de seguir, rebasar `feat/pepper-gerente-digital` sobre el `origin/main` actual en ambos repos.
 
 | Fase | Estado |
 |------|--------|
@@ -378,3 +378,4 @@ Leyenda: ⬜ Pendiente · 🟨 En curso · ✅ Completada
 - 2026-06-18 — DP5 — Resuelto: el backend ya valida Clerk vía `adminPortalAuth` (`Authorization: Bearer`); autorización por ownership (`restaurants.user_id`), helper `getUserRestaurants`.
 - 2026-06-18 — 0.1 — Auth + authz en `/api/ai-agent`: `adminPortalAuth` + `authorizeRestaurant` (valida `restaurant_id` contra restaurantes del usuario). `restaurant_id`/`user_id` ahora server-side (cierra el IDOR); `parseContext` solo como hint. 401 sin/con token inválido verificado en runtime; 403 cross-restaurante y `restaurant_id` server-side verificados por código (faltan probar E2E con token real, junto a 0.2).
 - 2026-06-19 — 0.2 — `app/pepper/page.tsx` ahora adjunta el token de Clerk (`useAuth().getToken()` → `Authorization: Bearer`) y envía `restaurant_id` explícito en el body. `npm run build` OK. Con 0.1+0.2 el baseline ya es desplegable de forma segura.
+- 2026-06-19 — deploy — Baseline seguro (0.1+0.2) a prod. admin-portal: push directo a `main` (`e7918d7`, auto-deploy Vercel). backend: PR #187 → `main` (`6e360dd`) tras pasar Semgrep SAST + npm audit (la rama `main` del backend está protegida, requiere PR). `feat/pepper-gerente-digital` conservada para 0.3–8.
