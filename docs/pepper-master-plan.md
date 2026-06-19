@@ -170,13 +170,14 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 - **Mejores prácticas:** RLS si aplica; `restaurant_id`/`user_id` NOT NULL; FK con `on delete cascade` en `messages`.
 - **Estado:** ✅ migración SQL en `xquisito-backend/database/portals/admin-portal/pepper.sql` (`pepper_conversations`, `pepper_messages`, `whatsapp_identities`) **aplicada en Supabase por el usuario y verificada** (las 3 tablas existen y el backend con anon key las lee sin bloqueo de RLS). Desvíos vs plan: nombres con prefijo `pepper_` (Supabase compartido); `user_id`/`restaurant_id` = `integer` FK a `user_admin_portal(id)`/`restaurants(id)` con `on delete cascade`; RLS calcada del patrón de `campaigns.sql` (service_role full + escape `rls.clerk_user_id IS NULL` para el backend); índice único parcial en `provider_message_id WHERE NOT NULL`.
 
-### 1.2 — Refactor del store en el agente `[ ]`
-- **Repo/archivos:** `pepperAgentService.js`.
+### 1.2 — Refactor del store en el agente `[x]`
+- **Repo/archivos:** `pepperAgentService.js`, nuevo `pepperStoreService.js`.
 - **Pasos:**
   1. Reemplazar el `Map` de sesiones por lectura/escritura a Postgres (cargar últimos N mensajes como historial; persistir user + assistant al terminar el turno).
   2. Persistir artifacts y, si se decide, metadata de tools.
   3. Mantener `HISTORY_LIMIT`/`CONTENT_CAP` como ventana de contexto enviada al modelo (no como límite de almacenamiento).
-- **Criterios de aceptación:** reiniciar el backend NO pierde el historial; un segundo mensaje recuerda el primero leyendo de Postgres.
+- **Implementado:** nuevo `pepperStoreService` (`resolveInternalUserId` con cache, `getConversation`, `createConversation`, `loadHistory`, `persistTurn`). `streamChat` ahora: resuelve `clerk_user_id`→`user_admin_portal.id`; el `sessionId` ES el id de `pepper_conversations`; valida ownership de la conversación (restaurant+user) antes de cargar su historial (anti-IDOR); carga historial desde Postgres (cap por mensaje = `CONTENT_CAP`, solo para contexto; se almacena completo); captura artifacts del turno y persiste user+assistant. Se eliminó el `Map` + sweeper TTL. Modo degradado (id efímero, sin persistir) si no se resuelve user/restaurant.
+- **Criterios de aceptación:** reiniciar el backend NO pierde el historial; un segundo mensaje recuerda el primero leyendo de Postgres. ✅ Verificado round-trip en runtime (create→persist→**loadHistory desde Postgres**=2 msgs en orden→cleanup), sin estado en memoria. INSERT/SELECT/UPDATE/DELETE OK con anon key.
 
 ### 1.3 — Endpoints de historial `[ ]`
 - **Repo/archivos:** `aiAgentRoutes.js`.
@@ -356,14 +357,14 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 ## 📊 Estado actual
 
-**Fase en curso:** **Fase 1 — Store persistente** (🟨). 1.1 ✅ (migración aplicada y verificada). **Fase 0 completa en prod** (0.1, 0.2, 0.3, 0.5). **0.4 parqueada** (DP3 abierta; Pepper en Opus 4.8).
-**Próximo paso sugerido:** **Fase 1.2 — Refactor del store en el agente** (`pepperAgentService`: `Map` en memoria → Postgres; resolver `clerk_user_id` → `user_admin_portal.id`).
+**Fase en curso:** **Fase 1 — Store persistente** (🟨). 1.1 ✅, 1.2 ✅. **Fase 0 completa en prod** (0.1, 0.2, 0.3, 0.5). **0.4 parqueada** (DP3 abierta; Pepper en Opus 4.8).
+**Próximo paso sugerido:** **Fase 1.3 — Endpoints de historial** (`GET /conversations`, `GET /conversations/:id/messages`, `DELETE /conversations/:id`, autenticados).
 **Regla activa:** NO mergear a `main` — todo se queda en `feat/pepper-gerente-digital` (ambos repos) hasta terminar la feature (instrucción del usuario 2026-06-19).
 
 | Fase | Estado |
 |------|--------|
 | 0 — Fundaciones y hardening | ✅ Completada en prod (0.1, 0.2, 0.3, 0.5; 0.4 parqueada/DP3) |
-| 1 — Store persistente | 🟨 En curso (1.1 ✅) |
+| 1 — Store persistente | 🟨 En curso (1.1 ✅, 1.2 ✅) |
 | 2 — Core agnóstico de canal | ⬜ Pendiente |
 | 3 — Canal WhatsApp | ⬜ Pendiente |
 | 4 — Memoria de largo plazo | ⬜ Pendiente |
@@ -391,3 +392,4 @@ Leyenda: ⬜ Pendiente · 🟨 En curso · ✅ Completada
 - 2026-06-19 — 0.5 — Observabilidad y limpieza: log de uso/costo por conversación en `runAgent` (`[pepper] usage {...}`, sin PII); 3 `console.log` de conversación gateados tras `NODE_ENV` en `page.tsx`; cliente Anthropic con `maxRetries: 4` (backoff 429/500/529). Verificado en runtime + `npm run build` OK.
 - 2026-06-19 — deploy — 0.3+0.5 a prod. admin-portal push directo a `main` (`56b5fe1`, Vercel success). backend PR #188 → `main` (`bb61336`) tras Semgrep SAST + npm audit. Fase 0 completa en prod.
 - 2026-06-19 — 1.1 — Migración del store: `pepper.sql` (`pepper_conversations`, `pepper_messages`, `whatsapp_identities`) con FKs integer + cascade, índices (único parcial en `provider_message_id`) y RLS patrón admin-portal. Aplicada en Supabase por el usuario y verificada (3 tablas legibles por el backend). **Nueva regla: a partir de aquí todo se queda en `feat/pepper-gerente-digital`, sin merges a `main` hasta terminar la feature.**
+- 2026-06-19 — 1.2 — Store en Postgres: nuevo `pepperStoreService` (resolveInternalUserId/getConversation/createConversation/loadHistory/persistTurn). `streamChat` usa Postgres (sessionId = id de `pepper_conversations`), valida ownership de la conversación (anti-IDOR), carga historial y persiste user+assistant+artifacts; eliminado el `Map` + sweeper TTL. Verificado round-trip en runtime (loadHistory desde Postgres sin estado en memoria).
