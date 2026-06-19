@@ -160,7 +160,7 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 > **Objetivo:** mover el historial de localStorage/Map a Postgres. Cimiento del historial unificado y de WhatsApp.
 
-### 1.1 — Modelo de datos `[ ]`
+### 1.1 — Modelo de datos `[x]`
 - **Repo/archivos:** migración SQL en `xquisito-backend` (Supabase).
 - **Esquema propuesto:**
   - `conversations(id uuid pk, restaurant_id, user_id, channel text /* 'web' | 'whatsapp' */, title, created_at, updated_at, last_inbound_at)`.
@@ -168,7 +168,7 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
   - `whatsapp_identities(phone_e164 pk, user_id, restaurant_id, verified_at, created_at)` *(se usa en Fase 3; definir aquí está bien)*.
 - **Criterios de aceptación:** migración aplicada; índices en `conversations(restaurant_id, user_id, updated_at)` y `messages(conversation_id, created_at)`; `provider_message_id` con índice único para idempotencia.
 - **Mejores prácticas:** RLS si aplica; `restaurant_id`/`user_id` NOT NULL; FK con `on delete cascade` en `messages`.
-- **Estado:** migración SQL **escrita** en `xquisito-backend/database/portals/admin-portal/pepper.sql` (`pepper_conversations`, `pepper_messages`, `whatsapp_identities`) — **PENDIENTE DE APLICAR en Supabase** (no se corre DDL en prod sin confirmación). Desvíos vs plan: nombres con prefijo `pepper_` (Supabase compartido); `user_id`/`restaurant_id` = `integer` FK a `user_admin_portal(id)`/`restaurants(id)` con `on delete cascade`; RLS calcada del patrón de `campaigns.sql` (service_role full + escape `rls.clerk_user_id IS NULL` para el backend); índice único parcial en `provider_message_id WHERE NOT NULL`.
+- **Estado:** ✅ migración SQL en `xquisito-backend/database/portals/admin-portal/pepper.sql` (`pepper_conversations`, `pepper_messages`, `whatsapp_identities`) **aplicada en Supabase por el usuario y verificada** (las 3 tablas existen y el backend con anon key las lee sin bloqueo de RLS). Desvíos vs plan: nombres con prefijo `pepper_` (Supabase compartido); `user_id`/`restaurant_id` = `integer` FK a `user_admin_portal(id)`/`restaurants(id)` con `on delete cascade`; RLS calcada del patrón de `campaigns.sql` (service_role full + escape `rls.clerk_user_id IS NULL` para el backend); índice único parcial en `provider_message_id WHERE NOT NULL`.
 
 ### 1.2 — Refactor del store en el agente `[ ]`
 - **Repo/archivos:** `pepperAgentService.js`.
@@ -356,13 +356,14 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 ## 📊 Estado actual
 
-**Fase en curso:** **Fase 1 — Store persistente** (iniciando). **Fase 0 completa en prod** (0.1, 0.2, 0.3, 0.5 desplegados 2026-06-19; admin-portal `56b5fe1`, backend `bb61336`). **0.4 parqueada** (DP3 abierta; Pepper en Opus 4.8).
-**Próximo paso sugerido:** **Fase 1.1 — Modelo de datos** (migración SQL Postgres/Supabase: `conversations`, `messages`, `whatsapp_identities`).
+**Fase en curso:** **Fase 1 — Store persistente** (🟨). 1.1 ✅ (migración aplicada y verificada). **Fase 0 completa en prod** (0.1, 0.2, 0.3, 0.5). **0.4 parqueada** (DP3 abierta; Pepper en Opus 4.8).
+**Próximo paso sugerido:** **Fase 1.2 — Refactor del store en el agente** (`pepperAgentService`: `Map` en memoria → Postgres; resolver `clerk_user_id` → `user_admin_portal.id`).
+**Regla activa:** NO mergear a `main` — todo se queda en `feat/pepper-gerente-digital` (ambos repos) hasta terminar la feature (instrucción del usuario 2026-06-19).
 
 | Fase | Estado |
 |------|--------|
 | 0 — Fundaciones y hardening | ✅ Completada en prod (0.1, 0.2, 0.3, 0.5; 0.4 parqueada/DP3) |
-| 1 — Store persistente | ⬜ Pendiente |
+| 1 — Store persistente | 🟨 En curso (1.1 ✅) |
 | 2 — Core agnóstico de canal | ⬜ Pendiente |
 | 3 — Canal WhatsApp | ⬜ Pendiente |
 | 4 — Memoria de largo plazo | ⬜ Pendiente |
@@ -389,3 +390,4 @@ Leyenda: ⬜ Pendiente · 🟨 En curso · ✅ Completada
 - 2026-06-19 — 0.4 — Parqueada: salta la evaluación Opus vs Sonnet por ahora (DP3 sigue abierta); Pepper continúa en Opus 4.8.
 - 2026-06-19 — 0.5 — Observabilidad y limpieza: log de uso/costo por conversación en `runAgent` (`[pepper] usage {...}`, sin PII); 3 `console.log` de conversación gateados tras `NODE_ENV` en `page.tsx`; cliente Anthropic con `maxRetries: 4` (backoff 429/500/529). Verificado en runtime + `npm run build` OK.
 - 2026-06-19 — deploy — 0.3+0.5 a prod. admin-portal push directo a `main` (`56b5fe1`, Vercel success). backend PR #188 → `main` (`bb61336`) tras Semgrep SAST + npm audit. Fase 0 completa en prod.
+- 2026-06-19 — 1.1 — Migración del store: `pepper.sql` (`pepper_conversations`, `pepper_messages`, `whatsapp_identities`) con FKs integer + cascade, índices (único parcial en `provider_message_id`) y RLS patrón admin-portal. Aplicada en Supabase por el usuario y verificada (3 tablas legibles por el backend). **Nueva regla: a partir de aquí todo se queda en `feat/pepper-gerente-digital`, sin merges a `main` hasta terminar la feature.**
