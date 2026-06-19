@@ -124,10 +124,11 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
   - El `restaurant_id` efectivo proviene del servidor, no del body.
 - **Mejores prácticas:** defensa en profundidad; los `pci_audit_logs` deben registrar el `user_id` real (no `"anonymous"`).
 
-### 0.2 — Frontend envía credenciales `[ ]`
+### 0.2 — Frontend envía credenciales `[x]`
 - **Repo/archivos:** `admin-portal/app/pepper/page.tsx` (`streamFromAgent`).
 - **Pasos:** adjuntar el token de sesión de Clerk (`Authorization: Bearer …` o cookie) en el `fetch` a `/chat/stream`.
-- **Criterios de aceptación:** el chat web sigue funcionando con auth activa.
+- **Implementado:** se importó `useAuth` de `@clerk/nextjs` (mismo patrón que `src/hooks/useAnalytics.ts`); el componente obtiene `token = await getToken()` y lo pasa a `streamFromAgent`, que ahora manda `Authorization: Bearer <token>`. Además se envía `restaurant_id` explícito en el body (el backend lo prefiere sobre el hint del texto).
+- **Criterios de aceptación:** el chat web sigue funcionando con auth activa. ✅ `npm run build` OK (`/pepper` compila); type-check sin errores nuevos (la base de errores pre-existentes del repo no es de este cambio). Falta confirmación E2E en el navegador con sesión real.
 
 ### 0.3 — Prompt caching `[ ]`
 - **Repo/archivos:** `xquisito-backend/src/services/shared/pepperAgentService.js`.
@@ -349,12 +350,12 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 ## 📊 Estado actual
 
-**Fase en curso:** **Fase 0 — Fundaciones y hardening** (🟨). 0.1 ✅ completado.
-**Próximo paso sugerido:** **Fase 0.2 — Frontend envía credenciales** — el chat web (`app/pepper/page.tsx`) debe adjuntar el token de Clerk en el `fetch`. ⚠️ Debe ir junto a 0.1 antes de cualquier deploy: con 0.1 activo y sin 0.2, el chat web rompería con 401.
+**Fase en curso:** **Fase 0 — Fundaciones y hardening** (🟨). 0.1 ✅ y 0.2 ✅ completados.
+**Próximo paso sugerido:** **Deploy del baseline seguro a prod** (0.1 + 0.2 juntas: backend con auth + frontend mandando token). Luego continuar con **Fase 0.3 — Prompt caching**.
 
 | Fase | Estado |
 |------|--------|
-| 0 — Fundaciones y hardening | 🟨 En curso (0.1 ✅) |
+| 0 — Fundaciones y hardening | 🟨 En curso (0.1 ✅, 0.2 ✅) |
 | 1 — Store persistente | ⬜ Pendiente |
 | 2 — Core agnóstico de canal | ⬜ Pendiente |
 | 3 — Canal WhatsApp | ⬜ Pendiente |
@@ -376,3 +377,4 @@ Leyenda: ⬜ Pendiente · 🟨 En curso · ✅ Completada
 - 2026-06-18 — infra — Rama `feat/pepper-gerente-digital` creada en admin-portal y xquisito-backend; WIP previo de Pepper commiteado como baseline y rebaseado sobre `origin/main` (sin perder el fix de seguridad `multer 2.2.0`). `.env` agregado al `.gitignore` de admin-portal.
 - 2026-06-18 — DP5 — Resuelto: el backend ya valida Clerk vía `adminPortalAuth` (`Authorization: Bearer`); autorización por ownership (`restaurants.user_id`), helper `getUserRestaurants`.
 - 2026-06-18 — 0.1 — Auth + authz en `/api/ai-agent`: `adminPortalAuth` + `authorizeRestaurant` (valida `restaurant_id` contra restaurantes del usuario). `restaurant_id`/`user_id` ahora server-side (cierra el IDOR); `parseContext` solo como hint. 401 sin/con token inválido verificado en runtime; 403 cross-restaurante y `restaurant_id` server-side verificados por código (faltan probar E2E con token real, junto a 0.2).
+- 2026-06-19 — 0.2 — `app/pepper/page.tsx` ahora adjunta el token de Clerk (`useAuth().getToken()` → `Authorization: Bearer`) y envía `restaurant_id` explícito en el body. `npm run build` OK. Con 0.1+0.2 el baseline ya es desplegable de forma segura.

@@ -6,7 +6,7 @@ import Joyride from "react-joyride";
 import ReactMarkdown from "react-markdown";
 import Layout from "../../src/components/Layout";
 import { useRestaurant } from "../../src/contexts/RestaurantContext";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import {
   usePepperOnboarding,
   pepperJoyrideTheme,
@@ -61,6 +61,8 @@ const toolDisplayNames: Record<string, string> = {
 async function streamFromAgent(
   message: string,
   sessionId: string | null = null,
+  token: string | null,
+  restaurantId: string | number | null,
   onToken: (token: string) => void,
   onSessionId: (sessionId: string) => void,
   onToolStart: (toolName: string) => void,
@@ -74,10 +76,14 @@ async function streamFromAgent(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        // Fase 0.2: credencial de Clerk; el backend valida auth/authz server-side.
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({
         message,
         session_id: sessionId,
+        // restaurant_id explícito: el backend lo prefiere sobre el hint del texto.
+        restaurant_id: restaurantId,
       }),
     },
   );
@@ -546,6 +552,7 @@ const PepperPage: React.FC = () => {
   // Obtener contextos
   const { restaurant } = useRestaurant();
   const { user } = useUser();
+  const { getToken } = useAuth();
 
   // Hook para onboarding
   const {
@@ -722,10 +729,15 @@ const PepperPage: React.FC = () => {
         userId,
       });
 
+      // Token de sesión de Clerk (Fase 0.2). Sin él, el backend responde 401.
+      const token = await getToken();
+
       // Llamar al agente con streaming
       await streamFromAgent(
         contextualMessage,
         sessionId,
+        token,
+        restaurantId,
         // onToken - actualizar el mensaje con el nuevo token
         (token: string) => {
           setMessages((prev) =>
