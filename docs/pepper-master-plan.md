@@ -130,12 +130,13 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 - **Implementado:** se importó `useAuth` de `@clerk/nextjs` (mismo patrón que `src/hooks/useAnalytics.ts`); el componente obtiene `token = await getToken()` y lo pasa a `streamFromAgent`, que ahora manda `Authorization: Bearer <token>`. Además se envía `restaurant_id` explícito en el body (el backend lo prefiere sobre el hint del texto).
 - **Criterios de aceptación:** el chat web sigue funcionando con auth activa. ✅ `npm run build` OK (`/pepper` compila); type-check sin errores nuevos (la base de errores pre-existentes del repo no es de este cambio). Falta confirmación E2E en el navegador con sesión real.
 
-### 0.3 — Prompt caching `[ ]`
+### 0.3 — Prompt caching `[x]`
 - **Repo/archivos:** `xquisito-backend/src/services/shared/pepperAgentService.js`.
 - **Pasos:**
   1. Reordenar `buildSystemPrompt`: poner el `SYSTEM_PROMPT` **estático primero** con `cache_control: { type: "ephemeral" }`, y la fecha/hora volátil al final (o como bloque/mensaje aparte).
   2. Marcar la definición de `TOOLS` como cacheable.
-- **Criterios de aceptación:** las respuestas reportan `usage.cache_read_input_tokens > 0` a partir del segundo turno/petición.
+- **Implementado:** `buildSystemPrompt()` ahora devuelve un array de bloques — `[{ SYSTEM_PROMPT, cache_control: ephemeral }, { fecha volátil }]` — con el estático primero (prefijo cacheable, render order tools → system → messages) y la fecha después del breakpoint. `TOOLS_CACHED` agrega `cache_control` a la última tool (cachea todo el bloque). Verificado contra la skill `claude-api`.
+- **Criterios de aceptación:** las respuestas reportan `usage.cache_read_input_tokens > 0` a partir del segundo turno/petición. ✅ **Verificado en runtime**: 2 llamadas reales con prefijo idéntico → CALL 1 `cache_write=5018`, CALL 2 `cache_read=5018` (prefijo de 5018 tokens, > mínimo 4096 de Opus 4.8). La fecha volátil (260 tokens uncached) no invalida el cache.
 - **Mejores prácticas:** verificar contra la doc vigente del Claude SDK (usar la skill `claude-api` si hay duda de la API exacta).
 
 ### 0.4 — Evaluación de modelo (Opus vs Sonnet) `[ ]`
@@ -350,12 +351,12 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 ## 📊 Estado actual
 
-**Fase en curso:** **Fase 0 — Fundaciones y hardening** (🟨). 0.1 ✅ y 0.2 ✅ completados y **desplegados a prod (2026-06-19)**.
-**Próximo paso sugerido:** **Fase 0.3 — Prompt caching** (backend). Nota: antes de seguir, rebasar `feat/pepper-gerente-digital` sobre el `origin/main` actual en ambos repos.
+**Fase en curso:** **Fase 0 — Fundaciones y hardening** (🟨). 0.1 ✅ y 0.2 ✅ (desplegados a prod 2026-06-19); 0.3 ✅.
+**Próximo paso sugerido:** **Fase 0.4 — Evaluación de modelo (Opus vs Sonnet)** — bloqueada por **DP3** (¿Sonnet por default?). Si se prefiere saltarla, seguir con **0.5 — Observabilidad y limpieza**.
 
 | Fase | Estado |
 |------|--------|
-| 0 — Fundaciones y hardening | 🟨 En curso (0.1 ✅, 0.2 ✅) |
+| 0 — Fundaciones y hardening | 🟨 En curso (0.1 ✅, 0.2 ✅, 0.3 ✅) |
 | 1 — Store persistente | ⬜ Pendiente |
 | 2 — Core agnóstico de canal | ⬜ Pendiente |
 | 3 — Canal WhatsApp | ⬜ Pendiente |
@@ -379,3 +380,4 @@ Leyenda: ⬜ Pendiente · 🟨 En curso · ✅ Completada
 - 2026-06-18 — 0.1 — Auth + authz en `/api/ai-agent`: `adminPortalAuth` + `authorizeRestaurant` (valida `restaurant_id` contra restaurantes del usuario). `restaurant_id`/`user_id` ahora server-side (cierra el IDOR); `parseContext` solo como hint. 401 sin/con token inválido verificado en runtime; 403 cross-restaurante y `restaurant_id` server-side verificados por código (faltan probar E2E con token real, junto a 0.2).
 - 2026-06-19 — 0.2 — `app/pepper/page.tsx` ahora adjunta el token de Clerk (`useAuth().getToken()` → `Authorization: Bearer`) y envía `restaurant_id` explícito en el body. `npm run build` OK. Con 0.1+0.2 el baseline ya es desplegable de forma segura.
 - 2026-06-19 — deploy — Baseline seguro (0.1+0.2) a prod. admin-portal: push directo a `main` (`e7918d7`, auto-deploy Vercel). backend: PR #187 → `main` (`6e360dd`) tras pasar Semgrep SAST + npm audit (la rama `main` del backend está protegida, requiere PR). `feat/pepper-gerente-digital` conservada para 0.3–8.
+- 2026-06-19 — 0.3 — Prompt caching en `pepperAgentService`: `buildSystemPrompt()` devuelve array `[SYSTEM_PROMPT (cache_control ephemeral), fecha volátil]`; `TOOLS_CACHED` marca la última tool como cacheable. Verificado con 2 llamadas reales: `cache_read_input_tokens=5018` en la 2ª (prefijo > 4096, mínimo de Opus 4.8). Ramas `feat` rebaseadas sobre `origin/main` actual antes de empezar.
