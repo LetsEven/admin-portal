@@ -168,6 +168,7 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
   - `whatsapp_identities(phone_e164 pk, user_id, restaurant_id, verified_at, created_at)` *(se usa en Fase 3; definir aquí está bien)*.
 - **Criterios de aceptación:** migración aplicada; índices en `conversations(restaurant_id, user_id, updated_at)` y `messages(conversation_id, created_at)`; `provider_message_id` con índice único para idempotencia.
 - **Mejores prácticas:** RLS si aplica; `restaurant_id`/`user_id` NOT NULL; FK con `on delete cascade` en `messages`.
+- **Estado:** migración SQL **escrita** en `xquisito-backend/database/portals/admin-portal/pepper.sql` (`pepper_conversations`, `pepper_messages`, `whatsapp_identities`) — **PENDIENTE DE APLICAR en Supabase** (no se corre DDL en prod sin confirmación). Desvíos vs plan: nombres con prefijo `pepper_` (Supabase compartido); `user_id`/`restaurant_id` = `integer` FK a `user_admin_portal(id)`/`restaurants(id)` con `on delete cascade`; RLS calcada del patrón de `campaigns.sql` (service_role full + escape `rls.clerk_user_id IS NULL` para el backend); índice único parcial en `provider_message_id WHERE NOT NULL`.
 
 ### 1.2 — Refactor del store en el agente `[ ]`
 - **Repo/archivos:** `pepperAgentService.js`.
