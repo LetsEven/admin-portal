@@ -205,9 +205,10 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 - **Implementado:** nuevo `pepperMessage.js` con `createCanonicalMessage` (shape `{channel, externalId, userId, restaurantId, threadId, text, timestamp}`). El adaptador web (`normalizeWebMessage` en `aiAgentRoutes`) convierte la entrada del chat (parseContext limpia el texto; restaurant/user vienen de `req.pepperContext` autorizado) al canónico. `streamChat` ahora recibe el canónico (`{ message, handlers, signal }`) y ya **no** hace `parseContext` ni conoce `authContext`/canal; usa `threadId` como id de conversación. `runAgent` recibe `userMessage = canonical.text`.
 - **Criterios de aceptación:** `runAgent` recibe siempre el shape canónico, sin saber de qué canal viene. ✅ Verificado end-to-end: canónico → `streamChat` → modelo responde → historial persistido (1 llamada real, cleanup).
 
-### 2.2 — Extraer el core del transporte `[ ]`
+### 2.2 — Extraer el core del transporte `[x]`
 - **Pasos:** dejar `runAgent`/loop puro (recibe mensaje canónico + handlers, no conoce SSE ni HTTP). El **adaptador web** mapea handlers→SSE (streaming). 
-- **Criterios de aceptación:** el chat web funciona idéntico, ahora pasando por el core agnóstico.
+- **Implementado:** se formalizó la frontera core↔transporte (gran parte ya existía). `streamChat` documentado como la **entrada pública del core agnóstico** (recibe canónico + puerto de canal; resuelve conversación/historial, corre el loop, persiste; no conoce SSE/HTTP). Nuevo `normalizeHandlers` define el **puerto de canal** (`onConversationStart/onToken/onArtifact/onToolStart/onToolEnd/onError`) y rellena con no-op los ausentes, para que un adaptador (p. ej. WhatsApp en Fase 3) implemente solo lo que necesita. `runAgent` (loop puro) también normaliza sus handlers. El adaptador web (ruta) ya mapea handlers→SSE.
+- **Criterios de aceptación:** el chat web funciona idéntico, ahora pasando por el core agnóstico. ✅ El flujo web no cambia (pasa todos los handlers; E2E ya verificado en 2.1). Puerto verificado robusto a handlers parciales/ausentes.
 
 ### 2.3 — Capacidades por canal `[ ]`
 - **Pasos:** abstracción de capacidades: `supportsStreaming`, estrategia de artifacts (Recharts vs PNG/texto), límite de longitud. El core consulta capacidades; el adaptador las implementa.
@@ -361,15 +362,15 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 ## 📊 Estado actual
 
-**Fase en curso:** **Fase 2 — Core agnóstico de canal** (🟨). 2.1 ✅. **Fase 1** ✅ (1.1–1.4) y **Fase 0** ✅ en prod. **0.4 parqueada** (DP3). Nota: Fases 1 y 2 están en `feat`, **sin desplegar** (regla no-merge).
-**Próximo paso sugerido:** **Fase 2.2 — Extraer el core del transporte** (dejar `runAgent`/loop puro; el adaptador web mapea handlers→SSE — gran parte ya está hecho). Luego 2.3 (capacidades por canal).
+**Fase en curso:** **Fase 2 — Core agnóstico de canal** (🟨). 2.1 ✅, 2.2 ✅. **Fase 1** ✅ (1.1–1.4) y **Fase 0** ✅ en prod. **0.4 parqueada** (DP3). Nota: Fases 1 y 2 están en `feat`, **sin desplegar** (regla no-merge).
+**Próximo paso sugerido:** **Fase 2.3 — Capacidades por canal** (`supportsStreaming`, estrategia de artifacts, límite de longitud; el core consulta capacidades en vez de ramas `if (whatsapp)`). Cierra Fase 2.
 **Regla activa:** NO mergear a `main` — todo se queda en `feat/pepper-gerente-digital` (ambos repos) hasta terminar la feature (instrucción del usuario 2026-06-19).
 
 | Fase | Estado |
 |------|--------|
 | 0 — Fundaciones y hardening | ✅ Completada en prod (0.1, 0.2, 0.3, 0.5; 0.4 parqueada/DP3) |
 | 1 — Store persistente | ✅ Completada en `feat` (1.1–1.4; sin desplegar) |
-| 2 — Core agnóstico de canal | 🟨 En curso (2.1 ✅) |
+| 2 — Core agnóstico de canal | 🟨 En curso (2.1 ✅, 2.2 ✅) |
 | 3 — Canal WhatsApp | ⬜ Pendiente |
 | 4 — Memoria de largo plazo | ⬜ Pendiente |
 | 5 — Analítica determinística | ⬜ Pendiente |
@@ -400,3 +401,4 @@ Leyenda: ⬜ Pendiente · 🟨 En curso · ✅ Completada
 - 2026-06-19 — 1.3 — Endpoints de historial en `aiAgentRoutes`: `GET /conversations` (authz por restaurante + user interno), `GET /conversations/:id/messages` y `DELETE /conversations/:id` (ownership por `conversation.user_id`, 404 si ajena). `authorizeRestaurant` ahora lee `restaurant_id` de query. Store: `listConversations`/`getMessages`/`deleteConversation`. Verificado: 401 sin token + round-trip list/get/delete.
 - 2026-06-19 — 1.4 — Frontend (`page.tsx`) lee historial del backend: `fetchConversations` (GET /conversations), `loadConversation` (GET /:id/messages), `deleteConversation` (DELETE); sin `localStorage`; el uuid de la conversación es el session id. `npm run build` OK. Desvío: migración de localStorage viejo NO implementada (sin endpoint de import; data vieja no se borra). **Fase 1 completa en `feat` (sin desplegar).**
 - 2026-06-19 — 2.1 — Mensaje canónico: nuevo `pepperMessage.createCanonicalMessage` (`{channel, externalId, userId, restaurantId, threadId, text, timestamp}`); adaptador web `normalizeWebMessage` en `aiAgentRoutes`. `streamChat` consume el canónico (sin `parseContext`/`authContext`, sin saber del canal). Verificado end-to-end (canónico → core → persistencia).
+- 2026-06-19 — 2.2 — Frontera core↔transporte formalizada: `normalizeHandlers` define el puerto de canal (no-op para handlers ausentes); `streamChat` documentado como entrada del core agnóstico; `runAgent` normaliza handlers. Puerto verificado robusto a adaptadores parciales (listo para WhatsApp). Flujo web sin cambios.
