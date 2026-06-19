@@ -210,9 +210,10 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 - **Implementado:** se formalizó la frontera core↔transporte (gran parte ya existía). `streamChat` documentado como la **entrada pública del core agnóstico** (recibe canónico + puerto de canal; resuelve conversación/historial, corre el loop, persiste; no conoce SSE/HTTP). Nuevo `normalizeHandlers` define el **puerto de canal** (`onConversationStart/onToken/onArtifact/onToolStart/onToolEnd/onError`) y rellena con no-op los ausentes, para que un adaptador (p. ej. WhatsApp en Fase 3) implemente solo lo que necesita. `runAgent` (loop puro) también normaliza sus handlers. El adaptador web (ruta) ya mapea handlers→SSE.
 - **Criterios de aceptación:** el chat web funciona idéntico, ahora pasando por el core agnóstico. ✅ El flujo web no cambia (pasa todos los handlers; E2E ya verificado en 2.1). Puerto verificado robusto a handlers parciales/ausentes.
 
-### 2.3 — Capacidades por canal `[ ]`
+### 2.3 — Capacidades por canal `[x]`
 - **Pasos:** abstracción de capacidades: `supportsStreaming`, estrategia de artifacts (Recharts vs PNG/texto), límite de longitud. El core consulta capacidades; el adaptador las implementa.
-- **Criterios de aceptación:** el core decide qué emitir según capacidades, sin ramas `if (whatsapp)` dispersas.
+- **Implementado:** nuevo `pepperCapabilities.js` con `CHANNEL_CAPABILITIES` (web: `supportsStreaming:true`, `artifactStrategy:'interactive'`, `maxMessageLength:null`; whatsapp: `false`/`'text'`/`4096`) + `getChannelCapabilities(channel)` (fallback a web). El core (`streamChat`) deriva capacidades del `channel` del canónico y las pasa a `runAgent`. `emitArtifact(artifact, capabilities, handlers)` centraliza la decisión: `interactive` → `onArtifact`; otro → degrada a texto vía `onToken`. `supportsStreaming`/`maxMessageLength` quedan definidos para que los adaptadores de Fase 3 (WhatsApp: buffer + chunking) los consulten.
+- **Criterios de aceptación:** el core decide qué emitir según capacidades, sin ramas `if (whatsapp)` dispersas. ✅ Verificado unitariamente: web→`onArtifact`, whatsapp→texto, desconocido→web.
 
 ---
 
@@ -362,15 +363,15 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 ## 📊 Estado actual
 
-**Fase en curso:** **Fase 2 — Core agnóstico de canal** (🟨). 2.1 ✅, 2.2 ✅. **Fase 1** ✅ (1.1–1.4) y **Fase 0** ✅ en prod. **0.4 parqueada** (DP3). Nota: Fases 1 y 2 están en `feat`, **sin desplegar** (regla no-merge).
-**Próximo paso sugerido:** **Fase 2.3 — Capacidades por canal** (`supportsStreaming`, estrategia de artifacts, límite de longitud; el core consulta capacidades en vez de ramas `if (whatsapp)`). Cierra Fase 2.
+**Fase en curso:** **Fase 2 — Core agnóstico de canal** ✅ completa (2.1, 2.2, 2.3). **Fase 1** ✅ (1.1–1.4) y **Fase 0** ✅ en prod. **0.4 parqueada** (DP3). Nota: Fases 1 y 2 están en `feat`, **sin desplegar** (regla no-merge).
+**Próximo paso sugerido:** **Fase 3 — Canal WhatsApp** (depende de 1 y 2, ya hechas). ⚠️ **Bloqueada por DP1** (¿sent.dm soporta webhook inbound two-way?). Alternativas desbloqueadas: **Fase 4 (memoria Zep)** o **Fase 5 (analítica determinística)**.
 **Regla activa:** NO mergear a `main` — todo se queda en `feat/pepper-gerente-digital` (ambos repos) hasta terminar la feature (instrucción del usuario 2026-06-19).
 
 | Fase | Estado |
 |------|--------|
 | 0 — Fundaciones y hardening | ✅ Completada en prod (0.1, 0.2, 0.3, 0.5; 0.4 parqueada/DP3) |
 | 1 — Store persistente | ✅ Completada en `feat` (1.1–1.4; sin desplegar) |
-| 2 — Core agnóstico de canal | 🟨 En curso (2.1 ✅, 2.2 ✅) |
+| 2 — Core agnóstico de canal | ✅ Completada en `feat` (2.1–2.3; sin desplegar) |
 | 3 — Canal WhatsApp | ⬜ Pendiente |
 | 4 — Memoria de largo plazo | ⬜ Pendiente |
 | 5 — Analítica determinística | ⬜ Pendiente |
@@ -402,3 +403,4 @@ Leyenda: ⬜ Pendiente · 🟨 En curso · ✅ Completada
 - 2026-06-19 — 1.4 — Frontend (`page.tsx`) lee historial del backend: `fetchConversations` (GET /conversations), `loadConversation` (GET /:id/messages), `deleteConversation` (DELETE); sin `localStorage`; el uuid de la conversación es el session id. `npm run build` OK. Desvío: migración de localStorage viejo NO implementada (sin endpoint de import; data vieja no se borra). **Fase 1 completa en `feat` (sin desplegar).**
 - 2026-06-19 — 2.1 — Mensaje canónico: nuevo `pepperMessage.createCanonicalMessage` (`{channel, externalId, userId, restaurantId, threadId, text, timestamp}`); adaptador web `normalizeWebMessage` en `aiAgentRoutes`. `streamChat` consume el canónico (sin `parseContext`/`authContext`, sin saber del canal). Verificado end-to-end (canónico → core → persistencia).
 - 2026-06-19 — 2.2 — Frontera core↔transporte formalizada: `normalizeHandlers` define el puerto de canal (no-op para handlers ausentes); `streamChat` documentado como entrada del core agnóstico; `runAgent` normaliza handlers. Puerto verificado robusto a adaptadores parciales (listo para WhatsApp). Flujo web sin cambios.
+- 2026-06-19 — 2.3 — Capacidades por canal: nuevo `pepperCapabilities` (`getChannelCapabilities`); el core deriva capacidades del canal y `emitArtifact` decide interactivo (onArtifact) vs texto sin `if(whatsapp)`. Verificado unitariamente. **Fase 2 completa en `feat`.**
