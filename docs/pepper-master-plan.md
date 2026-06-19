@@ -355,12 +355,12 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 ## 📊 Estado actual
 
-**Fase en curso:** **Fase 0 — Fundaciones y hardening** — casi completa. 0.1 ✅ y 0.2 ✅ (desplegados a prod 2026-06-19); 0.3 ✅; 0.5 ✅. **0.4 parqueada** (bloqueada por DP3; Pepper sigue en Opus 4.8 por ahora).
-**Próximo paso sugerido:** **Fase 1.1 — Modelo de datos** (store persistente en Postgres). Pendientes de Fase 0: desplegar 0.3+0.5 (commiteados en `feat`, no en prod) y, si se desea, retomar 0.4 cerrando DP3.
+**Fase en curso:** **Fase 1 — Store persistente** (iniciando). **Fase 0 completa en prod** (0.1, 0.2, 0.3, 0.5 desplegados 2026-06-19; admin-portal `56b5fe1`, backend `bb61336`). **0.4 parqueada** (DP3 abierta; Pepper en Opus 4.8).
+**Próximo paso sugerido:** **Fase 1.1 — Modelo de datos** (migración SQL Postgres/Supabase: `conversations`, `messages`, `whatsapp_identities`).
 
 | Fase | Estado |
 |------|--------|
-| 0 — Fundaciones y hardening | 🟨 Casi completa (0.1 ✅, 0.2 ✅, 0.3 ✅, 0.5 ✅; 0.4 parqueada/DP3) |
+| 0 — Fundaciones y hardening | ✅ Completada en prod (0.1, 0.2, 0.3, 0.5; 0.4 parqueada/DP3) |
 | 1 — Store persistente | ⬜ Pendiente |
 | 2 — Core agnóstico de canal | ⬜ Pendiente |
 | 3 — Canal WhatsApp | ⬜ Pendiente |
@@ -387,3 +387,4 @@ Leyenda: ⬜ Pendiente · 🟨 En curso · ✅ Completada
 - 2026-06-19 — 0.3 — Prompt caching en `pepperAgentService`: `buildSystemPrompt()` devuelve array `[SYSTEM_PROMPT (cache_control ephemeral), fecha volátil]`; `TOOLS_CACHED` marca la última tool como cacheable. Verificado con 2 llamadas reales: `cache_read_input_tokens=5018` en la 2ª (prefijo > 4096, mínimo de Opus 4.8). Ramas `feat` rebaseadas sobre `origin/main` actual antes de empezar.
 - 2026-06-19 — 0.4 — Parqueada: salta la evaluación Opus vs Sonnet por ahora (DP3 sigue abierta); Pepper continúa en Opus 4.8.
 - 2026-06-19 — 0.5 — Observabilidad y limpieza: log de uso/costo por conversación en `runAgent` (`[pepper] usage {...}`, sin PII); 3 `console.log` de conversación gateados tras `NODE_ENV` en `page.tsx`; cliente Anthropic con `maxRetries: 4` (backoff 429/500/529). Verificado en runtime + `npm run build` OK.
+- 2026-06-19 — deploy — 0.3+0.5 a prod. admin-portal push directo a `main` (`56b5fe1`, Vercel success). backend PR #188 → `main` (`bb61336`) tras Semgrep SAST + npm audit. Fase 0 completa en prod.
