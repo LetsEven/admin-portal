@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, memo } from "react";
+import React, { useState, useRef, useEffect, useCallback, memo } from "react";
 import { PlusIcon, MicIcon, SendIcon, X, History, Trash2 } from "lucide-react";
 import Joyride from "react-joyride";
 import ReactMarkdown from "react-markdown";
@@ -14,6 +14,10 @@ import {
 } from "../../src/hooks/usePepperOnboarding";
 import { ArtifactBlock } from "./artifacts/ArtifactBlock";
 import type { Artifact } from "./artifacts/types";
+
+// Base del backend (Fase 1.4: historial server-side).
+const PEPPER_API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 interface StreamEvent {
   type:
@@ -196,19 +200,11 @@ interface Message {
   artifacts?: Artifact[];
 }
 
-interface StoredMessage {
-  id: string;
-  content: string;
-  role: "user" | "assistant";
-  timestamp: string;
-  artifacts?: Artifact[];
-}
-
+// Conversación tal como la lista el backend (Fase 1.4). El `id` (uuid) ES el
+// session id; los mensajes se cargan al abrirla (GET /conversations/:id/messages).
 interface StoredConversation {
   id: string;
   title: string;
-  messages: StoredMessage[];
-  sessionId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -580,68 +576,44 @@ const PepperPage: React.FC = () => {
     activeConvIdRef.current = activeConversationId;
   }, [activeConversationId]);
 
-  // Load conversations from localStorage
-  useEffect(() => {
-    if (!isHydrated) return;
+  // Cargar la lista de conversaciones desde el backend (Fase 1.4).
+  const fetchConversations = useCallback(async () => {
+    if (!restaurant?.id) return;
     try {
-      const stored = localStorage.getItem("pepper_conversations");
-      if (stored) setConversations(JSON.parse(stored));
+      const token = await getToken();
+      const res = await fetch(
+        `${PEPPER_API_BASE}/api/ai-agent/conversations?restaurant_id=${restaurant.id}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      setConversations(
+        (data.conversations || []).map((c: any) => ({
+          id: c.id,
+          title: c.title || "Conversación",
+          createdAt: c.created_at,
+          updatedAt: c.updated_at,
+        })),
+      );
     } catch {
-      // ignore corrupt data
+      // backend no disponible / sin sesión: mantenemos la lista como está
     }
-  }, [isHydrated]);
+  }, [restaurant?.id, getToken]);
 
-  // Auto-save conversation when a response finishes
+  useEffect(() => {
+    if (isHydrated && restaurant?.id) fetchConversations();
+  }, [isHydrated, restaurant?.id, fetchConversations]);
+
+  // Al terminar una respuesta, el backend YA persistió el turno (Fase 1.2);
+  // refrescamos la lista para reflejar nueva conversación / título / orden.
   useEffect(() => {
     const wasLoading = prevIsLoadingRef.current;
     prevIsLoadingRef.current = isLoading;
 
     if (!isHydrated || isLoading || !wasLoading) return;
-    const convId = activeConvIdRef.current;
-    if (messages.length === 0 || !convId) return;
-
-    const title =
-      messages.find((m) => m.role === "user")?.content.slice(0, 60) ??
-      "Nueva conversación";
-    const serialized: StoredMessage[] = messages.map((m) => ({
-      ...m,
-      timestamp:
-        m.timestamp instanceof Date
-          ? m.timestamp.toISOString()
-          : (m.timestamp as string),
-    }));
-
-    setConversations((prev) => {
-      const existing = prev.find((c) => c.id === convId);
-      let updated: StoredConversation[];
-      if (existing) {
-        updated = prev.map((c) =>
-          c.id === convId
-            ? {
-                ...c,
-                messages: serialized,
-                sessionId,
-                updatedAt: new Date().toISOString(),
-              }
-            : c,
-        );
-      } else {
-        updated = [
-          {
-            id: convId,
-            title,
-            messages: serialized,
-            sessionId,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          ...prev,
-        ];
-      }
-      localStorage.setItem("pepper_conversations", JSON.stringify(updated));
-      return updated;
-    });
-  }, [isLoading, isHydrated, messages, sessionId]);
+    if (messages.length === 0) return;
+    fetchConversations();
+  }, [isLoading, isHydrated, messages.length, fetchConversations]);
 
   useEffect(() => {
     scrollToBottom();
@@ -665,34 +637,53 @@ const PepperPage: React.FC = () => {
     setInputValue("");
   };
 
-  const loadConversation = (conv: StoredConversation) => {
-    setMessages(
-      conv.messages.map((m) => ({ ...m, timestamp: new Date(m.timestamp) })),
-    );
-    setSessionId(conv.sessionId);
+  const loadConversation = async (conv: StoredConversation) => {
+    // El uuid de la conversación ES el session id (Fase 1.4).
+    setSessionId(conv.id);
     setActiveConversationId(conv.id);
     activeConvIdRef.current = conv.id;
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${PEPPER_API_BASE}/api/ai-agent/conversations/${conv.id}/messages`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!res.ok) {
+        setMessages([]);
+        return;
+      }
+      const data = await res.json();
+      setMessages(
+        (data.messages || []).map((m: any) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content || "",
+          timestamp: new Date(m.created_at),
+          artifacts: m.artifacts || undefined,
+        })),
+      );
+    } catch {
+      setMessages([]);
+    }
   };
 
-  const deleteConversation = (convId: string, e: React.MouseEvent) => {
+  const deleteConversation = async (convId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setConversations((prev) => {
-      const updated = prev.filter((c) => c.id !== convId);
-      localStorage.setItem("pepper_conversations", JSON.stringify(updated));
-      return updated;
-    });
+    setConversations((prev) => prev.filter((c) => c.id !== convId)); // optimista
     if (activeConvIdRef.current === convId) startNewConversation();
+    try {
+      const token = await getToken();
+      await fetch(`${PEPPER_API_BASE}/api/ai-agent/conversations/${convId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch {
+      // si falla, un refetch posterior lo reconcilia
+    }
   };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
-
-    // Ensure a conversation ID exists before the first message
-    if (!activeConvIdRef.current) {
-      const newId = `conv-${Date.now()}`;
-      setActiveConversationId(newId);
-      activeConvIdRef.current = newId;
-    }
 
     const userMessage: Message = {
       id: `user-${Date.now()}`,
@@ -755,9 +746,14 @@ const PepperPage: React.FC = () => {
             ),
           );
         },
-        // onSessionId - guardar el session_id
+        // onSessionId - el backend devuelve el id de la conversación (uuid):
+        // es el session id Y el id de la conversación activa (Fase 1.4).
         (newSessionId: string) => {
           if (!sessionId) setSessionId(newSessionId);
+          if (!activeConvIdRef.current) {
+            setActiveConversationId(newSessionId);
+            activeConvIdRef.current = newSessionId;
+          }
         },
         // onToolStart - mostrar qué herramienta se está ejecutando
         (toolName: string) => {
