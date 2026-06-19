@@ -113,8 +113,9 @@ async function streamFromAgent(
         try {
           const event: StreamEvent = JSON.parse(line.slice(6));
 
-          // Debug: mostrar todos los eventos recibidos
-          if (event.type !== "token") {
+          // Debug (solo dev): los eventos pueden contener contenido de la
+          // conversación (final_response, artifacts) → no loguear en prod.
+          if (event.type !== "token" && process.env.NODE_ENV !== "production") {
             console.log("🔄 Evento recibido:", event);
           }
 
@@ -142,7 +143,10 @@ async function streamFromAgent(
             throw new Error(event.content || "Error del agente");
           }
         } catch (e) {
-          console.warn("Error parseando evento:", line);
+          // La línea cruda puede contener contenido de la conversación → solo dev.
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("Error parseando evento:", line);
+          }
         }
       }
     }
@@ -722,12 +726,15 @@ const PepperPage: React.FC = () => {
       const contextualMessage = `[CONTEXT: service=admin_portal, restaurant_id=${restaurantId || "null"}, user_id=${userId || "null"}]
 [USER_MESSAGE: ${messageContent}]`;
 
-      console.log("📤 Enviando mensaje a Pepper (Admin Portal):", {
-        originalMessage: messageContent,
-        contextualMessage,
-        restaurantId,
-        userId,
-      });
+      // Solo dev: incluye el mensaje del usuario y sus IDs (PII) → no loguear en prod.
+      if (process.env.NODE_ENV !== "production") {
+        console.log("📤 Enviando mensaje a Pepper (Admin Portal):", {
+          originalMessage: messageContent,
+          contextualMessage,
+          restaurantId,
+          userId,
+        });
+      }
 
       // Token de sesión de Clerk (Fase 0.2). Sin él, el backend responde 401.
       const token = await getToken();

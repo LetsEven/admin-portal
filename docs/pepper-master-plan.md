@@ -143,12 +143,16 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 - **Pasos:** A/B con `PEPPER_MODEL`. Medir calidad de razonamiento, latencia y costo en consultas reales. Default sugerido: Sonnet, reservar Opus si baja la calidad.
 - **Criterios de aceptación:** decisión documentada en el changelog con datos.
 
-### 0.5 — Observabilidad y limpieza `[ ]`
+### 0.5 — Observabilidad y limpieza `[x]`
 - **Pasos:**
   1. Capturar `response.usage` por turno (tokens in/out/cache) y costo estimado.
   2. Logging estructurado; gatear `console.log` de datos de usuario tras flag de dev (frontend y backend).
   3. Backoff/retry ante `overloaded`/529.
-- **Criterios de aceptación:** existe registro de uso por conversación; sin logs de PII en prod.
+- **Implementado:**
+  - `runAgent` acumula `usage` por turno y emite un log estructurado por conversación: `[pepper] usage {session_id, restaurant_id, model, turns, input/output/cache tokens, est_cost_usd}` (`estimateCostUSD` con tabla de precios opus-4-8/sonnet-4-6). Solo IDs + métricas, sin contenido de mensajes.
+  - Frontend (`page.tsx`): 3 `console.log/warn` con contenido de conversación gateados tras `process.env.NODE_ENV !== "production"`. Backend: no había `console.log` de contenido de usuario (solo error con nombre de tool).
+  - Cliente Anthropic con `maxRetries: 4` → el SDK reintenta 429/500/529 con backoff exponencial.
+- **Criterios de aceptación:** existe registro de uso por conversación; sin logs de PII en prod. ✅ Registro verificado en runtime (`turns:1, cache_write:5018, est_cost_usd:0.03279`); gating verificado por código + `npm run build` OK.
 
 ---
 
@@ -351,12 +355,12 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 ## 📊 Estado actual
 
-**Fase en curso:** **Fase 0 — Fundaciones y hardening** (🟨). 0.1 ✅ y 0.2 ✅ (desplegados a prod 2026-06-19); 0.3 ✅.
-**Próximo paso sugerido:** **Fase 0.4 — Evaluación de modelo (Opus vs Sonnet)** — bloqueada por **DP3** (¿Sonnet por default?). Si se prefiere saltarla, seguir con **0.5 — Observabilidad y limpieza**.
+**Fase en curso:** **Fase 0 — Fundaciones y hardening** — casi completa. 0.1 ✅ y 0.2 ✅ (desplegados a prod 2026-06-19); 0.3 ✅; 0.5 ✅. **0.4 parqueada** (bloqueada por DP3; Pepper sigue en Opus 4.8 por ahora).
+**Próximo paso sugerido:** **Fase 1.1 — Modelo de datos** (store persistente en Postgres). Pendientes de Fase 0: desplegar 0.3+0.5 (commiteados en `feat`, no en prod) y, si se desea, retomar 0.4 cerrando DP3.
 
 | Fase | Estado |
 |------|--------|
-| 0 — Fundaciones y hardening | 🟨 En curso (0.1 ✅, 0.2 ✅, 0.3 ✅) |
+| 0 — Fundaciones y hardening | 🟨 Casi completa (0.1 ✅, 0.2 ✅, 0.3 ✅, 0.5 ✅; 0.4 parqueada/DP3) |
 | 1 — Store persistente | ⬜ Pendiente |
 | 2 — Core agnóstico de canal | ⬜ Pendiente |
 | 3 — Canal WhatsApp | ⬜ Pendiente |
@@ -381,3 +385,5 @@ Leyenda: ⬜ Pendiente · 🟨 En curso · ✅ Completada
 - 2026-06-19 — 0.2 — `app/pepper/page.tsx` ahora adjunta el token de Clerk (`useAuth().getToken()` → `Authorization: Bearer`) y envía `restaurant_id` explícito en el body. `npm run build` OK. Con 0.1+0.2 el baseline ya es desplegable de forma segura.
 - 2026-06-19 — deploy — Baseline seguro (0.1+0.2) a prod. admin-portal: push directo a `main` (`e7918d7`, auto-deploy Vercel). backend: PR #187 → `main` (`6e360dd`) tras pasar Semgrep SAST + npm audit (la rama `main` del backend está protegida, requiere PR). `feat/pepper-gerente-digital` conservada para 0.3–8.
 - 2026-06-19 — 0.3 — Prompt caching en `pepperAgentService`: `buildSystemPrompt()` devuelve array `[SYSTEM_PROMPT (cache_control ephemeral), fecha volátil]`; `TOOLS_CACHED` marca la última tool como cacheable. Verificado con 2 llamadas reales: `cache_read_input_tokens=5018` en la 2ª (prefijo > 4096, mínimo de Opus 4.8). Ramas `feat` rebaseadas sobre `origin/main` actual antes de empezar.
+- 2026-06-19 — 0.4 — Parqueada: salta la evaluación Opus vs Sonnet por ahora (DP3 sigue abierta); Pepper continúa en Opus 4.8.
+- 2026-06-19 — 0.5 — Observabilidad y limpieza: log de uso/costo por conversación en `runAgent` (`[pepper] usage {...}`, sin PII); 3 `console.log` de conversación gateados tras `NODE_ENV` en `page.tsx`; cliente Anthropic con `maxRetries: 4` (backoff 429/500/529). Verificado en runtime + `npm run build` OK.
