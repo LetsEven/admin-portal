@@ -51,13 +51,13 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 | # | Decisión | Razón |
 |---|----------|-------|
-| D1 | **Provider = transporte detrás de una interfaz** (mensaje canónico provider-agnóstico). sent.dm para WhatsApp; intercambiable. | Desacoplar canal de cerebro; poder cambiar de BSP sin tocar el core. |
+| D1 | **Provider = transporte detrás de una interfaz** (mensaje canónico provider-agnóstico). **Meta Cloud API** para WhatsApp (decidido 2026-06-22, ver DP1); intercambiable. | Desacoplar canal de cerebro; poder cambiar de BSP sin tocar el core. |
 | D2 | **Un solo agent core + adaptadores por canal.** Web = SSE streaming; WhatsApp = buffer + envío único. | `runAgent` no se duplica; las diferencias viven en el adaptador. |
 | D3 | **Store persistente en Postgres** (`conversations`, `messages`, `whatsapp_identities`). El `Map` en memoria muere. | Sin store persistente no hay historial unificado ni WhatsApp. |
 | D4 | **Historial sale de localStorage → backend.** La web lee del backend. | Una conversación de WhatsApp no puede vivir en localStorage del navegador. |
 | D5 | **Hilos separados por canal, vista unificada.** Contexto corto por hilo; memoria larga compartida por restaurante. | UX coherente por canal + "memoria de la relación" vía Zep. |
 | D6 | **Memoria larga = Zep/Graphiti, un graph por `restaurant_id`.** Solo se ingestan **hechos cualitativos, decisiones y resultados** — NUNCA métricas crudas. | Las métricas viven en Postgres y se traen frescas; meterlas al grafo = stale + quema créditos. |
-| D7 | **Identidad:** Clerk en web; `phone → restaurant` verificado en WhatsApp; rechazar números desconocidos. | El número ES la identidad; sin esto se reabre el IDOR por WhatsApp. |
+| D7 | **Identidad:** Clerk en web; en WhatsApp **un solo número de Pepper** atiende a todos los restaurantes — el `phone` del que escribe identifica al usuario/restaurante (`whatsapp_identities`); rechazar números desconocidos. Si el usuario posee varios restaurantes, Pepper pregunta cuál (DP2). | El número del cliente ES su identidad; sin esto se reabre el IDOR por WhatsApp. |
 | D8 | **Webhook:** firma/HMAC + ACK rápido + procesamiento async + idempotencia + serialización por hilo. | El agente tarda segundos; el webhook no puede responder síncrono. |
 | D9 | **Seguridad y exactitud primero.** Arreglar auth/authz (IDOR) y aritmética determinística antes de features. | Un gerente que filtra datos o da números mal, no sirve. |
 
@@ -139,8 +139,9 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 - **Criterios de aceptación:** las respuestas reportan `usage.cache_read_input_tokens > 0` a partir del segundo turno/petición. ✅ **Verificado en runtime**: 2 llamadas reales con prefijo idéntico → CALL 1 `cache_write=5018`, CALL 2 `cache_read=5018` (prefijo de 5018 tokens, > mínimo 4096 de Opus 4.8). La fecha volátil (260 tokens uncached) no invalida el cache.
 - **Mejores prácticas:** verificar contra la doc vigente del Claude SDK (usar la skill `claude-api` si hay duda de la API exacta).
 
-### 0.4 — Evaluación de modelo (Opus vs Sonnet) `[ ]`
+### 0.4 — Evaluación de modelo (Opus vs Sonnet) `[x]`
 - **Pasos:** A/B con `PEPPER_MODEL`. Medir calidad de razonamiento, latencia y costo en consultas reales. Default sugerido: Sonnet, reservar Opus si baja la calidad.
+- **Resuelto (DP3, 2026-06-22):** se mantiene **Opus 4.8** por default (decisión del usuario; no se corrió A/B formal). `PEPPER_MODEL` queda disponible para cambiar a Sonnet sin código si en el futuro se quiere optimizar costo.
 - **Criterios de aceptación:** decisión documentada en el changelog con datos.
 
 ### 0.5 — Observabilidad y limpieza `[x]`
@@ -217,14 +218,14 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 ---
 
-## Fase 3 — Canal WhatsApp (sent.dm)
+## Fase 3 — Canal WhatsApp (Meta Cloud API)
 
-> **Objetivo:** hablar con Pepper por WhatsApp; provider = cable tonto. Depende de Fases 1 y 2.
+> **Objetivo:** hablar con Pepper por WhatsApp; provider = cable tonto. Depende de Fases 1 y 2 (✅). Provider = **Meta Cloud API** (DP1 resuelto). **Un solo número de Pepper** para todos los restaurantes (DP2): el `phone` del que escribe lo identifica.
 
-> ⚠️ **Bloqueador a resolver primero:** confirmar con sent.dm que soporta **webhook de inbound (two-way) sobre un número dedicado**. Si no, usar Twilio / 360dialog / Meta Cloud API directo para inbound y dejar sent.dm para outbound. Ver [❓ Decisiones pendientes](#-decisiones-pendientes).
+> 📋 **Setup de la app de Meta:** se hace paso a paso con el usuario (negocio ya verificado en Meta). Credenciales en `.env` del backend: `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_BUSINESS_ACCOUNT_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_APP_SECRET`, `WHATSAPP_WEBHOOK_VERIFY_TOKEN`.
 
 ### 3.1 — Integración del provider detrás de la interfaz `[ ]`
-- **Pasos:** implementar `WhatsAppProvider` con `sendMessage()` y verificación de firma de webhook. Detrás de la interfaz de D1.
+- **Pasos:** implementar `WhatsAppProvider` (Meta Cloud API) con `sendMessage()` (POST a Graph API `/{phone_number_id}/messages`) y verificación de firma del webhook (HMAC SHA-256 con `WHATSAPP_APP_SECRET`, header `X-Hub-Signature-256`). Detrás de la interfaz de D1.
 - **Criterios de aceptación:** se puede enviar un mensaje de prueba a un número y recibir uno (eco) sin tocar el agent core.
 
 ### 3.2 — Identidad phone → restaurante `[ ]`
@@ -232,7 +233,7 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
   1. Tabla `whatsapp_identities` (definida en 1.1).
   2. Flujo de verificación/onboarding del número (código por WhatsApp/SMS o alta desde la web).
   3. Rechazar números no verificados con un mensaje guía.
-  4. **Desambiguación multi-restaurante** (ver decisión D-pendiente): default por número o Pepper pregunta "¿de cuál restaurante?".
+  4. **Desambiguación multi-restaurante (DP2 resuelto):** si el usuario posee varios restaurantes, **Pepper pregunta "¿de cuál restaurante?"** (no default).
 - **Criterios de aceptación:** un número desconocido NO obtiene datos; un número verificado resuelve a su `restaurant_id` correcto.
 
 ### 3.3 — Webhook robusto `[ ]`
@@ -353,26 +354,26 @@ WhatsApp ─► webhook (sent.dm) ───────┘            │       
 
 > Resolver con el usuario antes de que bloqueen un paso. Mover a "Decisiones tomadas" cuando se cierren.
 
-- `[ ]` **DP1 — sent.dm inbound:** ¿soporta webhook two-way sobre número dedicado? Si no → proveedor de inbound alterno. *(Bloquea Fase 3.)*
-- `[ ]` **DP2 — Desambiguación multi-restaurante en WhatsApp:** ¿restaurante default por número o Pepper pregunta? *(Bloquea 3.2.)*
-- `[ ]` **DP3 — Modelo:** ¿Sonnet por default? *(Fase 0.4.)*
-- `[ ]` **DP4 — Zep escala/residencia:** ¿free tier para piloto y luego Flex? ¿Cloud US aceptable o se requiere BYOC por PCI? *(Fase 4.)*
+- `[x]` **DP1 — Proveedor WhatsApp (RESUELTO 2026-06-22):** **Meta Cloud API directo** (no sent.dm). El negocio ya está verificado en Meta. La app se configura paso a paso con el usuario. Provider sigue detrás de la interfaz (D1), intercambiable. *(Desbloquea Fase 3.)*
+- `[x]` **DP2 — Identidad/multi-restaurante en WhatsApp (RESUELTO 2026-06-22):** **Un solo número de Pepper** atiende a todos los restaurantes (un agente, muchos restaurantes). El `phone` del que escribe lo identifica vía `whatsapp_identities` y entra en contexto. Si ese usuario posee varios restaurantes, **Pepper pregunta cuál** (no default). *(Aplica en 3.2.)*
+- `[x]` **DP3 — Modelo (RESUELTO 2026-06-22):** Se mantiene **Opus 4.8** por default (no cambiar a Sonnet por ahora). *(Cierra 0.4.)*
+- `[x]` **DP4 — Zep escala/residencia (RESUELTO 2026-06-22):** Empezar con **free tier** (Zep Cloud; Cloud US aceptable para el piloto). API key en `ZEP_API_KEY` del `.env` del backend (rotar: se compartió en chat). Evaluar Flex/BYOC más adelante si el piloto crece. *(Desbloquea Fase 4.)*
 - `[x]` **DP5 — Auth backend (RESUELTO 2026-06-18):** Sí. El backend ya valida Clerk con `@clerk/clerk-sdk-node` vía `Authorization: Bearer` y el middleware `adminPortalAuth` (`src/middleware/clerkAdminPortalAuth.js`), usado en todas las rutas admin-portal (analytics, campaigns, segments, etc.). Config por proyecto en `clerkConfig.js` (`adminPortal` → `CLERK_SECRET_KEY_ADMIN_PORTAL`). Autorización por **ownership** (`restaurants.user_id = user_admin_portal.id`), no por tabla de membresías; helper reutilizado: `analyticsService.getUserRestaurants`. *(Desbloqueó y se aplicó en Fase 0.1.)*
 
 ---
 
 ## 📊 Estado actual
 
-**Fase en curso:** **Fase 2 — Core agnóstico de canal** ✅ completa (2.1, 2.2, 2.3). **Fase 1** ✅ (1.1–1.4) y **Fase 0** ✅ en prod. **0.4 parqueada** (DP3). Nota: Fases 1 y 2 están en `feat`, **sin desplegar** (regla no-merge).
-**Próximo paso sugerido:** **Fase 3 — Canal WhatsApp** (depende de 1 y 2, ya hechas). ⚠️ **Bloqueada por DP1** (¿sent.dm soporta webhook inbound two-way?). Alternativas desbloqueadas: **Fase 4 (memoria Zep)** o **Fase 5 (analítica determinística)**.
+**Fase en curso:** **Fase 3 — Canal WhatsApp (Meta Cloud API)** — iniciando. **Fase 0** ✅ en prod, **Fases 1 y 2** ✅ en `feat` (sin desplegar). Todas las DPs resueltas (DP1 Meta, DP2 número único + Pepper pregunta, DP3 Opus 4.8, DP4 Zep free tier, DP5 Clerk).
+**Próximo paso sugerido:** **Setup de la app de Meta WhatsApp con el usuario** (paso a paso), luego **3.1 — `WhatsAppProvider`** (sendMessage + verificación de firma del webhook). Fases 4 (Zep) y 5 (analítica) también desbloqueadas.
 **Regla activa:** NO mergear a `main` — todo se queda en `feat/pepper-gerente-digital` (ambos repos) hasta terminar la feature (instrucción del usuario 2026-06-19).
 
 | Fase | Estado |
 |------|--------|
-| 0 — Fundaciones y hardening | ✅ Completada en prod (0.1, 0.2, 0.3, 0.5; 0.4 parqueada/DP3) |
+| 0 — Fundaciones y hardening | ✅ Completada en prod (0.1, 0.2, 0.3, 0.4/DP3, 0.5) |
 | 1 — Store persistente | ✅ Completada en `feat` (1.1–1.4; sin desplegar) |
 | 2 — Core agnóstico de canal | ✅ Completada en `feat` (2.1–2.3; sin desplegar) |
-| 3 — Canal WhatsApp | ⬜ Pendiente |
+| 3 — Canal WhatsApp (Meta Cloud API) | 🟨 En curso (setup Meta) |
 | 4 — Memoria de largo plazo | ⬜ Pendiente |
 | 5 — Analítica determinística | ⬜ Pendiente |
 | 6 — Proactividad | ⬜ Pendiente |
@@ -404,3 +405,4 @@ Leyenda: ⬜ Pendiente · 🟨 En curso · ✅ Completada
 - 2026-06-19 — 2.1 — Mensaje canónico: nuevo `pepperMessage.createCanonicalMessage` (`{channel, externalId, userId, restaurantId, threadId, text, timestamp}`); adaptador web `normalizeWebMessage` en `aiAgentRoutes`. `streamChat` consume el canónico (sin `parseContext`/`authContext`, sin saber del canal). Verificado end-to-end (canónico → core → persistencia).
 - 2026-06-19 — 2.2 — Frontera core↔transporte formalizada: `normalizeHandlers` define el puerto de canal (no-op para handlers ausentes); `streamChat` documentado como entrada del core agnóstico; `runAgent` normaliza handlers. Puerto verificado robusto a adaptadores parciales (listo para WhatsApp). Flujo web sin cambios.
 - 2026-06-19 — 2.3 — Capacidades por canal: nuevo `pepperCapabilities` (`getChannelCapabilities`); el core deriva capacidades del canal y `emitArtifact` decide interactivo (onArtifact) vs texto sin `if(whatsapp)`. Verificado unitariamente. **Fase 2 completa en `feat`.**
+- 2026-06-22 — decisiones — Resueltas DP1–DP4: **DP1** WhatsApp = Meta Cloud API directo (negocio ya verificado en Meta; app a configurar con el usuario); **DP2** un solo número de Pepper para todos los restaurantes, el `phone` identifica al usuario y Pepper pregunta si posee varios restaurantes; **DP3** se mantiene Opus 4.8 (cierra 0.4); **DP4** Zep free tier (Cloud US para el piloto). `.env` del backend: `ZEP_API_KEY` (rotar — se compartió en chat) + placeholders `WHATSAPP_*`. Actualizados D1/D7 y header de Fase 3. Próximo: setup de la app de Meta + 3.1.
