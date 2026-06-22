@@ -67,7 +67,7 @@ export default function Page() {
   }, [emailValidation.allowed]);
 
   const searchParams = useSearchParams();
-  const { user } = useUser();
+  useUser();
   const isInvited = searchParams.get("invited") === "true";
   const emailFromUrl = searchParams.get("email");
   const [mounted, setMounted] = useState(false);
@@ -119,7 +119,13 @@ export default function Page() {
   if (emailValidation.loading) {
     return (
       <div className="min-h-screen bg-[#023828] flex items-center justify-center">
-        <div className="h-6 w-6 border-b-2 border-[#82E657] animate-spin" />
+        <div className="text-center">
+          <img
+            src="/even/even-asterisk-grass.svg"
+            alt="Even"
+            className="asterisk-spin size-18 md:size-20 object-contain"
+          />
+        </div>
       </div>
     );
   }
@@ -130,13 +136,13 @@ export default function Page() {
         <div className="w-full max-w-md">
           <div className="flex justify-center mb-12">
             <img
-              src="/even-assets/asterisk-evergreen.png"
+              src="/even-assets/even-asterisk-grass.svg"
               alt="Even"
-              className="h-16 brightness-0 invert"
+              className="h-16"
             />
           </div>
 
-          <div className="bg-white p-10">
+          <div className="bg-white p-10 rounded-2xl">
             <div className="flex items-center justify-center w-14 h-14 mx-auto bg-red-50 mb-6">
               <ShieldAlert className="w-7 h-7 text-red-500" />
             </div>

@@ -75,7 +75,13 @@ export default function Page() {
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-[#023828] flex items-center justify-center">
-        <div className="h-6 w-6 border-b-2 border-[#82E657] animate-spin" />
+        <div className="text-center">
+          <img
+            src="/even/even-asterisk-grass.svg"
+            alt="Even"
+            className="asterisk-spin size-18 md:size-20 object-contain"
+          />
+        </div>
       </div>
     );
   }
@@ -98,13 +104,13 @@ export default function Page() {
           {/* Logo */}
           <div className="flex justify-center mb-12">
             <img
-              src="/even-assets/asterisk-evergreen.png"
+              src="/even-assets/even-asterisk-grass.svg"
               alt="Even"
-              className="h-16 brightness-0 invert"
+              className="h-16"
             />
           </div>
 
-          <div className="bg-white p-10">
+          <div className="bg-white p-10 rounded-2xl">
             {resetStatus === "" || resetStatus === "sending" ? (
               <>
                 <h2 className="text-base font-medium uppercase tracking-widest text-[#023828] mb-2">
@@ -254,13 +260,13 @@ export default function Page() {
         {/* Logo */}
         <div className="flex justify-center mb-12">
           <img
-            src="/even-assets/asterisk-evergreen.png"
+            src="/even-assets/even-asterisk-grass.svg"
             alt="Even"
-            className="h-16 brightness-0 invert"
+            className="h-16"
           />
         </div>
 
-        <div className="bg-white p-10">
+        <div className="bg-white p-10 rounded-2xl">
           <div className="mb-8">
             <h1 className="text-base font-medium uppercase tracking-widest text-[#023828]">
               Admin Portal
