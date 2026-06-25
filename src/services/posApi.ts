@@ -1,10 +1,11 @@
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from "@clerk/nextjs";
 
 // ===============================================
 // CONFIGURACIÓN DE LA API
 // ===============================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 const POS_BASE = `${API_BASE_URL}/api/pos`;
 
 // ===============================================
@@ -17,11 +18,11 @@ export interface Printer {
   ip: string | null;
   port: number | null;
   name: string | null;
-  role: 'bar' | 'kitchen' | 'other' | 'all' | null;
+  role: "bar" | "kitchen" | "other" | "all" | null;
   is_active: boolean;
   last_seen_at: string;
   created_at: string;
-  connection_type: 'wifi' | 'usb' | null;
+  connection_type: "wifi" | "usb" | null;
   usb_device_name: string | null;
 }
 
@@ -88,14 +89,16 @@ export function usePosApi() {
     const response = await fetch(`${POS_BASE}${endpoint}`, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
         ...options.headers,
       },
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
+      const error = await response
+        .json()
+        .catch(() => ({ error: "Error desconocido" }));
       throw new Error(error.error || `Error ${response.status}`);
     }
 
@@ -112,19 +115,25 @@ export function usePosApi() {
     // Sincronizar menú (PULL + PUSH)
     syncMenu: async (branchId: string): Promise<SyncResult> => {
       const response = await fetchWithAuth(`/branch/${branchId}/sync-menu`, {
-        method: 'POST',
+        method: "POST",
       });
       return response;
     },
 
     // Obtener mapeos de secciones
-    getSectionMappings: async (branchId: string): Promise<{ mappings: SectionMapping[] }> => {
-      const response = await fetchWithAuth(`/branch/${branchId}/section-mappings`);
+    getSectionMappings: async (
+      branchId: string,
+    ): Promise<{ mappings: SectionMapping[] }> => {
+      const response = await fetchWithAuth(
+        `/branch/${branchId}/section-mappings`,
+      );
       return response;
     },
 
     // Obtener mapeos de items
-    getItemMappings: async (branchId: string): Promise<{ mappings: ItemMapping[] }> => {
+    getItemMappings: async (
+      branchId: string,
+    ): Promise<{ mappings: ItemMapping[] }> => {
       const response = await fetchWithAuth(`/branch/${branchId}/item-mappings`);
       return response;
     },
@@ -140,31 +149,59 @@ export function usePosApi() {
       return fetchWithAuth(`/branch/${branchId}/printers`);
     },
 
-    scanPrinters: async (branchId: string): Promise<{ found: number; printers: Printer[] }> => {
-      return fetchWithAuth(`/branch/${branchId}/printers/scan`, { method: 'POST' });
+    scanPrinters: async (
+      branchId: string,
+    ): Promise<{ found: number; printers: Printer[] }> => {
+      return fetchWithAuth(`/branch/${branchId}/printers/scan`, {
+        method: "POST",
+      });
     },
 
     updatePrinter: async (
       branchId: string,
       printerId: string,
-      data: { name?: string; role?: Printer['role']; is_active?: boolean }
+      data: { name?: string; role?: Printer["role"]; is_active?: boolean },
     ): Promise<{ printer: Printer }> => {
       return fetchWithAuth(`/branch/${branchId}/printers/${printerId}`, {
-        method: 'PUT',
+        method: "PUT",
         body: JSON.stringify(data),
       });
     },
 
-    deletePrinter: async (branchId: string, printerId: string): Promise<void> => {
-      await fetchWithAuth(`/branch/${branchId}/printers/${printerId}`, { method: 'DELETE' });
+    deletePrinter: async (
+      branchId: string,
+      printerId: string,
+    ): Promise<void> => {
+      await fetchWithAuth(`/branch/${branchId}/printers/${printerId}`, {
+        method: "DELETE",
+      });
     },
 
-    testPrinter: async (branchId: string, printerId: string): Promise<{ success: boolean; error?: string }> => {
-      return fetchWithAuth(`/branch/${branchId}/printers/${printerId}/test`, { method: 'POST' });
+    testPrinter: async (
+      branchId: string,
+      printerId: string,
+    ): Promise<{ success: boolean; error?: string }> => {
+      return fetchWithAuth(`/branch/${branchId}/printers/${printerId}/test`, {
+        method: "POST",
+      });
     },
 
-    scanUsbPrinters: async (branchId: string): Promise<{ found: number; printers: Printer[] }> => {
-      return fetchWithAuth(`/branch/${branchId}/printers/scan-usb`, { method: 'POST' });
+    scanUsbPrinters: async (
+      branchId: string,
+    ): Promise<{ found: number; printers: Printer[] }> => {
+      return fetchWithAuth(`/branch/${branchId}/printers/scan-usb`, {
+        method: "POST",
+      });
+    },
+
+    // Enviar un platillo recién creado al POS en tiempo real
+    pushItemToPos: async (
+      branchId: string,
+      itemId: number,
+    ): Promise<{ posItemId: string; posGroupId: string }> => {
+      return fetchWithAuth(`/branch/${branchId}/push-item/${itemId}`, {
+        method: "POST",
+      });
     },
   };
 }

@@ -27,6 +27,7 @@ import {
   joyrideTheme,
   joyrideResponsiveCSS,
 } from "../hooks/useMenuOnboarding";
+import { usePosApi } from "../services/posApi";
 
 interface NewSection {
   name: string;
@@ -51,6 +52,7 @@ const MenuManagement = () => {
   } = useRestaurant();
   const menuApi = useMenuAdminPortalApi();
   const adminPortalApi = useAdminPortalApi();
+  const posApi = usePosApi();
 
   // Menu onboarding tour
   const { run, steps, handleJoyrideCallback, startOnboarding } =
@@ -336,7 +338,54 @@ const MenuManagement = () => {
       if (values.id) {
         await menuApi.items.update(values.id, itemData);
       } else {
-        await menuApi.items.create(itemData);
+        // Platillo nuevo: validar sucursales y verificar agentes POS
+        const selectedBranchIds: string[] = values.availableBranches || [];
+
+        if (selectedBranchIds.length === 0) {
+          toast.error(
+            "Debes seleccionar al menos una sucursal para agregar el platillo.",
+            { duration: 4000 },
+          );
+          return;
+        }
+
+        // Verificar estado POS de cada sucursal seleccionada
+        const branchStatuses = await Promise.all(
+          selectedBranchIds.map(async (branchId: string) => ({
+            branchId,
+            status: await posApi.getAgentStatus(branchId),
+          })),
+        );
+
+        const posIntegratedBranches = branchStatuses.filter(
+          (b) => b.status.hasIntegration && b.status.isActive,
+        );
+
+        const offlineBranch = posIntegratedBranches.find(
+          (b) => !b.status.isAgentConnected,
+        );
+
+        if (offlineBranch) {
+          toast.error(
+            "El agente POS está desconectado en una de las sucursales seleccionadas. No es posible agregar el platillo.",
+            { duration: 5000 },
+          );
+          return;
+        }
+
+        const newItem = await menuApi.items.create(itemData);
+
+        // Enviar al POS de cada sucursal integrada
+        for (const { branchId } of posIntegratedBranches) {
+          try {
+            await posApi.pushItemToPos(branchId, newItem.id);
+          } catch (posError) {
+            toast.error(
+              "Platillo guardado, pero no se pudo enviar a todas las sucursales POS.",
+              { duration: 5000 },
+            );
+          }
+        }
       }
 
       await loadData();
