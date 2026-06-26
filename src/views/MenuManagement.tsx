@@ -199,7 +199,7 @@ const MenuManagement = () => {
     try {
       await posApi.pushItemToPos(selectedBranch.id, itemId);
       toast.success("Platillo sincronizado al POS");
-      setMappedItemIds((prev) => new Set([...prev, itemId]));
+      setMappedItemIds((prev) => new Set(Array.from(prev).concat(itemId)));
       await loadData();
     } catch (err: any) {
       toast.error(err.message || "Error al sincronizar al POS");

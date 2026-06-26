@@ -618,7 +618,6 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
                 name="description"
                 id="description"
                 rows={3}
-                required
                 value={values.description}
                 onChange={handleChange}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-custom-green-500 focus:border-custom-green-500 text-sm"
