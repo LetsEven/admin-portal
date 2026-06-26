@@ -203,5 +203,14 @@ export function usePosApi() {
         method: "POST",
       });
     },
+
+    // Enforce per-branch availability based on POS mapping status
+    enforceAvailability: async (
+      branchId: string,
+    ): Promise<{ mappedIds: number[]; skipped: boolean }> => {
+      return fetchWithAuth(`/branch/${branchId}/enforce-availability`, {
+        method: "POST",
+      });
+    },
   };
 }

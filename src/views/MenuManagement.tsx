@@ -165,6 +165,49 @@ const MenuManagement = () => {
     startOnboarding,
   ]);
 
+  const [mappedItemIds, setMappedItemIds] = useState<Set<number>>(new Set());
+  const [hasPosIntegration, setHasPosIntegration] = useState(false);
+  const [syncingItemId, setSyncingItemId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!selectedBranch?.id) {
+      setHasPosIntegration(false);
+      setMappedItemIds(new Set());
+      return;
+    }
+    posApi
+      .enforceAvailability(selectedBranch.id)
+      .then((res) => {
+        if (!res.skipped) {
+          setHasPosIntegration(true);
+          setMappedItemIds(new Set(res.mappedIds));
+          loadData();
+        } else {
+          setHasPosIntegration(false);
+          setMappedItemIds(new Set());
+        }
+      })
+      .catch(() => {
+        setHasPosIntegration(false);
+        setMappedItemIds(new Set());
+      });
+  }, [selectedBranch?.id]);
+
+  const handleSyncItemToPos = async (itemId: number) => {
+    if (!selectedBranch?.id) return;
+    setSyncingItemId(itemId);
+    try {
+      await posApi.pushItemToPos(selectedBranch.id, itemId);
+      toast.success("Platillo sincronizado al POS");
+      setMappedItemIds((prev) => new Set([...prev, itemId]));
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Error al sincronizar al POS");
+    } finally {
+      setSyncingItemId(null);
+    }
+  };
+
   const [deletingItemId, setDeletingItemId] = useState<number | null>(null);
   const [isSubmittingSections, setIsSubmittingSections] = useState(false);
   const [showItemForm, setShowItemForm] = useState(false);
@@ -863,6 +906,14 @@ const MenuManagement = () => {
                                     onEdit={handleEditClick}
                                     onDelete={handleDeleteClick}
                                     isDeleting={deletingItemId === item.id}
+                                    isPosUnmapped={
+                                      hasPosIntegration &&
+                                      !mappedItemIds.has(item.id)
+                                    }
+                                    onSyncToPos={() =>
+                                      handleSyncItemToPos(item.id)
+                                    }
+                                    isSyncing={syncingItemId === item.id}
                                   />
                                 </div>
                               )}
