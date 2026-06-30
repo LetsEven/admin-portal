@@ -22,6 +22,8 @@ interface RestaurantData {
   emailNotifications?: boolean;
   smsNotifications?: boolean;
   tapPayPrint?: boolean;
+  facturapiApiKey?: string | null;
+  billingEnabled?: boolean;
   language?: string;
   currency?: string;
   tableCount?: number;
@@ -156,6 +158,8 @@ export function useRestaurant(): UseRestaurantReturn {
             emailNotifications: result.data.email_notifications ?? false,
             smsNotifications: result.data.sms_notifications ?? false,
             tapPayPrint: result.data.tap_pay_print ?? true,
+            facturapiApiKey: result.data.facturapi_api_key ?? null,
+            billingEnabled: result.data.billing_enabled ?? false,
             tableCount: result.data.table_count ?? 0,
             language: "es",
             currency: "MXN",
@@ -234,6 +238,7 @@ export function useRestaurant(): UseRestaurantReturn {
           email_notifications: updateData.emailNotifications,
           sms_notifications: updateData.smsNotifications,
           tap_pay_print: updateData.tapPayPrint,
+          facturapi_api_key: updateData.facturapiApiKey,
           table_count: updateData.tableCount,
         };
 

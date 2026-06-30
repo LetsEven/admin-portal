@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
+import { useRestaurant } from "../hooks/useRestaurant";
 import {
   HomeIcon,
   BookOpenIcon,
@@ -12,6 +13,7 @@ import {
   LogOutIcon,
   SparklesIcon,
   DollarSign,
+  FileText,
 } from "lucide-react";
 interface SidebarProps {
   mobile: boolean;
@@ -20,6 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const pathname = usePathname();
   const { signOut } = useAuth();
+  const { restaurant } = useRestaurant();
   // No aplicamos la lógica de contracción en móvil
   const handleMouseEnter = () => {
     if (!mobile) setIsExpanded(true);
@@ -135,6 +138,21 @@ const Sidebar: React.FC<SidebarProps> = ({ mobile }) => {
             PDP
           </span>
         </Link>
+        {restaurant?.billingEnabled !== false && (
+          <Link
+            href="/invoices"
+            className={`group flex items-center text-sm font-medium rounded-lg transition-all duration-200 ${mobile || isExpanded ? "px-3 py-3" : "px-0 py-3 justify-center"} ${pathname === "/invoices" ? "bg-custom-green-100 text-custom-green-900 shadow-sm" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"}`}
+          >
+            <FileText
+              className={`flex-shrink-0 h-5 w-5 ${mobile || isExpanded ? "mr-3 text-custom-green-600" : "mx-auto text-gray-500"} transition-all duration-200`}
+            />
+            <span
+              className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${mobile || isExpanded ? "opacity-100 max-w-[160px]" : "opacity-0 max-w-0"}`}
+            >
+              Facturas
+            </span>
+          </Link>
+        )}
         <Link
           href="/settings"
           className={`group flex items-center text-sm font-medium rounded-lg transition-all duration-200 ${mobile || isExpanded ? "px-3 py-3" : "px-0 py-3 justify-center"} ${pathname === "/settings" ? "bg-custom-green-100 text-custom-green-900 shadow-sm" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"}`}

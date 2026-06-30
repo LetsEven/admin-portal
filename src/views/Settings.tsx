@@ -237,7 +237,8 @@ const Settings = () => {
   useEffect(() => {
     if (restaurant) {
       console.log("🔍 Restaurant data received in Settings:", restaurant);
-      if (restaurant.tapPayPrint !== undefined) setTapPayPrint(restaurant.tapPayPrint);
+      if (restaurant.tapPayPrint !== undefined)
+        setTapPayPrint(restaurant.tapPayPrint);
       setSettings({
         name: restaurant.name || "Mi Restaurante",
         address: restaurant.address || "",
@@ -1439,7 +1440,6 @@ const Settings = () => {
                   Gestionar servicios
                 </button>
               </div>
-
             </div>
           </div>
 

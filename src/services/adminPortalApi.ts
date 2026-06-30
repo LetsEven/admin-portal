@@ -36,6 +36,7 @@ export interface Restaurant {
   email?: string;
   is_active: boolean;
   tap_pay_print?: boolean;
+  facturapi_api_key?: string | null;
   created_at: string;
   updated_at: string;
 }
