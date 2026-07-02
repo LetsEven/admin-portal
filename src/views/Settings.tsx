@@ -13,6 +13,7 @@ import {
   Server,
   Printer,
   Tag,
+  Download,
 } from "lucide-react";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { useRestaurant } from "../hooks/useRestaurant";
@@ -30,6 +31,7 @@ import HorarioModal from "../components/settings/HorarioModal";
 import ControlFlujoModal from "../components/settings/ControlFlujoModal";
 import PosConfigModal from "../components/settings/PosConfigModal";
 import ImpresorasModal from "../components/settings/ImpresorasModal";
+import DownloadsModal from "../components/settings/DownloadsModal";
 
 interface SettingsData {
   name: string;
@@ -230,7 +232,7 @@ const Settings = () => {
 
   // Modal abierto en la sección de configuración
   const [openModal, setOpenModal] = useState<
-    null | "dine" | "horario" | "flujo" | "pos" | "impresoras"
+    null | "dine" | "horario" | "flujo" | "pos" | "impresoras" | "descargas"
   >(null);
 
   // Sincronizar estado local con datos del restaurante
@@ -1612,7 +1614,7 @@ const Settings = () => {
           <div className="border-t border-gray-200 my-6"></div>
 
           {/* === Sección 3: Acciones por sucursal (cada botón abre un modal) === */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <button
               type="button"
               onClick={() => setOpenModal("horario")}
@@ -1652,6 +1654,16 @@ const Settings = () => {
               <Printer className="h-5 w-5 text-custom-green-600 flex-shrink-0" />
               <span className="text-sm font-medium text-gray-700">
                 Impresoras
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpenModal("descargas")}
+              className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-custom-green-500 hover:bg-gray-50 transition-colors text-left"
+            >
+              <Download className="h-5 w-5 text-custom-green-600 flex-shrink-0" />
+              <span className="text-sm font-medium text-gray-700">
+                Descargas
               </span>
             </button>
           </div>
@@ -1821,6 +1833,11 @@ const Settings = () => {
         tapPayPrint={tapPayPrint}
         onTapPayPrintChange={handleTapPayPrintChange}
         isTapPayEnabled={isTapPayEnabled}
+      />
+
+      <DownloadsModal
+        isOpen={openModal === "descargas"}
+        onClose={() => setOpenModal(null)}
       />
 
       {/* Image Crop Modal */}

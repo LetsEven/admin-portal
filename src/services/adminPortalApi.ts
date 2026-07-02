@@ -473,6 +473,16 @@ class AdminPortalApiService {
   // MÉTODOS DE POS INTEGRATION
   // ===============================================
 
+  async getDownloads(
+    token: string,
+  ): Promise<{ name: string; filename: string; url: string }[]> {
+    return this.makeRequest<{ name: string; filename: string; url: string }[]>(
+      "/downloads",
+      { method: "GET" },
+      token,
+    );
+  }
+
   async getBranchPosIntegration(
     branchId: string,
     token: string,
@@ -705,6 +715,10 @@ export function useAdminPortalApi() {
     getBranchPosIntegration: (branchId: string) =>
       makeAuthenticatedRequest((token) =>
         adminPortalApiService.getBranchPosIntegration(branchId, token),
+      ),
+    getDownloads: () =>
+      makeAuthenticatedRequest((token) =>
+        adminPortalApiService.getDownloads(token),
       ),
 
     // Sincronización inicial (puede no requerir auth)
