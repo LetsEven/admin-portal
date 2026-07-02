@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import {
   DragDropContext,
   Droppable,
@@ -215,6 +215,7 @@ const MenuManagement = () => {
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
   const [filterCategory, setFilterCategory] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(
     null,
@@ -652,12 +653,20 @@ const MenuManagement = () => {
   const handleUpdateLogo = (logo_url: string) => {
     updateRestaurant({ logo_url });
   };
-  const filteredItems = filterCategory
-    ? menuItems.filter((item) => {
-        const section = sections.find((s) => s.id === item.section_id);
-        return section?.name === filterCategory;
-      })
-    : menuItems;
+  const filteredItems = menuItems.filter((item) => {
+    if (filterCategory) {
+      const section = sections.find((s) => s.id === item.section_id);
+      if (section?.name !== filterCategory) return false;
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return (
+        item.name.toLowerCase().includes(q) ||
+        (item.description?.toLowerCase().includes(q) ?? false)
+      );
+    }
+    return true;
+  });
 
   // Group items by category - use section names from the database
   const itemsByCategory = sections.reduce(
@@ -754,6 +763,28 @@ const MenuManagement = () => {
       />
 
       <div className="mt-4 sm:mt-6">
+        {/* Search bar */}
+        <div className="flex justify-end mb-4 sm:mb-6">
+          <div className="relative w-48">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar..."
+              className="w-full pl-9 pr-8 py-1.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#023828] focus:border-transparent"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <XIcon className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Branch filter info */}
         {/* {selectedBranch && (
           <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -841,10 +872,18 @@ const MenuManagement = () => {
               </p>
             </div>
           )
+        ) : searchQuery.trim() &&
+          Object.values(itemsByCategory).every(
+            (items) => items.length === 0,
+          ) ? (
+          <div className="text-center py-10 text-sm text-gray-500">
+            No se encontraron platillos para "{searchQuery}".
+          </div>
         ) : (
           <DragDropContext onDragEnd={handleItemDragEnd}>
-            {Object.entries(itemsByCategory).map(
-              ([category, items], categoryIndex) => {
+            {Object.entries(itemsByCategory)
+              .filter(([, items]) => !searchQuery.trim() || items.length > 0)
+              .map(([category, items], categoryIndex) => {
                 const section = sections.find((s) => s.name === category);
                 const droppableId = String(section?.id ?? category);
                 return (
@@ -947,8 +986,7 @@ const MenuManagement = () => {
                     </Droppable>
                   </div>
                 );
-              },
-            )}
+              })}
           </DragDropContext>
         )}
       </div>
