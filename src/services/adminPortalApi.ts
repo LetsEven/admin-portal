@@ -475,8 +475,8 @@ class AdminPortalApiService {
 
   async getDownloads(
     token: string,
-  ): Promise<{ name: string; filename: string; url: string }[]> {
-    return this.makeRequest<{ name: string; filename: string; url: string }[]>(
+  ): Promise<{ name: string; platform: string; filename: string; url: string }[]> {
+    return this.makeRequest<{ name: string; platform: string; filename: string; url: string }[]>(
       "/downloads",
       { method: "GET" },
       token,

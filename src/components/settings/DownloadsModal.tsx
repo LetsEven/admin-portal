@@ -7,6 +7,7 @@ import { useAdminPortalApi } from "../../services/adminPortalApi";
 
 interface DownloadFile {
   name: string;
+  platform: string;
   filename: string;
   url: string;
 }
@@ -69,13 +70,24 @@ const DownloadsModal: React.FC<DownloadsModalProps> = ({ isOpen, onClose }) => {
         <ul className="divide-y divide-gray-100">
           {files.map((file) => (
             <li
-              key={file.name}
+              key={file.filename}
               className="flex items-center justify-between py-4 gap-4"
             >
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900">
-                  {file.name}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {file.name}
+                  </p>
+                  <span
+                    className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                      file.platform === "Android"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-blue-100 text-blue-700"
+                    }`}
+                  >
+                    {file.platform}
+                  </span>
+                </div>
                 <p className="text-xs text-gray-400 mt-0.5">{file.filename}</p>
               </div>
               <a
